@@ -225,4 +225,19 @@
     <string name="saturation">Saturation</string>
     <string name="brightness">Brightness</string>
     <string name="lock_screen_hint">Protected by your PIN</string>
+    <string name="encrypted_auto_backup">Encrypted automatic backup</string>
+    <string name="backup_not_configured">Off · offline by default</string>
+    <string name="daily_encrypted_backup">Every 24 hours · end-to-end encrypted</string>
+    <string name="change_backup_folder">Change backup folder</string>
+    <string name="backup_password">Recovery passphrase</string>
+    <string name="confirm_backup_password">Confirm passphrase</string>
+    <string name="backup_password_warning">Keep this passphrase outside the phone. Without it you cannot restore encrypted backups to another device.</string>
+    <string name="create_backup_password">Create backup passphrase</string>
+    <string name="enter_backup_password">Backup passphrase</string>
+    <string name="backup_password_minimum">Use at least 12 characters</string>
+    <string name="encrypted_backup_saved">Encrypted backup saved</string>
+    <string name="encrypted_backup_error">Failed to create encrypted backup</string>
+    <string name="wrong_backup_password">Wrong passphrase or damaged backup</string>
+    <string name="encrypted_restore_complete">Backup restored. Restart the app to apply appearance.</string>
+    <string name="backup_requires_android_6">Encrypted automatic backups require Android 6 or newer</string>
 </resources>

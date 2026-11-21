@@ -8,6 +8,18 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.text.InputType
+import android.widget.EditText
+import android.widget.LinearLayout
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Observer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import com.omgodse.notally.backup.BackupScheduler
+import com.omgodse.notally.backup.BackupSecrets
+import com.omgodse.notally.backup.EncryptedBackups
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.PinDialogs
 import android.view.View
@@ -61,6 +73,26 @@ class Settings : Fragment() {
 
         model.preferences.autoBackup.observe(viewLifecycleOwner) { value ->
             binding.AutoBackup.setup(AutoBackup, value)
+            binding.AutoBackup.Title.setText(R.string.encrypted_auto_backup)
+            binding.AutoBackup.Value.setText(
+                if (value == AutoBackup.emptyPath) R.string.backup_not_configured
+                else R.string.daily_encrypted_backup
+            )
+            binding.AutoBackup.root.setOnClickListener {
+                if (value == AutoBackup.emptyPath) displayChooseFolderDialog()
+                else {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.encrypted_auto_backup)
+                        .setItems(arrayOf(getString(R.string.change_backup_folder), getString(R.string.disable_auto_backup))) { _, which ->
+                            if (which == 0) displayChooseFolderDialog()
+                            else {
+                                model.disableAutoBackup()
+                                BackupSecrets.clear(requireContext())
+                                BackupScheduler.disable(requireActivity().application)
+                            }
+                        }.show()
+                }
+            }
         }
 
         binding.ImportBackup.setOnClickListener {
@@ -111,9 +143,12 @@ class Settings : Fragment() {
         if (resultCode == Activity.RESULT_OK) {
             intent?.data?.let { uri ->
                 when (requestCode) {
-                    REQUEST_IMPORT_BACKUP -> model.importBackup(uri)
-                    REQUEST_EXPORT_BACKUP -> model.exportBackup(uri)
-                    REQUEST_CHOOSE_FOLDER -> model.setAutoBackupPath(uri)
+                    REQUEST_IMPORT_BACKUP -> importSelectedBackup(uri)
+                    REQUEST_EXPORT_BACKUP -> exportEncryptedBackup(uri)
+                    REQUEST_CHOOSE_FOLDER -> {
+                        model.setAutoBackupPath(uri)
+                        BackupScheduler.schedule(requireActivity().application, uri, refresh = true)
+                    }
                 }
             }
         }
@@ -121,19 +156,131 @@ class Settings : Fragment() {
 
 
     private fun exportBackup() {
-        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
-        intent.type = "application/zip"
-        intent.addCategory(Intent.CATEGORY_OPENABLE)
-        intent.putExtra(Intent.EXTRA_TITLE, "Notas - Copia de seguridad")
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            type = "application/octet-stream"
+            addCategory(Intent.CATEGORY_OPENABLE)
+            putExtra(Intent.EXTRA_TITLE, "Notas-" + java.text.SimpleDateFormat("yyyy-MM-dd",java.util.Locale.US)
+                .format(System.currentTimeMillis()) + ".rnotas")
+        }
         startActivityForResult(intent, REQUEST_EXPORT_BACKUP)
     }
 
     private fun importBackup() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
-        intent.type = "*/*"
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/zip", "text/xml"))
-        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES,arrayOf("application/octet-stream","application/zip","text/xml"))
+            addCategory(Intent.CATEGORY_OPENABLE)
+        }
         startActivityForResult(intent, REQUEST_IMPORT_BACKUP)
+    }
+
+    private fun requestBackupPassword(confirm: Boolean, callback: (CharArray) -> Unit) {
+        val context = requireContext()
+        val dp = resources.displayMetrics.density
+        val panel = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((22*dp).toInt(),(8*dp).toInt(),(22*dp).toInt(),(10*dp).toInt())
+        }
+        fun field(hint: Int): EditText = EditText(context).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setHint(hint)
+            isSingleLine = true
+            minHeight = (55*dp).toInt()
+        }
+        val first = field(R.string.backup_password)
+        panel.addView(first)
+        val repeat = if (confirm) field(R.string.confirm_backup_password) else null
+        repeat?.let(panel::addView)
+        val message = android.widget.TextView(context).apply {
+            setText(R.string.backup_password_warning)
+            textSize = 12f
+            setPadding(0,(13*dp).toInt(),0,0)
+        }
+        panel.addView(message)
+        val dialog = MaterialAlertDialogBuilder(context)
+            .setTitle(if (confirm) R.string.create_backup_password else R.string.enter_backup_password)
+            .setView(panel)
+            .setNegativeButton(R.string.cancel,null)
+            .setPositiveButton(R.string.continue_,null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                val pass = first.text.toString()
+                if (pass.length < 12) {
+                    first.error = getString(R.string.backup_password_minimum)
+                } else if (repeat != null && pass != repeat.text.toString()) {
+                    repeat.error = getString(R.string.pin_mismatch)
+                } else {
+                    val password = pass.toCharArray()
+                    first.text?.clear()
+                    repeat?.text?.clear()
+                    dialog.dismiss()
+                    callback(password)
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun exportEncryptedBackup(uri: Uri) {
+        requestBackupPassword(confirm = true) { pass ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                val app = requireActivity().application
+                try {
+                    withContext(Dispatchers.IO) {
+                        requireNotNull(app.contentResolver.openOutputStream(uri,"w")).use { out ->
+                            EncryptedBackups.write(app,out,pass)
+                        }
+                    }
+                    Toast.makeText(app,R.string.encrypted_backup_saved,Toast.LENGTH_LONG).show()
+                } catch (_: Exception) {
+                    Toast.makeText(app,R.string.encrypted_backup_error,Toast.LENGTH_LONG).show()
+                } finally { pass.fill('\u0000') }
+            }
+        }
+    }
+
+    private fun importSelectedBackup(uri: Uri) {
+        val app = requireActivity().application
+        viewLifecycleOwner.lifecycleScope.launch {
+            val encrypted = withContext(Dispatchers.IO) { EncryptedBackups.isEncrypted(app,uri) }
+            if (!encrypted) {
+                // Compatibilidad con copias ZIP/XML antiguas seleccionadas expresamente.
+                model.importBackup(uri)
+                return@launch
+            }
+            requestBackupPassword(confirm = false) { password ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    var file: File? = null
+                    try {
+                        file = withContext(Dispatchers.IO) {
+                            requireNotNull(app.contentResolver.openInputStream(uri)).use { input ->
+                                EncryptedBackups.decryptToCache(app,input,password)
+                            }
+                        }
+                        withContext(Dispatchers.IO) { EncryptedBackups.restoreSettings(app,requireNotNull(file)) }
+                        val restored = requireNotNull(file)
+                        var started = false
+                        val observer = object : Observer<Progress> {
+                            override fun onChanged(progress: Progress) {
+                                if (progress.inProgress) started = true
+                                else if (started) {
+                                    model.importingBackup.removeObserver(this)
+                                    restored.delete()
+                                    Toast.makeText(app,R.string.encrypted_restore_complete,Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                        model.importingBackup.observe(viewLifecycleOwner, observer)
+                        val safeUri = FileProvider.getUriForFile(app,"${app.packageName}.provider",restored)
+                        model.importBackup(safeUri)
+                    } catch (_: Exception) {
+                        file?.delete()
+                        Toast.makeText(app,R.string.wrong_backup_password,Toast.LENGTH_LONG).show()
+                    } finally { password.fill('\u0000') }
+                }
+            }
+        }
     }
 
     private fun setupProgressDialog(titleId: Int, liveData: MutableLiveData<Progress>) {
@@ -202,15 +349,24 @@ class Settings : Fragment() {
     }
 
     private fun displayChooseFolderDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setMessage(R.string.notes_will_be)
-            .setPositiveButton(R.string.choose_folder) { _, _ ->
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-                startActivityForResult(intent, REQUEST_CHOOSE_FOLDER)
-            }
-            .show()
+        if (!BackupSecrets.supported()) {
+            Toast.makeText(requireContext(),R.string.backup_requires_android_6,Toast.LENGTH_LONG).show()
+            return
+        }
+        requestBackupPassword(confirm = true) { password ->
+            try {
+                BackupSecrets.save(requireContext(),password)
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                }
+                startActivityForResult(intent,REQUEST_CHOOSE_FOLDER)
+            } catch (_: Exception) {
+                Toast.makeText(requireContext(),R.string.encrypted_backup_error,Toast.LENGTH_LONG).show()
+            } finally { password.fill('\u0000') }
+        }
     }
-
 
     private fun PreferenceBinding.setup(info: ListInfo, value: String) {
         Title.setText(info.title)

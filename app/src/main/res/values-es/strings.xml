@@ -214,4 +214,19 @@
     <string name="saturation">Saturación</string>
     <string name="brightness">Brillo</string>
     <string name="lock_screen_hint">Protegido con tu PIN</string>
+    <string name="encrypted_auto_backup">Respaldo cifrado automático</string>
+    <string name="backup_not_configured">Desactivado · sin conexión por defecto</string>
+    <string name="daily_encrypted_backup">Cada 24 horas · cifrado de extremo a extremo</string>
+    <string name="change_backup_folder">Cambiar carpeta de destino</string>
+    <string name="backup_password">Contraseña de recuperación</string>
+    <string name="confirm_backup_password">Confirmar contraseña</string>
+    <string name="backup_password_warning">Guarda esta contraseña fuera del teléfono. Sin ella no podrás restaurar las copias cifradas en otro dispositivo.</string>
+    <string name="create_backup_password">Crear contraseña de respaldo</string>
+    <string name="enter_backup_password">Contraseña del respaldo</string>
+    <string name="backup_password_minimum">Usa al menos 12 caracteres</string>
+    <string name="encrypted_backup_saved">Copia cifrada guardada</string>
+    <string name="encrypted_backup_error">No se pudo crear la copia cifrada</string>
+    <string name="wrong_backup_password">Contraseña incorrecta o copia dañada</string>
+    <string name="encrypted_restore_complete">Copia restaurada. Reinicia la app para aplicar la apariencia.</string>
+    <string name="backup_requires_android_6">El respaldo automático cifrado requiere Android 6 o posterior</string>
 </resources>
