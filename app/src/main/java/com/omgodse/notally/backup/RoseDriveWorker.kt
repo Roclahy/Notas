@@ -22,19 +22,24 @@ import java.util.concurrent.TimeUnit
 class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(context,params) {
     companion object {
         private val lock = java.util.concurrent.locks.ReentrantLock()
-    }
-    override fun doWork(): Result {
+
+        /** Único motor compartido por la ejecución directa y la periódica. */
+        fun perform(app: Application, manual: Boolean): androidx.work.ListenableWorker.Result {
         // El trabajo periódico puede coincidir con la cola por cambios.
         // No bloquear el hilo: la otra subida confirmará o reintentará.
-        if (!lock.tryLock()) return Result.retry()
-        val app = applicationContext as Application
+        if (!lock.tryLock()) {
+            // Una copia ya está en curso; esa copia programará un sucesor
+            // al terminar. No perder una edición en esta carrera.
+            RoseDriveState.markDirty(app)
+            return androidx.work.ListenableWorker.androidx.work.ListenableWorker.Result.retry()
+        }
         var file: File? = null
         var passphrase: CharArray? = null
         return try {
-            if (!RoseDriveState.enabled(app)) return Result.success()
+            if (!RoseDriveState.enabled(app)) return androidx.work.ListenableWorker.Result.success()
             passphrase = BackupSecrets.read(app) ?: run {
                 RoseDriveState.markFailed(app, "Contraseña local inaccesible")
-                return Result.failure()
+                return androidx.work.ListenableWorker.Result.failure()
             }
             RoseDriveState.markStarted(app)
 
@@ -46,17 +51,17 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             )
             if (authorization.hasResolution() || authorization.accessToken.isNullOrEmpty()) {
                 RoseDriveState.markNeedsAuthorization(app)
-                return Result.failure()
+                return androidx.work.ListenableWorker.Result.failure()
             }
             val dao = NotallyDatabase.getDatabase(app).getBaseNoteDao()
             val notesBefore = dao.getAllForSync()
-            if (!inputData.getBoolean("manual", false) &&
+            if (!manual &&
                 RoseDriveState.allSynced(app, notesBefore)) {
                 RoseDriveState.markAlreadyCurrent(app)
                 if (RoseDriveState.consumeDirty(app)) {
                     BackupScheduler.followUp(app)
                 }
-                return Result.success()
+                return androidx.work.ListenableWorker.Result.success()
             }
             // Captura conservadora anterior a crear la copia.
             // Nunca se marcan datos que se modifiquen tras esta captura.
@@ -78,7 +83,7 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             if (changesDuringUpload || !RoseDriveState.allSynced(app, dao.getAllForSync())) {
                 BackupScheduler.followUp(app)
             }
-            Result.success()
+            androidx.work.ListenableWorker.Result.success()
         } catch (error: Exception) {
             // Conservar un diagnóstico seguro: nunca registrar mensajes arbitrarios
             // que puedan incluir detalles de la cuenta, tokens o contenido privado.
@@ -86,7 +91,7 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
                 .find(error.message.orEmpty())?.groupValues?.get(1)?.toIntOrNull()
             if (http == 401) {
                 RoseDriveState.markNeedsAuthorization(app)
-                Result.failure()
+                androidx.work.ListenableWorker.Result.failure()
             } else {
                 val reason = when {
                     http != null -> "HTTP $http"
@@ -100,13 +105,17 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
                 }
                 RoseDriveState.markFailed(app, reason)
                 if (http != null && http in 400..499 && http != 408 && http != 429)
-                    Result.failure()
-                else Result.retry()
+                    androidx.work.ListenableWorker.Result.failure()
+                else androidx.work.ListenableWorker.Result.retry()
             }
         } finally {
             file?.delete()
             passphrase?.fill('\u0000')
             lock.unlock()
         }
+        }
     }
+
+    override fun doWork(): Result =
+        perform(applicationContext as Application, inputData.getBoolean("manual", false))
 }

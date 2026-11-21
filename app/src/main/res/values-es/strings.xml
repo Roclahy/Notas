@@ -249,7 +249,7 @@
     <string name="sync_up_to_date">Todo sincronizado con Google Drive</string>
     <string name="sync_note_uploaded">Nota incluida en la copia cifrada de Google Drive</string>
     <string name="sync_note_pending">Nota pendiente de copia cifrada</string>
-    <string name="sync_queued">Copia cifrada solicitada. Consulta su estado en Ajustes.</string>
+    <string name="sync_queued">Iniciando copia cifrada. Consulta su estado en Ajustes.</string>
     <string name="sync_not_configured">Activa la copia cifrada en Google Drive desde Ajustes</string>
     <string name="notebook_folders">Carpetas</string>
     <string name="notebook_all">Todas las notas</string>
@@ -274,7 +274,7 @@
     <string name="notebook_wallpaper_saved">Fondo de carpeta actualizado</string>
     <string name="notebook_without_password">Sin contraseña</string>
     <string name="telegram_channel">Canal de Telegram</string>
-    <string name="google_drive_queued">Copia en cola · se intentará automáticamente</string>
+    <string name="google_drive_queued">Copia pendiente · se enviará en breve</string>
     <string name="link_to_note">Enlazar nota</string>
     <string name="link_to_folder">Enlazar carpeta</string>
     <string name="link_open_note">¿Abrir la nota enlazada?</string>

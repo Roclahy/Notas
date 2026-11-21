@@ -262,7 +262,7 @@
     <string name="sync_up_to_date">Everything backed up to Google Drive</string>
     <string name="sync_note_uploaded">Note included in encrypted Google Drive backup</string>
     <string name="sync_note_pending">Note awaiting encrypted backup</string>
-    <string name="sync_queued">Encrypted backup requested. Check its status in Settings.</string>
+    <string name="sync_queued">Starting encrypted backup. Check its status in Settings.</string>
     <string name="sync_not_configured">Enable encrypted Google Drive backup in Settings</string>
     <string name="notebook_folders">Folders</string>
     <string name="notebook_all">All notes</string>
@@ -287,7 +287,7 @@
     <string name="notebook_wallpaper_saved">Folder background updated</string>
     <string name="notebook_without_password">Without password</string>
     <string name="telegram_channel">Telegram channel</string>
-    <string name="google_drive_queued">Backup queued · automatic attempt pending</string>
+    <string name="google_drive_queued">Backup pending · sending shortly</string>
     <string name="link_to_note">Link note</string>
     <string name="link_to_folder">Link folder</string>
     <string name="link_open_note">Open the linked note?</string>
