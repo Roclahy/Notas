@@ -277,4 +277,5 @@
     <string name="notebook_wallpaper_saved">Fondo de carpeta actualizado</string>
     <string name="notebook_without_password">Sin contraseña</string>
     <string name="telegram_channel">Canal de Telegram</string>
+    <string name="google_drive_queued">Copia pendiente · se subirá cuando haya conexión</string>
 </resources>

@@ -290,4 +290,5 @@
     <string name="notebook_wallpaper_saved">Folder background updated</string>
     <string name="notebook_without_password">Without password</string>
     <string name="telegram_channel">Telegram channel</string>
+    <string name="google_drive_queued">Backup queued · uploads when connected</string>
 </resources>

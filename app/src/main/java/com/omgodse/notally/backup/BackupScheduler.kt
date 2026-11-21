@@ -65,19 +65,22 @@ object BackupScheduler {
 
     /** Al guardar, agrupa ediciones cercanas y encadena sin cancelar subidas. */
     @Synchronized
-    fun changed(app: Application) {
+    fun changed(app: Application, urgent: Boolean = false) {
         if (!ready(app)) return
         val now = SystemClock.elapsedRealtime()
-        if (lastQueuedAt > 0 && now >= lastQueuedAt &&
+        if (!urgent && lastQueuedAt > 0 && now >= lastQueuedAt &&
             now - lastQueuedAt < DEBOUNCE_MS) return
         lastQueuedAt = now
+        RoseDriveState.markQueued(app)
         WorkManager.getInstance(app).enqueueUniqueWork(
-            CLOUD_QUEUE, ExistingWorkPolicy.APPEND_OR_REPLACE, request(8, false))
+            CLOUD_QUEUE, ExistingWorkPolicy.APPEND_OR_REPLACE,
+            request(if (urgent) 0 else 8, false))
     }
 
     /** El botón manual salta el debounce, pero mantiene el orden seguro. */
     fun force(app: Application): Boolean {
         if (!ready(app)) return false
+        RoseDriveState.markQueued(app)
         WorkManager.getInstance(app).enqueueUniqueWork(
             CLOUD_QUEUE, ExistingWorkPolicy.APPEND_OR_REPLACE, request(0, true))
         return true

@@ -108,6 +108,8 @@ class Settings : Fragment() {
                 getString(R.string.google_drive_uploading)
             RoseDriveState.lastFailure(context) != null ->
                 getString(R.string.google_drive_upload_error, RoseDriveState.lastFailure(context))
+            RoseDriveState.isQueued(context) ->
+                getString(R.string.google_drive_queued)
             RoseDriveState.lastUpload(context) > 0L -> {
                 val date = java.text.DateFormat.getDateTimeInstance(
                     java.text.DateFormat.SHORT, java.text.DateFormat.SHORT

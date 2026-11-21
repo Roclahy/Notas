@@ -72,7 +72,7 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             // Una nota puede cambiar mientras se subía esta versión. Encolar
             // la nueva sin cancelar ni invalidar el archivo ya confirmado.
             if (!RoseDriveState.allSynced(app, dao.getAllForSync())) {
-                BackupScheduler.changed(app)
+                BackupScheduler.changed(app, urgent = true)
             }
             Result.success()
         } catch (error: Exception) {

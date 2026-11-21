@@ -34,6 +34,7 @@ object RoseDriveState {
         if (!enabled) {
             editor.remove(BACKED_UP).remove(BACKED_UP_SETTINGS).remove("last_upload")
                 .remove("needs_authorization").remove("last_failure").remove("uploading")
+                .remove("queued")
         }
         editor.apply()
         invalidate()
@@ -99,20 +100,21 @@ object RoseDriveState {
             .putString(BACKED_UP_SETTINGS, settingsHash)
             .putLong("last_upload", System.currentTimeMillis())
             .putBoolean("needs_authorization", false)
-            .putBoolean("uploading", false).remove("last_failure").commit()
+            .putBoolean("uploading", false).putBoolean("queued", false)
+            .remove("last_failure").commit()
         invalidate()
     }
 
     /** Trabajo redundante: no modificar la fecha del último respaldo real. */
     fun markAlreadyCurrent(c: Context) {
-        prefs(c).edit().putBoolean("uploading", false)
+        prefs(c).edit().putBoolean("uploading", false).putBoolean("queued", false)
             .remove("last_failure").apply()
         invalidate()
     }
 
     fun markNeedsAuthorization(c: Context) {
         prefs(c).edit().putBoolean("needs_authorization", true)
-            .putBoolean("uploading", false).apply()
+            .putBoolean("uploading", false).putBoolean("queued", false).apply()
         invalidate()
     }
 
@@ -126,6 +128,13 @@ object RoseDriveState {
         invalidate()
     }
 
+    fun markQueued(c: Context) {
+        prefs(c).edit().putBoolean("queued", true).apply()
+        invalidate()
+    }
+
+    fun isQueued(c: Context): Boolean = prefs(c).getBoolean("queued", false)
+
     fun markStarted(c: Context) {
         prefs(c).edit().putBoolean("uploading", true).remove("last_failure").apply()
         invalidate()
@@ -134,7 +143,7 @@ object RoseDriveState {
     /** Solo diagnósticos genéricos, sin tokens ni contenido de las notas. */
     fun markFailed(c: Context, reason: String) {
         prefs(c).edit().putBoolean("uploading", false)
-            .putString("last_failure", reason).apply()
+            .putString("last_failure", reason).putBoolean("queued", false).apply()
         invalidate()
     }
 
