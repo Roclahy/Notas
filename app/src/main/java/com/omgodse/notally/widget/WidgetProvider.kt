@@ -104,7 +104,8 @@ class WidgetProvider : AppWidgetProvider() {
             val prefs = Preferences.getInstance(app)
             val relevant = prefs.getUpdatableWidgets(ids).map { it.first }.toSet()
             manager.getAppWidgetIds(component).forEach {
-                if (it in relevant || PinSecurity.appEnabled(app)) updateWidget(app, manager, it)
+                if (ids.isEmpty() || it in relevant || PinSecurity.appEnabled(app))
+                    updateWidget(app, manager, it)
             }
         }
         fun sendBroadcast(app: Application, id: Long) = sendBroadcast(app, longArrayOf(id))

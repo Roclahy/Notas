@@ -370,11 +370,15 @@ class Settings : Fragment() {
             if (PinSecurity.appEnabled(requireContext())) {
                 PinDialogs.check(requireActivity(), "pin:app", onVerified = {
                     PinSecurity.removeAppPin(requireContext())
+                    com.omgodse.notally.widget.WidgetProvider.sendBroadcast(
+                        requireActivity().application, longArrayOf())
                     updatePinLabel()
                 })
             } else {
                 PinDialogs.setup(requireActivity()) { pin ->
                     PinSecurity.setAppPin(requireContext(), pin)
+                    com.omgodse.notally.widget.WidgetProvider.sendBroadcast(
+                        requireActivity().application, longArrayOf())
                     updatePinLabel()
                 }
             }
