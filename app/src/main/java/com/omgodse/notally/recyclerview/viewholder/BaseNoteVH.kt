@@ -21,6 +21,7 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.omgodse.notally.R
+import com.omgodse.notally.view.LiquidGlass
 import com.omgodse.notally.databinding.RecyclerBaseNoteBinding
 import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.miscellaneous.applySpans
@@ -206,11 +207,9 @@ class BaseNoteVH(
         val context = binding.root.context
 
         val amoled = Preferences.getInstance(context.applicationContext as Application).isAmoledTheme()
-        val glass = Preferences.getInstance(context.applicationContext as Application).isGlassTheme()
+        val glass = LiquidGlass.enabled(context)
         if (glass && color == Color.DEFAULT) {
-            binding.root.strokeWidth = (context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
-            binding.root.strokeColor = 0x55FFFFFF
-            binding.root.setCardBackgroundColor(0x66273447)
+            LiquidGlass.styleCard(binding.root, context)
         } else if (amoled && color == Color.DEFAULT) {
             binding.root.strokeColor = 0
             binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.NotasSurface))

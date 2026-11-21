@@ -43,6 +43,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.omgodse.notally.MenuDialog
 import com.omgodse.notally.Progress
 import com.omgodse.notally.R
+import com.omgodse.notally.view.LiquidGlass
+import android.content.res.ColorStateList
 import com.omgodse.notally.databinding.DialogProgressBinding
 import com.omgodse.notally.databinding.FragmentSettingsBinding
 import com.omgodse.notally.databinding.PreferenceBinding
@@ -84,6 +86,23 @@ class Settings : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val binding = FragmentSettingsBinding.bind(view)
+        setupBinding(binding)
+        // Usar el layout base de cada tema: el material se aplica solo a
+        // superficies de ajustes, nunca al fondo completo de AMOLED.
+        if (LiquidGlass.enabled(requireContext())) {
+            val content = binding.root.getChildAt(0) as? ViewGroup
+            if (content != null) {
+                for (i in 0 until content.childCount) {
+                    val child = content.getChildAt(i)
+                    if (child is LinearLayout) {
+                        child.background = LiquidGlass.surface(
+                            requireContext(), LiquidGlass.Role.GROUP)
+                        child.clipToOutline = true
+                    }
+                }
+            }
+        }
         RoseDriveState.revision.observe(viewLifecycleOwner) { refreshDriveLabel?.invoke() }
     }
 
@@ -292,6 +311,7 @@ class Settings : Fragment() {
         }
 
         binding.GlassSwitch.isChecked = model.preferences.isGlassTheme()
+        binding.GlassSwitch.thumbTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
         binding.GlassSwitch.setOnCheckedChangeListener { _, checked ->
             if (checked != model.preferences.isGlassTheme()) {
                 model.preferences.setLiquidGlass(checked)
@@ -354,24 +374,7 @@ class Settings : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val binding = FragmentSettingsBinding.inflate(inflater)
-        if (model.preferences.isGlassTheme()) {
-            binding.root.background = androidx.appcompat.content.res.AppCompatResources
-                .getDrawable(requireContext(), R.drawable.notas_glass_background)
-            val content = (binding.root as? android.view.ViewGroup)?.getChildAt(0)
-                as? android.view.ViewGroup
-            if (content != null) {
-                for (index in 0 until content.childCount) {
-                    val child = content.getChildAt(index)
-                    if (child is LinearLayout) {
-                        child.background = androidx.appcompat.content.res.AppCompatResources
-                            .getDrawable(requireContext(), R.drawable.notas_glass_group)
-                    }
-                }
-            }
-        }
-        setupBinding(binding)
-        return binding.root
+        return FragmentSettingsBinding.inflate(inflater, container, false).root
     }
 
 

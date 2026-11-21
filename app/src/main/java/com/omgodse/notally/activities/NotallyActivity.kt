@@ -53,6 +53,7 @@ import androidx.transition.TransitionManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.MaterialFade
 import com.omgodse.notally.R
+import com.omgodse.notally.view.LiquidGlass
 import com.omgodse.notally.backup.RoseDriveState
 import com.omgodse.notally.backup.BackupScheduler
 import com.omgodse.notally.room.NotallyDatabase
@@ -529,14 +530,11 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                 }
             } catch (_: Exception) { hasWallpaper = false }
         }
-        val glassDefault = !hasWallpaper && noteColor == NoteColor.DEFAULT &&
-            com.omgodse.notally.preferences.Preferences
-                .getInstance(application).isGlassTheme()
-        if (glassDefault) {
-            binding.root.background = androidx.appcompat.content.res.AppCompatResources
-                .getDrawable(this, R.drawable.notas_glass_background)
-        } else if (!hasWallpaper) binding.root.setBackgroundColor(colorInt)
-        val surface = if (hasWallpaper || glassDefault) Color.TRANSPARENT else colorInt
+        // El lienzo de escritura conserva su color real: en AMOLED se mantiene
+        // #000000, sin gradientes ni velos que afecten la legibilidad.
+        val glassChrome = LiquidGlass.enabled(this)
+        if (!hasWallpaper) binding.root.setBackgroundColor(colorInt)
+        val surface = if (hasWallpaper || glassChrome) Color.TRANSPARENT else colorInt
         binding.RecyclerView.setBackgroundColor(surface)
         binding.Toolbar.setBackgroundColor(surface)
         binding.Search.setBackgroundColor(surface)
@@ -549,7 +547,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             androidx.core.graphics.ColorUtils.setAlphaComponent(foreground, 165))
         val pill = if (foreground == Color.WHITE) 0x4D000000 else 0x44FFFFFF
         listOf(binding.DateCreated, binding.CharacterCount).forEach { view ->
-            view.background = GradientDrawable().apply {
+            view.background = if (glassChrome) {
+                LiquidGlass.surface(this, LiquidGlass.Role.METADATA, backgroundColor)
+            } else GradientDrawable().apply {
                 setColor(pill)
                 cornerRadius = 999f * resources.displayMetrics.density
             }
@@ -977,7 +977,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             orientation = LinearLayout.VERTICAL
             val pad = (20 * resources.displayMetrics.density).toInt()
             setPadding(pad, pad, pad, pad + (12 * resources.displayMetrics.density).toInt())
-            background = GradientDrawable().apply {
+            background = if (LiquidGlass.enabled(this@NotallyActivity)) {
+                LiquidGlass.surface(this@NotallyActivity, LiquidGlass.Role.SHEET)
+            } else GradientDrawable().apply {
                 setColor(sheetSurface)
                 val radius = 28f * resources.displayMetrics.density
                 cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
@@ -1073,6 +1075,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         }
         dialog.setContentView(container)
         dialog.setOnShowListener {
+            LiquidGlass.styleDialog(dialog, this)
             dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.apply {
                 backgroundTintList = null
                 background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
