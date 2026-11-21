@@ -40,3 +40,7 @@ La opción de PIN protege la interfaz; no cifra el contenido de la base de datos
 ## Identidad Rose
 
 Icono de rosa blanca sobre negro basado en la ilustración aportada por la propietaria. Entrada animada nativa de 950 ms en negro puro, sin dependencias de animación ni recursos GIF en el APK.
+
+## Google Drive
+
+El respaldo automático de Rose está diseñado para la carpeta visible `Mi unidad/Rose` mediante OAuth y Google Drive API v3, en lugar de una carpeta del almacenamiento interno. Consulta [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md) para configurar Google Cloud y la firma. La funcionalidad está pendiente de compilación y pruebas en Android.

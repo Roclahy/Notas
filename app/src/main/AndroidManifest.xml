@@ -5,6 +5,8 @@
 
     <!-- Solo comprueba conectividad; la app no solicita permiso INTERNET. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Solo se utiliza si la persona activa el respaldo cifrado de Google Drive. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />

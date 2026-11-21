@@ -5,41 +5,50 @@ import android.net.Uri
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
-import com.omgodse.notally.AutoBackupWorker
-import com.omgodse.notally.preferences.AutoBackup
-import com.omgodse.notally.preferences.Preferences
 import java.util.concurrent.TimeUnit
 
 object BackupScheduler {
-    private const val JOB = "Notas encrypted daily backup"
+    private const val LEGACY_JOB = "Notas encrypted daily backup"
+    private const val CLOUD_JOB = "Rose Google Drive encrypted daily backup"
+    private const val CLOUD_NOW = "Rose Google Drive encrypted first backup"
 
     fun schedule(app: Application, selectedUri: Uri? = null, refresh: Boolean = false) {
-        val manager = WorkManager.getInstance(app)
-        // Desactiva el trabajador antiguo que generaba ZIP sin cifrar.
-        manager.cancelUniqueWork("Auto Backup")
-        val uri = selectedUri ?: Preferences.getInstance(app).autoBackup.value
-            .takeUnless { it == AutoBackup.emptyPath }?.let(Uri::parse)
-        if (uri == null || BackupSecrets.read(app) == null) {
-            manager.cancelUniqueWork(JOB)
+        val work = WorkManager.getInstance(app)
+        // No programar la antigua copia automática en almacenamiento interno.
+        work.cancelUniqueWork("Auto Backup")
+        work.cancelUniqueWork(LEGACY_JOB)
+        if (!RoseDriveState.enabled(app) || BackupSecrets.read(app) == null) {
+            work.cancelUniqueWork(CLOUD_JOB)
             return
         }
-        val isCloud = uri.authority.orEmpty().contains("com.google.android.apps.docs",ignoreCase = true)
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(if (isCloud) NetworkType.CONNECTED else NetworkType.NOT_REQUIRED)
+        val constraint = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED).build()
+        val periodic = PeriodicWorkRequest.Builder(RoseDriveWorker::class.java,24,TimeUnit.HOURS)
+            .setConstraints(constraint)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL,30,TimeUnit.MINUTES)
             .build()
-        val request = PeriodicWorkRequest.Builder(AutoBackupWorker::class.java, 24, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES)
-            .build()
-        manager.enqueueUniquePeriodicWork(JOB,
+        work.enqueueUniquePeriodicWork(CLOUD_JOB,
             if (refresh) ExistingPeriodicWorkPolicy.REPLACE else ExistingPeriodicWorkPolicy.KEEP,
-            request)
+            periodic)
+        if (refresh) {
+            val first = OneTimeWorkRequestBuilder<RoseDriveWorker>()
+                .setConstraints(constraint)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL,30,TimeUnit.MINUTES)
+                .build()
+            work.enqueueUniqueWork(CLOUD_NOW,ExistingWorkPolicy.REPLACE,first)
+        }
     }
 
     fun disable(app: Application) {
-        WorkManager.getInstance(app).cancelUniqueWork(JOB)
+        val work=WorkManager.getInstance(app)
+        work.cancelUniqueWork(CLOUD_NOW)
+        work.cancelUniqueWork(CLOUD_JOB)
+        work.cancelUniqueWork(LEGACY_JOB)
+        work.cancelUniqueWork("Auto Backup")
     }
 }
