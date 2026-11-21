@@ -296,4 +296,6 @@
     <string name="notebook_deleted">Carpeta eliminada. Las notas se conservaron.</string>
     <string name="notebook_not_found">La carpeta ya no existe.</string>
     <string name="notebook_delete_error">No se pudo eliminar la carpeta.</string>
+    <string name="notebook_name_required">Escribe el nombre de la carpeta.</string>
+    <string name="notebook_password_optional">Puedes proteger esta carpeta con una contraseña, o continuar sin ella.</string>
 </resources>

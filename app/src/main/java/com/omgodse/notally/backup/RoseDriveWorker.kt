@@ -53,6 +53,9 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             if (!inputData.getBoolean("manual", false) &&
                 RoseDriveState.allSynced(app, notesBefore)) {
                 RoseDriveState.markAlreadyCurrent(app)
+                if (RoseDriveState.consumeDirty(app)) {
+                    BackupScheduler.followUp(app)
+                }
                 return Result.success()
             }
             // Captura conservadora anterior a crear la copia.

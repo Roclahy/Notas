@@ -309,4 +309,6 @@
     <string name="notebook_deleted">Folder deleted. Notes were kept.</string>
     <string name="notebook_not_found">This folder no longer exists.</string>
     <string name="notebook_delete_error">Could not delete the folder.</string>
+    <string name="notebook_name_required">Enter a name for the folder.</string>
+    <string name="notebook_password_optional">You can protect this folder with a password or continue without one.</string>
 </resources>

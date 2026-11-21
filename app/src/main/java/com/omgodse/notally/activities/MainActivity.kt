@@ -439,7 +439,10 @@ class MainActivity : NotasBaseActivity() {
             this.hint = getString(hint)
             boxBackgroundMode = TextInputLayout.BOX_OUTLINE
             boxStrokeColor = 0xFFF1C45B.toInt()
-            setBoxCornerRadii(14f, 14f, 14f, 14f)
+            setBoxCornerRadii(14f * resources.displayMetrics.density,
+                14f * resources.displayMetrics.density,
+                14f * resources.displayMetrics.density,
+                14f * resources.displayMetrics.density)
             addView(input, LinearLayout.LayoutParams(-1, -2))
         }
         return layout to input
