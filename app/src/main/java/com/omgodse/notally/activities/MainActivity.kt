@@ -543,7 +543,7 @@ class MainActivity : NotasBaseActivity() {
                 lifecycleScope.launch {
                     val valid = withContext(Dispatchers.Default) {
                         try { NotebookPassword.verify(secret, folder.passwordHash) }
-                        finally { secret.fill('\\u0000') }
+                        finally { secret.fill('\u0000') }
                     }
                     positive.isEnabled = true
                     if (valid) {
