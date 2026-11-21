@@ -126,6 +126,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         model.marker.color = ContextCompat.getColor(this, R.color.highlight)
         initialiseBinding()
         setContentView(binding.root)
+        NotasEdgeInsets.install(binding.root, includeKeyboard = true)
         pendingState = savedInstanceState
         binding.ScrollView.visibility = View.GONE
     }
@@ -422,7 +423,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             val isAmoled = com.omgodse.notally.preferences.Preferences.getInstance(application).isAmoledTheme()
             val colorInt = if (isAmoled && color == NoteColor.DEFAULT) Color.BLACK else Operations.extractColor(color, this)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                window.statusBarColor = colorInt
+                // La superficie de la nota continúa bajo la barra transparente.
+                window.statusBarColor = Color.TRANSPARENT
             }
             binding.root.setBackgroundColor(colorInt)
             binding.RecyclerView.setBackgroundColor(colorInt)

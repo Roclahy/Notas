@@ -41,7 +41,6 @@ import com.omgodse.notally.MenuDialog
 import com.omgodse.notally.R
 import com.omgodse.notally.backup.RoseDriveState
 import com.omgodse.notally.backup.BackupScheduler
-import android.content.res.ColorStateList
 import com.omgodse.notally.databinding.ActivityMainBinding
 import com.omgodse.notally.databinding.DialogColorBinding
 import com.omgodse.notally.miscellaneous.Operations
@@ -79,6 +78,7 @@ class MainActivity : NotasBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        NotasEdgeInsets.install(binding.root, includeKeyboard = false)
 
         setSupportActionBar(binding.Toolbar)
         setupBottomPill()

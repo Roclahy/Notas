@@ -1,6 +1,9 @@
 package com.omgodse.notally.activities
 
 import android.os.Bundle
+import android.os.Build
+import android.content.res.Configuration
+import androidx.core.view.WindowCompat
 import android.view.View
 import android.view.ViewGroup
 import android.graphics.Color
@@ -77,5 +80,19 @@ open class NotasBaseActivity : AppCompatActivity() {
             setTheme(R.style.AppThemeAmoled)
         }
         super.onCreate(savedInstanceState)
+        // Edge-to-edge también en Android 7-14: dibujo por detrás de las
+        // barras del sistema; cada pantalla aplicará sus propios insets.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
+        val light = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) !=
+            Configuration.UI_MODE_NIGHT_YES
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = light
+            isAppearanceLightNavigationBars = light
+        }
     }
 }
