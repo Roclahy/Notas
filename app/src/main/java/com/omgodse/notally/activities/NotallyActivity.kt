@@ -58,6 +58,7 @@ import com.omgodse.notally.backup.RoseDriveState
 import com.omgodse.notally.backup.BackupScheduler
 import com.omgodse.notally.room.NotallyDatabase
 import com.omgodse.notally.security.NotebookPassword
+import com.omgodse.notally.security.NoteWallpaperStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.text.InputType
@@ -334,6 +335,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             binding.EnterBody.requestFocus()
             binding.EnterBody.setSelection(end)
         }
+        // La carpeta se conoce después de cargar la nota; refrescar entonces
+        // el wallpaper heredado y la paleta (no solo al cambiar el color).
+        applyNoteAppearance(model.color.value)
     }
 
 
@@ -484,17 +488,13 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         lifecycleScope.launch {
             try {
                 val saved = withContext(Dispatchers.IO) {
-                    val root = File(application.filesDir, "SecureMedia/Wallpapers")
-                        .apply { mkdirs() }
-                    val name = UUID.randomUUID().toString() + ".wall"
-                    val source = requireNotNull(contentResolver.openInputStream(uri))
-                    SecureMedia.encryptFromStream(application, source, File(root, name))
-                    name
+                    NoteWallpaperStore.import(application, uri)
                 }
                 model.wallpaperName = saved
                 markNoteEdited()
                 applyNoteAppearance(model.color.value)
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                android.util.Log.e("RoseWallpaper", "Note wallpaper import failed", error)
                 Toast.makeText(this@NotallyActivity,
                     R.string.wallpaper_invalid, Toast.LENGTH_LONG).show()
             }
@@ -506,7 +506,15 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             .getInstance(application).isAmoledTheme()
         val colorInt = if (isAmoled && noteColor == NoteColor.DEFAULT) Color.BLACK
             else Operations.extractColor(noteColor, this)
-        val wallpaperFile = model.wallpaperName.takeIf { it.isNotBlank() }
+        // Si la nota no tiene fondo propio, hereda automáticamente el de su carpeta.
+        // El nombre del archivo es aleatorio; el contenido permanece cifrado.
+        val effectiveWallpaper = model.wallpaperName.ifBlank {
+            if (model.notebookId > 0L) {
+                NotallyDatabase.getDatabase(application).getNotebookFolderDao()
+                    .getNow(model.notebookId)?.wallpaperName.orEmpty()
+            } else ""
+        }
+        val wallpaperFile = effectiveWallpaper.takeIf { it.isNotBlank() }
             ?.let { File(application.filesDir, "SecureMedia/Wallpapers/$it") }
 
         var backgroundColor = colorInt

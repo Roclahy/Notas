@@ -49,6 +49,7 @@ import com.google.android.material.transition.MaterialFade
 import com.omgodse.notally.MenuDialog
 import com.omgodse.notally.R
 import com.omgodse.notally.view.LiquidGlass
+import com.omgodse.notally.security.NoteWallpaperStore
 import com.omgodse.notally.backup.RoseDriveState
 import com.omgodse.notally.backup.BackupScheduler
 import com.omgodse.notally.databinding.ActivityMainBinding
@@ -319,6 +320,53 @@ class MainActivity : NotasBaseActivity() {
                 LiquidGlass.styleDialog(dialog, this@MainActivity)
             }
             dialog.show()
+        }
+    }
+
+    private fun showNotebookOptions(folder: NotebookFolder) {
+        val options = mutableListOf(getString(R.string.notebook_wallpaper))
+        if (folder.wallpaperName.isNotBlank()) {
+            options.add(getString(R.string.notebook_remove_wallpaper))
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(folder.name)
+            .setItems(options.toTypedArray()) { _, choice ->
+                if (choice == 0) {
+                    pendingWallpaperFolderId = folder.id
+                    wallpaperPicker.launch("image/*")
+                } else {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            com.omgodse.notally.room.NotallyDatabase.getDatabase(application)
+                                .getNotebookFolderDao().updateWallpaper(folder.id, "")
+                        }
+                        Toast.makeText(this@MainActivity,
+                            R.string.notebook_wallpaper_saved, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }.show()
+    }
+
+    private fun saveNotebookWallpaper(folderId: Long, uri: Uri) {
+        lifecycleScope.launch {
+            var filename: String? = null
+            try {
+                filename = withContext(Dispatchers.IO) {
+                    NoteWallpaperStore.import(application, uri)
+                }
+                val saved = requireNotNull(filename)
+                withContext(Dispatchers.IO) {
+                    com.omgodse.notally.room.NotallyDatabase.getDatabase(application)
+                        .getNotebookFolderDao().updateWallpaper(folderId, saved)
+                }
+                Toast.makeText(this@MainActivity, R.string.notebook_wallpaper_saved,
+                    Toast.LENGTH_SHORT).show()
+            } catch (error: Exception) {
+                android.util.Log.e("RoseWallpaper", "Folder wallpaper import failed", error)
+                filename?.let { File(application.filesDir, "SecureMedia/Wallpapers/$it").delete() }
+                Toast.makeText(this@MainActivity, R.string.wallpaper_invalid,
+                    Toast.LENGTH_LONG).show()
+            }
         }
     }
 
