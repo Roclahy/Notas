@@ -262,4 +262,7 @@
     <string name="notebook_wrong_password">Contraseña incorrecta</string>
     <string name="notebook_move">Mover a carpeta</string>
     <string name="notebook_created">Carpeta creada</string>
+    <string name="wallpaper_custom">Fondo personalizado</string>
+    <string name="wallpaper_remove">Quitar fondo</string>
+    <string name="wallpaper_invalid">No se pudo cargar el fondo</string>
 </resources>

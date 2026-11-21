@@ -21,5 +21,6 @@ data class BaseNote(
     val images: List<Image>,
     val audios: List<Audio>,
     val reminder: Reminder?,
-    @ColumnInfo(defaultValue = "0") val notebookId: Long = 0L
+    @ColumnInfo(defaultValue = "0") val notebookId: Long = 0L,
+    @ColumnInfo(defaultValue = "''") val wallpaperName: String = ""
 ) : Item

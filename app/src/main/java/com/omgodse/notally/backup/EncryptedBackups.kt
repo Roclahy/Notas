@@ -130,6 +130,10 @@ object EncryptedBackups {
             .flatMap { Converters.jsonToAudios(it) }.distinctBy { it.name }
             .forEach { SecureMedia.backupFile(app, zip, audios,"Audios",it.name) }
 
+        val wallpaperRoot = File(app.filesDir, "SecureMedia/Wallpapers")
+        database.getBaseNoteDao().getAllWallpapers().asSequence().distinct()
+            .forEach { SecureMedia.backupFile(app, zip, wallpaperRoot, "Wallpapers", it) }
+
         val prefs = PreferenceManager.getDefaultSharedPreferences(app)
         val settings = Properties()
         for (setting in settingKeys) {

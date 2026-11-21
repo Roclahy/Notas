@@ -32,8 +32,8 @@ interface BaseNoteDao {
 
 
     @Query(
-        "INSERT INTO BaseNote (type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, notebookId)\n" +
-                "SELECT type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, notebookId\n" +
+        "INSERT INTO BaseNote (type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, notebookId, wallpaperName)\n" +
+                "SELECT type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, notebookId, wallpaperName\n" +
                 "FROM BaseNote WHERE id IN (:ids)"
     )
     suspend fun copy(ids: LongArray)
@@ -82,6 +82,9 @@ interface BaseNoteDao {
 
     @Query("SELECT images FROM BaseNote")
     fun getAllImages(): List<String>
+
+    @Query("SELECT wallpaperName FROM BaseNote WHERE wallpaperName != ''")
+    fun getAllWallpapers(): List<String>
 
     @Query("SELECT audios FROM BaseNote")
     fun getAllAudios(): List<String>

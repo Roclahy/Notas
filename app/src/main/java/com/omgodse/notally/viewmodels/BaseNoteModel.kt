@@ -339,10 +339,14 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
                 delay(1000)
 
-                val total = baseNotes.fold(0) { acc, baseNote -> acc + baseNote.images.size + baseNote.audios.size }
+                val total = baseNotes.fold(0) { acc, baseNote ->
+                    acc + baseNote.images.size + baseNote.audios.size +
+                        if (baseNote.wallpaperName.isBlank()) 0 else 1
+                }
                 var current = 1
 
                 // Don't let a single image bring down the entire backup
+                val wallpaperRemap = HashMap<String, String>()
                 baseNotes.forEach { baseNote ->
                     baseNote.images.forEach { image ->
                         try {
@@ -360,6 +364,17 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         } finally {
                             importingBackup.postValue(Progress(true, current, total, false))
                             current++
+                        }
+                    }
+                    if (baseNote.wallpaperName.isNotBlank()) {
+                        val entry = zipFile.getEntry("Wallpapers/${baseNote.wallpaperName}")
+                        if (entry != null) {
+                            val name = "${UUID.randomUUID()}.wall"
+                            val root = File(app.filesDir, "SecureMedia/Wallpapers")
+                                .apply { mkdirs() }
+                            com.omgodse.notally.security.SecureMedia.encryptFromStream(
+                                app, zipFile.getInputStream(entry), File(root, name))
+                            wallpaperRemap[baseNote.wallpaperName] = name
                         }
                     }
                     baseNote.audios.forEach { audio ->
@@ -381,7 +396,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     }
                 }
 
-                commonDao.importBackup(resolvedNotes, labels)
+                commonDao.importBackup(resolvedNotes.map { note ->
+                    note.copy(wallpaperName = wallpaperRemap[note.wallpaperName] ?: "")
+                }, labels)
                 val reminders = baseNoteDao.getAllReminders()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     if (manager.canScheduleExactAlarms()) {
@@ -445,7 +462,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         }
 
         return BaseNote(0, type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, reminder,
-            cursor.getColumnIndex("notebookId").takeIf { it >= 0 }?.let(cursor::getLong) ?: 0L)
+            cursor.getColumnIndex("notebookId").takeIf { it >= 0 }?.let(cursor::getLong) ?: 0L,
+            cursor.getColumnIndex("wallpaperName").takeIf { it >= 0 }?.let(cursor::getString) ?: "")
     }
 
     private fun <T> convertCursorToList(cursor: Cursor, convert: (cursor: Cursor) -> T): ArrayList<T> {

@@ -14,7 +14,7 @@ import com.omgodse.notally.room.dao.LabelDao
 import com.omgodse.notally.room.dao.NotebookFolderDao
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class, NotebookFolder::class], version = 6)
+@Database(entities = [BaseNote::class, Label::class, NotebookFolder::class], version = 7)
 abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -40,7 +40,7 @@ abstract class NotallyDatabase : RoomDatabase() {
         fun getDatabase(app: Application): NotallyDatabase {
             return instance ?: synchronized(this) {
                 val instance = Room.databaseBuilder(app, NotallyDatabase::class.java, DatabaseName)
-                    .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6)
+                    .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6, Migration7)
                     .allowMainThreadQueries()
                     .build()
                 this.instance = instance
@@ -66,6 +66,12 @@ abstract class NotallyDatabase : RoomDatabase() {
 
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `audios` TEXT NOT NULL DEFAULT `[]`")
+            }
+        }
+
+        object Migration7 : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE BaseNote ADD COLUMN wallpaperName TEXT NOT NULL DEFAULT ''")
             }
         }
 

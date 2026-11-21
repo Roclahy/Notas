@@ -275,4 +275,7 @@
     <string name="notebook_wrong_password">Incorrect password</string>
     <string name="notebook_move">Move to folder</string>
     <string name="notebook_created">Folder created</string>
+    <string name="wallpaper_custom">Custom background</string>
+    <string name="wallpaper_remove">Remove background</string>
+    <string name="wallpaper_invalid">Could not load background</string>
 </resources>
