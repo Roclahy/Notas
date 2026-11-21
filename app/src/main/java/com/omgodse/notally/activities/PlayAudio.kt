@@ -16,6 +16,7 @@ import com.omgodse.notally.audio.AudioPlayService
 import com.omgodse.notally.audio.LocalBinder
 import com.omgodse.notally.databinding.ActivityPlayAudioBinding
 import com.omgodse.notally.miscellaneous.IO
+import com.omgodse.notally.security.SecureMedia
 import com.omgodse.notally.miscellaneous.add
 import com.omgodse.notally.room.Audio
 import kotlinx.coroutines.Dispatchers
@@ -100,7 +101,9 @@ class PlayAudio : NotasBaseActivity() {
 
     private fun share() {
         val audioRoot = IO.getExternalAudioDirectory(application)
-        val file = if (audioRoot != null) File(audioRoot, audio.name) else null
+        val file = if (audioRoot != null) try {
+            SecureMedia.readableFile(application, File(audioRoot, audio.name))
+        } catch (_: Exception) { null } else null
         if (file != null && file.exists()) {
             val uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
 
@@ -130,7 +133,7 @@ class PlayAudio : NotasBaseActivity() {
     private fun saveToDevice() {
         val audioRoot = IO.getExternalAudioDirectory(application)
         val file = if (audioRoot != null) File(audioRoot, audio.name) else null
-        if (file != null && file.exists()) {
+        if (file != null) {
             val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             intent.type = "audio/mp4"
             intent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -151,9 +154,9 @@ class PlayAudio : NotasBaseActivity() {
                 if (file != null && file.exists()) {
                     val output = contentResolver.openOutputStream(uri) as FileOutputStream
                     output.channel.truncate(0)
-                    val input = FileInputStream(file)
-                    input.copyTo(output)
-                    input.close()
+                    SecureMedia.openDecrypted(application, file).use { input ->
+                        input.copyTo(output)
+                    }
                     output.close()
                 }
             }

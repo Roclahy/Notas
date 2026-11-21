@@ -5,6 +5,7 @@ import android.app.Application
 import android.view.ViewGroup
 import com.omgodse.notally.preferences.Preferences
 import com.omgodse.notally.security.PinSecurity
+import com.omgodse.notally.security.SecureMedia
 import android.util.TypedValue
 import android.view.View
 import android.widget.TextView
@@ -232,7 +233,11 @@ class BaseNoteVH(
             binding.Message.visibility = View.GONE
 
             val image = images[0]
-            val file = if (mediaRoot != null) File(mediaRoot, image.name) else null
+            val file = if (mediaRoot != null) try {
+                SecureMedia.readableFile(
+                    binding.root.context.applicationContext as Application,
+                    File(mediaRoot, image.name))
+            } catch (_: Exception) { null } else null
 
             Glide.with(binding.ImageView)
                 .load(file)

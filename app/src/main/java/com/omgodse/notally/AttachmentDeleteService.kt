@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import com.omgodse.notally.miscellaneous.IO
+import com.omgodse.notally.security.SecureMedia
 import com.omgodse.notally.room.Attachment
 import com.omgodse.notally.room.Audio
 import com.omgodse.notally.room.Image
@@ -68,6 +69,8 @@ class AttachmentDeleteService : Service() {
                         }
                         if (file != null && file.exists()) {
                             file.delete()
+                            File(File(application.cacheDir, "secure_view/${file.parentFile?.name}"),
+                                file.name).delete()
                         }
                         builder.setContentText(getString(R.string.count, index + 1, attachments.size))
                         builder.setProgress(attachments.size, index + 1, false)

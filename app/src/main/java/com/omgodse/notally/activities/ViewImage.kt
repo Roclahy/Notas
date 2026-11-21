@@ -16,6 +16,7 @@ import com.omgodse.notally.R
 import com.omgodse.notally.databinding.ActivityViewImageBinding
 import com.omgodse.notally.miscellaneous.Constants
 import com.omgodse.notally.miscellaneous.IO
+import com.omgodse.notally.security.SecureMedia
 import com.omgodse.notally.miscellaneous.add
 import com.omgodse.notally.recyclerview.adapter.ImageAdapter
 import com.omgodse.notally.room.Converters
@@ -134,7 +135,9 @@ class ViewImage : NotasBaseActivity() {
 
     private fun share(image: Image) {
         val mediaRoot = IO.getExternalImagesDirectory(application)
-        val file = if (mediaRoot != null) File(mediaRoot, image.name) else null
+        val file = if (mediaRoot != null) try {
+            SecureMedia.readableFile(application, File(mediaRoot, image.name))
+        } catch (_: Exception) { null } else null
         if (file != null && file.exists()) {
             val uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
 
@@ -156,7 +159,7 @@ class ViewImage : NotasBaseActivity() {
     private fun saveToDevice(image: Image) {
         val mediaRoot = IO.getExternalImagesDirectory(application)
         val file = if (mediaRoot != null) File(mediaRoot, image.name) else null
-        if (file != null && file.exists()) {
+        if (file != null) {
             val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             intent.type = image.mimeType
             intent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -175,9 +178,9 @@ class ViewImage : NotasBaseActivity() {
                 if (file != null && file.exists()) {
                     val output = contentResolver.openOutputStream(uri) as FileOutputStream
                     output.channel.truncate(0)
-                    val input = FileInputStream(file)
-                    input.copyTo(output)
-                    input.close()
+                    SecureMedia.openDecrypted(application, file).use { input ->
+                        input.copyTo(output)
+                    }
                     output.close()
                 }
             }

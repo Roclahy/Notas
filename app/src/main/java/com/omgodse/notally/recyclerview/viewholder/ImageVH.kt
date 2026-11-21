@@ -8,6 +8,8 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.DefaultOnImageEventListener
 import com.omgodse.notally.databinding.RecyclerImageBinding
 import java.io.File
+import android.app.Application
+import com.omgodse.notally.security.SecureMedia
 
 class ImageVH(private val binding: RecyclerImageBinding) : RecyclerView.ViewHolder(binding.root) {
 
@@ -29,7 +31,14 @@ class ImageVH(private val binding: RecyclerImageBinding) : RecyclerView.ViewHold
         binding.SSIV.recycle()
         if (file != null) {
             binding.Message.visibility = View.GONE
-            val source = ImageSource.uri(Uri.fromFile(file))
+            val app = binding.root.context.applicationContext as Application
+            val readable = try { SecureMedia.readableFile(app, file) }
+                catch (_: Exception) { null }
+            if (readable == null) {
+                binding.Message.visibility = View.VISIBLE
+                return
+            }
+            val source = ImageSource.uri(Uri.fromFile(readable))
             binding.SSIV.setImage(source)
         } else binding.Message.visibility = View.VISIBLE
     }

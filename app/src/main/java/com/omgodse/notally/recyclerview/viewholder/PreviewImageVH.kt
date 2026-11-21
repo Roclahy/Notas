@@ -12,6 +12,8 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.omgodse.notally.databinding.RecyclerPreviewImageBinding
 import java.io.File
+import android.app.Application
+import com.omgodse.notally.security.SecureMedia
 
 class PreviewImageVH(private val binding: RecyclerPreviewImageBinding, onClick: ((position: Int) -> Unit)) :
     RecyclerView.ViewHolder(binding.root) {
@@ -24,7 +26,12 @@ class PreviewImageVH(private val binding: RecyclerPreviewImageBinding, onClick: 
         binding.Message.visibility = View.GONE
 
         Glide.with(binding.ImageView)
-            .load(file)
+            .load(file?.let {
+                try {
+                    SecureMedia.readableFile(
+                        binding.root.context.applicationContext as Application, it)
+                } catch (_: Exception) { null }
+            })
             .centerCrop()
             .transition(DrawableTransitionOptions.withCrossFade())
             .diskCacheStrategy(DiskCacheStrategy.NONE)

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.os.IBinder
 import com.omgodse.notally.miscellaneous.IO
+import com.omgodse.notally.security.SecureMedia
 import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.room.Audio
 import java.io.File
@@ -49,7 +50,8 @@ class AudioPlayService : Service() {
             if (audioRoot != null) {
                 try {
                     val file = File(audioRoot, audio.name)
-                    player.setDataSource(file.absolutePath)
+                    val readable = SecureMedia.readableFile(application, file)
+                    player.setDataSource(readable.absolutePath)
                     setState(INITIALISED)
                     player.prepareAsync()
                 } catch (exception: Exception) {
