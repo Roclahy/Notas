@@ -1,10 +1,11 @@
-name: Build Notas 1.4.2 (106) - cifrado nativo y Google Drive
+name: Build Notas 1.4.3 (107) - candidate review
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+      - work/notas-143-ui-security-widget
     paths:
       - .github/workflows/build-notas-dev.yml
       - app/**
@@ -46,7 +47,7 @@ jobs:
       - name: Upload signed debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-142-debug-installable
+          name: notas-143-debug-installable
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -56,7 +57,7 @@ jobs:
       - name: Upload unsigned optimized Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-142-r8-unsigned
+          name: notas-143-r8-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
