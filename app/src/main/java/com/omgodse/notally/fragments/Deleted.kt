@@ -8,12 +8,9 @@ import com.omgodse.notally.miscellaneous.add
 
 class Deleted : NotallyFragment() {
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        menu.add(R.string.delete_all, R.drawable.delete_all) { deleteAllNotes() }
-    }
 
 
-    private fun deleteAllNotes() {
+    fun deleteAllNotes() {
         MaterialAlertDialogBuilder(requireContext())
             .setMessage(R.string.delete_all_notes)
             .setPositiveButton(R.string.delete) { _, _ -> model.deleteAllBaseNotes() }

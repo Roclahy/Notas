@@ -61,9 +61,6 @@ class Labels : Fragment(), ItemListener {
     }
 
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        menu.add(R.string.add_label, R.drawable.add) { displayAddLabelDialog() }
-    }
 
 
     override fun onClick(position: Int) {
@@ -92,7 +89,7 @@ class Labels : Fragment(), ItemListener {
     }
 
 
-    private fun displayAddLabelDialog() {
+    fun displayAddLabelDialog() {
         val inflater = LayoutInflater.from(requireContext())
         val dialogBinding = DialogInputBinding.inflate(inflater)
 

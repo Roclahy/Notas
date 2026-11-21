@@ -144,6 +144,7 @@ class MainActivity : NotasBaseActivity() {
 
     private fun setupSyncStatus() {
         fun refresh() {
+            if (navController.currentDestination?.id != R.id.Notes) return
             val complete = model.allNotes.value?.let { RoseDriveState.allSynced(this, it) } ?: false
             binding.SyncStatus.setImageResource(if (complete) R.drawable.refresh_cw else R.drawable.refresh_cw_off)
             binding.SyncStatus.imageTintList = ColorStateList.valueOf(
@@ -153,17 +154,23 @@ class MainActivity : NotasBaseActivity() {
         }
         model.allNotes.observe(this) { refresh() }
         RoseDriveState.revision.observe(this) { refresh() }
-        binding.SyncStatus.setOnClickListener {
-            if (BackupScheduler.force(application)) {
-                Toast.makeText(this, R.string.sync_queued, Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, R.string.sync_not_configured, Toast.LENGTH_LONG).show()
-                if (navController.currentDestination?.id != R.id.Settings) {
-                    navController.navigate(R.id.Settings)
-                }
+        binding.SyncStatus.setOnClickListener { requestManualBackup() }
+        refresh()
+    }
+
+    private fun activeScreen(): androidx.fragment.app.Fragment? =
+        (supportFragmentManager.findFragmentById(R.id.NavHostFragment) as? NavHostFragment)
+            ?.childFragmentManager?.primaryNavigationFragment
+
+    private fun requestManualBackup() {
+        if (BackupScheduler.force(application)) {
+            Toast.makeText(this, R.string.sync_queued, Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, R.string.sync_not_configured, Toast.LENGTH_LONG).show()
+            if (navController.currentDestination?.id != R.id.Settings) {
+                navController.navigate(R.id.Settings)
             }
         }
-        refresh()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -199,19 +206,27 @@ class MainActivity : NotasBaseActivity() {
     }
 
     private fun installPillPressAnimation(button: View) {
+        val lift = 6f * resources.displayMetrics.density
         button.setOnTouchListener { target, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    target.animate().scaleX(0.97f).scaleY(0.97f).setDuration(105L).start()
+                    target.animate().cancel()
+                    target.animate().translationY(-lift).scaleX(0.94f).scaleY(0.94f)
+                        .setDuration(95L).setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .start()
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    target.animate().scaleX(1f).scaleY(1f).setDuration(165L).start()
+                    target.animate().cancel()
+                    target.animate().translationY(0f).scaleX(1f).scaleY(1f)
+                        .setDuration(300L)
+                        .setInterpolator(android.view.animation.OvershootInterpolator(1.35f))
+                        .start()
                     if (event.actionMasked == MotionEvent.ACTION_UP) {
                         target.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
                 }
             }
-            false // No gesto oculto; pulsación prolongada crea nada.
+            false
         }
     }
 
@@ -852,7 +867,42 @@ class MainActivity : NotasBaseActivity() {
         binding.SectionTitle.text = if (destination.id == R.id.Notes) getString(R.string.internal_app_name) else (destination.label ?: getString(R.string.notes))
         binding.SectionTitle.visibility = if (destination.id == R.id.Search) View.GONE else View.VISIBLE
         binding.OpenSections.visibility = if (destination.id == R.id.Search) View.GONE else View.VISIBLE
-        binding.SyncStatus.visibility = if (destination.id == R.id.Notes) View.VISIBLE else View.GONE
+        binding.SyncStatus.visibility =
+            if (destination.id in setOf(R.id.Notes, R.id.Labels, R.id.Deleted)) View.VISIBLE else View.GONE
+        when (destination.id) {
+            R.id.Labels -> {
+                binding.SyncStatus.setImageResource(R.drawable.add)
+                binding.SyncStatus.imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+                binding.SyncStatus.contentDescription = getString(R.string.add_label)
+                binding.SyncStatus.setOnClickListener {
+                    activeScreen()?.let { screen ->
+                        (screen as? com.omgodse.notally.fragments.Labels)?.displayAddLabelDialog()
+                    }
+                }
+            }
+            R.id.Deleted -> {
+                binding.SyncStatus.setImageResource(R.drawable.delete_all)
+                binding.SyncStatus.imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+                binding.SyncStatus.contentDescription = getString(R.string.delete_all)
+                binding.SyncStatus.setOnClickListener {
+                    activeScreen()?.let { screen ->
+                        (screen as? com.omgodse.notally.fragments.Deleted)?.deleteAllNotes()
+                    }
+                }
+            }
+            R.id.Notes -> {
+                val complete = model.allNotes.value?.let {
+                    RoseDriveState.allSynced(this, it)
+                } ?: false
+                binding.SyncStatus.setImageResource(
+                    if (complete) R.drawable.refresh_cw else R.drawable.refresh_cw_off)
+                binding.SyncStatus.imageTintList = ColorStateList.valueOf(
+                    if (complete) 0xFFF1C45B.toInt() else 0xFF98989D.toInt())
+                binding.SyncStatus.contentDescription = getString(
+                    if (complete) R.string.sync_up_to_date else R.string.sync_pending)
+                binding.SyncStatus.setOnClickListener { requestManualBackup() }
+            }
+        }
         binding.BottomPill.visibility =
             if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
         binding.FoldersBar.visibility =

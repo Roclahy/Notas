@@ -138,16 +138,9 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:contentDescription="@string/notebook_create">
-                <ImageView
-                    android:layout_width="21dp"
-                    android:layout_height="21dp"
-                    android:contentDescription="@null"
-                    app:srcCompat="@drawable/notas_folder_plus"
-                    app:tint="@color/NotasGold"/>
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="7dp"
                     android:text="@string/notebook_create"
                     android:textColor="@color/NotasGold"
                     android:textSize="14sp"
@@ -205,7 +198,7 @@
                 android:contentDescription="@string/take_note"
                 android:padding="13dp"
                 android:scaleType="centerInside"
-                app:srcCompat="@drawable/edit"
+                app:srcCompat="@drawable/notas_huge_edit03"
                 app:tint="@color/Black" />
 
             <ImageButton
@@ -216,7 +209,7 @@
                 android:contentDescription="@string/make_list"
                 android:padding="13dp"
                 android:scaleType="centerInside"
-                app:srcCompat="@drawable/checkbox"
+                app:srcCompat="@drawable/notas_huge_checkmark_circle02"
                 app:tint="?attr/colorOnSurface" />
 
         </LinearLayout>
