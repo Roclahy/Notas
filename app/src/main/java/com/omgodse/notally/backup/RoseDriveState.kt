@@ -27,7 +27,8 @@ object RoseDriveState {
     fun setEnabled(c: Context, enabled: Boolean) {
         val editor = prefs(c).edit().putBoolean("enabled", enabled)
         if (!enabled) {
-            editor.remove(BACKED_UP).remove(BACKED_UP_SETTINGS).remove("last_upload").remove("needs_authorization")
+            editor.remove(BACKED_UP).remove(BACKED_UP_SETTINGS).remove("last_upload")
+                .remove("needs_authorization").remove("last_failure").remove("uploading")
         }
         editor.apply()
         invalidate()
@@ -84,17 +85,42 @@ object RoseDriveState {
         prefs(c).edit().putString(BACKED_UP, json.toString())
             .putString(BACKED_UP_SETTINGS, settingsHash)
             .putLong("last_upload", System.currentTimeMillis())
-            .putBoolean("needs_authorization", false).commit()
+            .putBoolean("needs_authorization", false)
+            .putBoolean("uploading", false).remove("last_failure").commit()
         invalidate()
     }
 
     fun markNeedsAuthorization(c: Context) {
-        prefs(c).edit().putBoolean("needs_authorization", true).apply()
+        prefs(c).edit().putBoolean("needs_authorization", true)
+            .putBoolean("uploading", false).apply()
         invalidate()
     }
 
     fun needsAuthorization(c: Context): Boolean =
         prefs(c).getBoolean("needs_authorization", false)
+
+    /** Autorización OAuth obtenida: NO significa que exista una copia subida. */
+    fun markAuthorized(c: Context) {
+        prefs(c).edit().putBoolean("needs_authorization", false)
+            .putBoolean("uploading", false).remove("last_failure").apply()
+        invalidate()
+    }
+
+    fun markStarted(c: Context) {
+        prefs(c).edit().putBoolean("uploading", true).remove("last_failure").apply()
+        invalidate()
+    }
+
+    /** Solo diagnósticos genéricos, sin tokens ni contenido de las notas. */
+    fun markFailed(c: Context, reason: String) {
+        prefs(c).edit().putBoolean("uploading", false)
+            .putString("last_failure", reason).apply()
+        invalidate()
+    }
+
+    fun isUploading(c: Context): Boolean = prefs(c).getBoolean("uploading", false)
+
+    fun lastFailure(c: Context): String? = prefs(c).getString("last_failure", null)
 
     fun lastUpload(c: Context): Long = prefs(c).getLong("last_upload", 0L)
 

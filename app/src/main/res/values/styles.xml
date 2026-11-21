@@ -3,7 +3,13 @@
     <style name="Base.AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="fontFamily">@font/notas_sans</item>
         <item name="android:fontFamily">@font/notas_sans</item>
-        <item name="colorSecondary">?attr/colorPrimary</item>
+        <!-- Acento oficial compartido por Claro, Oscuro y AMOLED. -->
+        <item name="colorPrimary">@color/NotasGold</item>
+        <item name="colorSecondary">@color/NotasGold</item>
+        <item name="colorAccent">@color/NotasGold</item>
+        <item name="android:colorAccent">@color/NotasGold</item>
+        <item name="colorControlActivated">@color/NotasGold</item>
+        <item name="android:colorControlActivated">@color/NotasGold</item>
         <item name="colorOnSecondary">?attr/colorOnPrimary</item>
 
         <item name="colorPrimaryDark">?attr/colorSurface</item>

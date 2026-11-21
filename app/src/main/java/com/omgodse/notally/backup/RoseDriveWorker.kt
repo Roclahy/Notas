@@ -30,7 +30,11 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
         var passphrase: CharArray? = null
         return try {
             if (!RoseDriveState.enabled(app)) return Result.success()
-            passphrase = BackupSecrets.read(app) ?: return Result.failure()
+            passphrase = BackupSecrets.read(app) ?: run {
+                RoseDriveState.markFailed(app, "Contraseña local inaccesible")
+                return Result.failure()
+            }
+            RoseDriveState.markStarted(app)
 
             val request = AuthorizationRequest.builder().setRequestedScopes(
                 listOf(Scope("https://www.googleapis.com/auth/drive.file"))
@@ -57,8 +61,28 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             // Únicamente después de obtener éxito HTTP en Google Drive.
             RoseDriveState.markUploaded(app, recorded, settingsHash)
             Result.success()
-        } catch (_: Exception) {
-            Result.retry() // WorkManager reintenta al volver Internet.
+        } catch (error: Exception) {
+            // Conservar un diagnóstico seguro: nunca registrar mensajes arbitrarios
+            // que puedan incluir detalles de la cuenta, tokens o contenido privado.
+            val http = Regex("""(?:Google Drive HTTP|Drive session HTTP|Drive HTTP) (\\d{3})""")
+                .find(error.message.orEmpty())?.groupValues?.get(1)?.toIntOrNull()
+            if (http == 401) {
+                RoseDriveState.markNeedsAuthorization(app)
+                Result.failure()
+            } else {
+                val reason = when {
+                    http != null -> "HTTP $http"
+                    error is com.google.android.gms.common.api.ApiException ->
+                        "Google Play Services: ${error.statusCode}"
+                    error is java.net.UnknownHostException -> "Servidor inaccesible"
+                    error is java.net.SocketTimeoutException -> "Tiempo de espera agotado"
+                    error is java.net.ConnectException -> "Conexión fallida"
+                    error is java.io.IOException -> "Error de red"
+                    else -> "Error interno"
+                }
+                RoseDriveState.markFailed(app, reason)
+                Result.retry()
+            }
         } finally {
             file?.delete()
             passphrase?.fill('\u0000')

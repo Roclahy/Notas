@@ -79,6 +79,11 @@ class Settings : Fragment() {
         refreshDriveLabel?.invoke()
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        RoseDriveState.revision.observe(viewLifecycleOwner) { refreshDriveLabel?.invoke() }
+    }
+
     override fun onDestroyView() {
         refreshDriveLabel = null
         super.onDestroyView()
@@ -87,11 +92,23 @@ class Settings : Fragment() {
     private fun updateDriveRow(binding: FragmentSettingsBinding) {
         val enabled = RoseDriveState.enabled(requireContext())
         binding.AutoBackup.Title.setText(R.string.google_drive_backup)
-        binding.AutoBackup.Value.setText(
-            if (!enabled) R.string.google_drive_connect
-            else if (RoseDriveState.needsAuthorization(requireContext())) R.string.google_drive_needs_auth
-            else R.string.google_drive_connected
-        )
+        val context = requireContext()
+        binding.AutoBackup.Value.text = when {
+            !enabled -> getString(R.string.google_drive_connect)
+            RoseDriveState.needsAuthorization(context) ->
+                getString(R.string.google_drive_needs_auth)
+            RoseDriveState.isUploading(context) ->
+                getString(R.string.google_drive_uploading)
+            RoseDriveState.lastFailure(context) != null ->
+                getString(R.string.google_drive_upload_error, RoseDriveState.lastFailure(context))
+            RoseDriveState.lastUpload(context) > 0L -> {
+                val date = java.text.DateFormat.getDateTimeInstance(
+                    java.text.DateFormat.SHORT, java.text.DateFormat.SHORT
+                ).format(java.util.Date(RoseDriveState.lastUpload(context)))
+                getString(R.string.google_drive_last_upload, date)
+            }
+            else -> getString(R.string.google_drive_pending)
+        }
         binding.AutoBackup.root.setOnClickListener {
             if (!enabled || RoseDriveState.needsAuthorization(requireContext())) {
                 connectGoogleDrive()
@@ -103,7 +120,9 @@ class Settings : Fragment() {
                         getString(R.string.google_drive_disconnect)
                     )) { _, choice ->
                         if (choice == 0) {
-                            BackupScheduler.schedule(requireActivity().application, refresh = true)
+                            if (BackupScheduler.force(requireActivity().application)) {
+                                Toast.makeText(requireContext(), R.string.sync_queued, Toast.LENGTH_SHORT).show()
+                            }
                         } else {
                             RoseDriveState.setEnabled(requireContext(), false)
                             BackupScheduler.disable(requireActivity().application)
@@ -117,6 +136,7 @@ class Settings : Fragment() {
 
     private fun enableDriveBackups() {
         RoseDriveState.setEnabled(requireContext(), true)
+        RoseDriveState.markAuthorized(requireContext())
         BackupScheduler.schedule(requireActivity().application, refresh = true)
         refreshDriveLabel?.invoke()
         Toast.makeText(requireContext(),R.string.google_drive_authorized,Toast.LENGTH_LONG).show()

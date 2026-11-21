@@ -246,6 +246,10 @@
     <string name="google_drive_backup">Google Drive · encrypted backup</string>
     <string name="google_drive_connect">Connect Google Drive</string>
     <string name="google_drive_connected">Connected · daily and after changes</string>
+    <string name="google_drive_pending">Drive authorized · first backup pending</string>
+    <string name="google_drive_uploading">Uploading encrypted backup to Drive…</string>
+    <string name="google_drive_last_upload">Last confirmed backup: %1$s</string>
+    <string name="google_drive_upload_error">Backup error: %1$s · retry scheduled</string>
     <string name="google_drive_needs_auth">Reauthorize Google Drive</string>
     <string name="google_drive_disconnect">Disable automatic Drive backup</string>
     <string name="google_drive_backup_now">Back up to Drive now</string>
@@ -258,6 +262,6 @@
     <string name="sync_up_to_date">Everything backed up to Google Drive</string>
     <string name="sync_note_uploaded">Note included in encrypted Google Drive backup</string>
     <string name="sync_note_pending">Note awaiting encrypted backup</string>
-    <string name="sync_queued">Encrypted backup queued; upload will start when online</string>
+    <string name="sync_queued">Encrypted backup requested. Check its status in Settings.</string>
     <string name="sync_not_configured">Enable encrypted Google Drive backup in Settings</string>
 </resources>

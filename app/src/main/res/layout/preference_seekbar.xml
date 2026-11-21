@@ -24,6 +24,8 @@
         android:layout_height="wrap_content"
         android:saveEnabled="false"
         android:stepSize="1"
-        app:thumbRadius="8dp" />
+        app:thumbRadius="8dp"
+        app:thumbColor="@color/NotasGold"
+        app:trackColorActive="@color/NotasGold" />
 
 </LinearLayout>
