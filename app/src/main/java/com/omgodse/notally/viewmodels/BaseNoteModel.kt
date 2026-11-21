@@ -99,6 +99,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     private val audioRoot = IO.getExternalAudioDirectory(app)
 
     val importingBackup = MutableLiveData<Progress>()
+    val importedBackupSuccessfully = MutableLiveData(false)
     val exportingBackup = MutableLiveData<Progress>()
 
     val actionMode = ActionMode()
@@ -244,9 +245,11 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
      * ZIP file, like a 100 MB image, ignore it.
      */
     private fun importZipBackup(uri: Uri) {
+        importedBackupSuccessfully.value = false
         val backupDir = getBackupDir()
 
         val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+            importedBackupSuccessfully.postValue(false)
             finishImporting(backupDir)
             Toast.makeText(app, R.string.invalid_backup, Toast.LENGTH_LONG).show()
             Operations.log(app, throwable)
@@ -328,6 +331,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 } else ReminderReceiver.rescheduleReminders(app, manager, reminders)
             }
 
+            importedBackupSuccessfully.value = true
             finishImporting(backupDir)
         }
     }

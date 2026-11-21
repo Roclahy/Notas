@@ -265,9 +265,16 @@ class Settings : Fragment() {
                                 if (progress.inProgress) started = true
                                 else if (started) {
                                     model.importingBackup.removeObserver(this)
-                                    // La importación puede haber fallado; el propio modelo muestra
-                                    // su error. No restaurar preferencias antes de verificar éxito.
-                                    restored.delete()
+                                    if (model.importedBackupSuccessfully.value == true) {
+                                        viewLifecycleOwner.lifecycleScope.launch {
+                                            try {
+                                                withContext(Dispatchers.IO) {
+                                                    EncryptedBackups.restoreSettings(app,restored)
+                                                }
+                                                Toast.makeText(app,R.string.encrypted_restore_complete,Toast.LENGTH_LONG).show()
+                                            } finally { restored.delete() }
+                                        }
+                                    } else restored.delete()
                                 }
                             }
                         }
