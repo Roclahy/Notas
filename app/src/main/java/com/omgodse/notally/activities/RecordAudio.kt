@@ -16,7 +16,7 @@ import com.omgodse.notally.databinding.ActivityRecordAudioBinding
 import com.omgodse.notally.miscellaneous.IO
 
 @RequiresApi(24)
-class RecordAudio : AppCompatActivity() {
+class RecordAudio : NotasBaseActivity() {
 
     private var service: AudioRecordService? = null
     private lateinit var connection: ServiceConnection

@@ -176,4 +176,5 @@
         <item quantity="one">No se puede añadir %d imagen</item>
         <item quantity="other">No se pueden añadir %d imágenes</item>
     </plurals>
+    <string name="amoled">AMOLED (negro puro)</string>
 </resources>

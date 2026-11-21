@@ -17,7 +17,7 @@ import com.omgodse.notally.recyclerview.adapter.SelectableLabelAdapter
 import com.omgodse.notally.room.Label
 import com.omgodse.notally.viewmodels.LabelModel
 
-class SelectLabels : AppCompatActivity() {
+class SelectLabels : NotasBaseActivity() {
 
     private val model: LabelModel by viewModels()
     private lateinit var binding: ActivityLabelBinding

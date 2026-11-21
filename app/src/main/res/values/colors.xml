@@ -7,6 +7,9 @@
     <color name="LightBlue100">#B3E5fC</color>
 
     <color name="Black">#000000</color>
+    <color name="NotasGold">#F1C45B</color>
+    <color name="NotasSurface">#1C1C1E</color>
+    <color name="NotasWhite">#F5F5F7</color>
     <color name="Transparent">#00000000</color>
 
     <color name="Grey100">#F5F5F5</color>

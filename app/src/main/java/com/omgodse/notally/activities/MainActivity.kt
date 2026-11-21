@@ -6,6 +6,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.print.PostPDFGenerator
 import android.view.Menu
+import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -45,7 +47,7 @@ import com.omgodse.notally.viewmodels.BaseNoteModel
 import kotlinx.coroutines.launch
 import java.io.File
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : NotasBaseActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
@@ -69,7 +71,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setSupportActionBar(binding.Toolbar)
-        setupFAB()
+        setupBottomPill()
         setupActionMode()
         setupNavigation()
         setupSearch()
@@ -85,17 +87,38 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun setupFAB() {
+    private fun setupBottomPill() {
         binding.TakeNote.setOnClickListener {
-            val intent = Intent(this, TakeNote::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, TakeNote::class.java))
         }
         binding.MakeList.setOnClickListener {
-            val intent = Intent(this, MakeList::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, MakeList::class.java))
         }
+        binding.BottomSearch.setOnClickListener {
+            if (navController.currentDestination?.id == R.id.Notes) {
+                navController.navigate(R.id.NotesToSearch)
+            }
+        }
+        listOf(binding.BottomSearch, binding.TakeNote, binding.MakeList)
+            .forEach(::installPillPressAnimation)
     }
 
+    private fun installPillPressAnimation(button: View) {
+        button.setOnTouchListener { target, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    target.animate().scaleX(0.94f).scaleY(0.94f).setDuration(90L).start()
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    target.animate().scaleX(1f).scaleY(1f).setDuration(135L).start()
+                    if (event.actionMasked == MotionEvent.ACTION_UP) {
+                        target.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    }
+                }
+            }
+            false // Conserva accesibilidad y eventos normales de clic.
+        }
+    }
 
     private fun setupActionMode() {
         binding.ActionMode.setNavigationOnClickListener { model.actionMode.close(true) }
@@ -105,8 +128,7 @@ class MainActivity : AppCompatActivity() {
 
         transition.excludeTarget(binding.NavHostFragment, true)
         transition.excludeChildren(binding.NavHostFragment, true)
-        transition.excludeTarget(binding.TakeNote, true)
-        transition.excludeTarget(binding.MakeList, true)
+        transition.excludeTarget(binding.BottomPill, true)
         transition.excludeTarget(binding.NavigationView, true)
 
         model.actionMode.enabled.observe(this) { enabled ->
@@ -115,10 +137,12 @@ class MainActivity : AppCompatActivity() {
                 binding.Toolbar.visibility = View.GONE
                 binding.ActionMode.visibility = View.VISIBLE
                 binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                binding.BottomPill.visibility = View.GONE
             } else {
                 binding.Toolbar.visibility = View.VISIBLE
                 binding.ActionMode.visibility = View.GONE
                 binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNDEFINED)
+                binding.BottomPill.visibility = if (navController.currentDestination?.id == R.id.Notes) View.VISIBLE else View.GONE
             }
         }
 
@@ -375,13 +399,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleDestinationChange(destination: NavDestination) {
-        if (destination.id == R.id.Notes) {
-            binding.TakeNote.show()
-            binding.MakeList.show()
-        } else {
-            binding.TakeNote.hide()
-            binding.MakeList.hide()
-        }
+        binding.BottomPill.visibility =
+            if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
 
         val inputManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         if (destination.id == R.id.Search) {

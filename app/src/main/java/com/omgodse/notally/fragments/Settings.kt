@@ -216,7 +216,11 @@ class Settings : Fragment() {
                 .setSingleChoiceItems(entries, checked) { dialog, which ->
                     dialog.cancel()
                     val newValue = entryValues[which]
-                    model.savePreference(info, newValue)
+                    if (info == Theme) {
+                        // Aplicamos la preferencia antes de recrear para elegir el tema AMOLED.
+                        com.omgodse.notally.preferences.Preferences.getInstance(requireActivity().application).savePreference(info, newValue)
+                        requireActivity().recreate()
+                    } else model.savePreference(info, newValue)
                 }
                 .setNegativeButton(R.string.cancel, null)
                 .show()

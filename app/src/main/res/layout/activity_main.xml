@@ -47,34 +47,54 @@
             app:defaultNavHost="true"
             app:navGraph="@navigation/navigation" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/MakeList"
+        <!-- Barra flotante contextual: búsqueda, nota y lista. -->
+        <LinearLayout
+            android:id="@+id/BottomPill"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@id/TakeNote"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            android:contentDescription="@string/make_list"
-            android:tooltipText="@string/make_list"
-            app:backgroundTint="?attr/alternateFabBackground"
-            app:elevation="2dp"
-            app:pressedTranslationZ="4dp"
-            app:srcCompat="@drawable/checkbox"
-            app:tint="?attr/alternateFabTint" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/TakeNote"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
             android:layout_alignParentBottom="true"
-            android:layout_marginEnd="16dp"
+            android:layout_centerHorizontal="true"
             android:layout_marginBottom="16dp"
-            android:contentDescription="@string/take_note"
-            android:tooltipText="@string/take_note"
-            app:shapeAppearanceOverlay="@style/RoundedRectangle"
-            app:srcCompat="@drawable/edit" />
+            android:background="@drawable/notas_bottom_pill"
+            android:elevation="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="6dp">
+
+            <ImageButton
+                android:id="@+id/BottomSearch"
+                android:layout_width="52dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/search"
+                android:padding="13dp"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/search"
+                app:tint="@color/NotasWhite" />
+
+            <ImageButton
+                android:id="@+id/TakeNote"
+                android:layout_width="52dp"
+                android:layout_height="48dp"
+                android:background="@drawable/notas_pill_primary"
+                android:contentDescription="@string/take_note"
+                android:padding="13dp"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/edit"
+                app:tint="@color/Black" />
+
+            <ImageButton
+                android:id="@+id/MakeList"
+                android:layout_width="52dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/make_list"
+                android:padding="13dp"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/checkbox"
+                app:tint="@color/NotasWhite" />
+
+        </LinearLayout>
 
     </RelativeLayout>
 

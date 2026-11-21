@@ -26,7 +26,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.text.DateFormat
 
-class PlayAudio : AppCompatActivity() {
+class PlayAudio : NotasBaseActivity() {
 
     private var service: AudioPlayService? = null
     private lateinit var connection: ServiceConnection

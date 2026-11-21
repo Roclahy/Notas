@@ -62,7 +62,7 @@ import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Calendar
 
-abstract class NotallyActivity(private val type: Type) : AppCompatActivity() {
+abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     internal lateinit var binding: ActivityNotallyBinding
     internal val model: NotallyModel by viewModels()

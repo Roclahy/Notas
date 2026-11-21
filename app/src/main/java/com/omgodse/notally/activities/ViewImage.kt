@@ -28,7 +28,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 
-class ViewImage : AppCompatActivity() {
+class ViewImage : NotasBaseActivity() {
 
     private var currentImage: Image? = null
     private lateinit var deletedImages: ArrayList<Image>

@@ -26,7 +26,7 @@ import kotlinx.coroutines.withContext
 import java.text.DateFormat
 import java.util.Collections
 
-class ConfigureWidget : AppCompatActivity(), ItemListener {
+class ConfigureWidget : NotasBaseActivity(), ItemListener {
 
     private lateinit var adapter: BaseNoteAdapter
     private val id by lazy {

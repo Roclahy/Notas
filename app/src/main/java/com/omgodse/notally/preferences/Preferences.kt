@@ -98,6 +98,8 @@ class Preferences private constructor(app: Application) {
     }
 
 
+    fun isAmoledTheme(): Boolean = getListPref(Theme) == Theme.amoled
+
     fun showDateCreated(): Boolean {
         return dateFormat.value != DateFormat.none
     }

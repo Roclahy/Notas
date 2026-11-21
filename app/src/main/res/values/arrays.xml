@@ -8,6 +8,7 @@
     <string-array name="theme">
         <item>@string/dark</item>
         <item>@string/light</item>
+        <item>@string/amoled</item>
         <item>@string/follow_system</item>
     </string-array>
 
