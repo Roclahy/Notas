@@ -24,6 +24,8 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
         private val lock = java.util.concurrent.locks.ReentrantLock()
     }
     override fun doWork(): Result {
+        // El trabajo periódico puede coincidir con la cola por cambios.
+        // No bloquear el hilo: la otra subida confirmará o reintentará.
         if (!lock.tryLock()) return Result.retry()
         val app = applicationContext as Application
         var file: File? = null
@@ -46,10 +48,16 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
                 RoseDriveState.markNeedsAuthorization(app)
                 return Result.failure()
             }
+            val dao = NotallyDatabase.getDatabase(app).getBaseNoteDao()
+            val notesBefore = dao.getAllForSync()
+            if (!inputData.getBoolean("manual", false) &&
+                RoseDriveState.allSynced(app, notesBefore)) {
+                RoseDriveState.markAlreadyCurrent(app)
+                return Result.success()
+            }
             // Captura conservadora anterior a crear la copia.
             // Nunca se marcan datos que se modifiquen tras esta captura.
-            val recorded = RoseDriveState.snapshot(
-                NotallyDatabase.getDatabase(app).getBaseNoteDao().getAllForSync())
+            val recorded = RoseDriveState.snapshot(notesBefore)
             val settingsHash = RoseDriveState.settingsFingerprint(app)
             file = File.createTempFile("notas_backup_", ".rnotas", app.cacheDir)
             file.outputStream().use { output ->
@@ -57,9 +65,15 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             }
             val name = "Notas-" +
                 SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".rnotas"
-            RoseDriveApi.backup(requireNotNull(authorization.accessToken), requireNotNull(file), name)
+            RoseDriveApi.backup(app, requireNotNull(authorization.accessToken),
+                requireNotNull(file), name)
             // Únicamente después de obtener éxito HTTP en Google Drive.
             RoseDriveState.markUploaded(app, recorded, settingsHash)
+            // Una nota puede cambiar mientras se subía esta versión. Encolar
+            // la nueva sin cancelar ni invalidar el archivo ya confirmado.
+            if (!RoseDriveState.allSynced(app, dao.getAllForSync())) {
+                BackupScheduler.changed(app)
+            }
             Result.success()
         } catch (error: Exception) {
             // Conservar un diagnóstico seguro: nunca registrar mensajes arbitrarios
@@ -81,7 +95,9 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
                     else -> "Error interno"
                 }
                 RoseDriveState.markFailed(app, reason)
-                Result.retry()
+                if (http != null && http in 400..499 && http != 408 && http != 429)
+                    Result.failure()
+                else Result.retry()
             }
         } finally {
             file?.delete()

@@ -22,7 +22,7 @@ object RoseDriveState {
     val trackedSettings = setOf(
         "theme", "view", "dateFormat", "textSize",
         "maxItemsToDisplayInList.v1", "maxLinesToDisplayInNote.v1",
-        "maxLinesToDisplayInTitle", "liquidGlassEnabled"
+        "maxLinesToDisplayInTitle"
     )
     val revision = MutableLiveData(0L)
 
@@ -100,6 +100,13 @@ object RoseDriveState {
             .putLong("last_upload", System.currentTimeMillis())
             .putBoolean("needs_authorization", false)
             .putBoolean("uploading", false).remove("last_failure").commit()
+        invalidate()
+    }
+
+    /** Trabajo redundante: no modificar la fecha del último respaldo real. */
+    fun markAlreadyCurrent(c: Context) {
+        prefs(c).edit().putBoolean("uploading", false)
+            .remove("last_failure").apply()
         invalidate()
     }
 
