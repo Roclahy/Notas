@@ -12,7 +12,7 @@
         android:background="@drawable/sticky_widget_amoled"
         android:clickable="true"
         android:focusable="true"
-        android:contentDescription="@string/quick_add_note">
+        android:contentDescription="@string/sticky_widget_label">
         <LinearLayout android:layout_width="match_parent"
             android:layout_height="wrap_content" android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -33,6 +33,8 @@
         <TextView android:id="@+id/StickyAction" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:text="+"
             android:layout_gravity="end" android:textStyle="bold"
+            android:clickable="true" android:focusable="true"
+            android:contentDescription="@string/quick_add_note"
             android:textSize="23sp" android:textColor="#FFF1C45B"/>
     </LinearLayout>
 </FrameLayout>

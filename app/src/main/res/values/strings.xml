@@ -139,6 +139,10 @@
 
     <string name="github" translatable="false">GitHub</string>
 
+    <string name="sticky_choose_note">Choose a note for your Stickie</string>
+    <string name="sticky_new_note">Quick access · New note</string>
+    <string name="sticky_locked">Protected note</string>
+    <string name="sticky_locked_hint">Open Notas to unlock</string>
     <string name="sticky_widget_label">Notes · Sticky 2×2</string>
     <string name="sticky_choose_style">Choose sticky note color</string>
     <string name="sticky_gold">Gold</string>
