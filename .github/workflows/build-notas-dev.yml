@@ -1,13 +1,18 @@
-name: Build rNotas 1.4.0 R8 release
+name: Build Rose 1.4.0 development (debug and R8)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - work/notas-apple-amoled-v1
+    paths:
+      - .github/workflows/build-notas-dev.yml
 
 permissions:
   contents: read
 
 jobs:
-  debug-apk:
+  android-apks:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -30,13 +35,23 @@ jobs:
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Build installable debug APK
+        run: bash ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Upload signed debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rose-140-debug-installable
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
       - name: Build optimized Release with R8
-        run: bash ./gradlew :app:assembleRelease --no-daemon
+        run: bash ./gradlew :app:assembleRelease --no-daemon --stacktrace
 
       - name: Upload unsigned optimized Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: rnotas-v1.4.0-r8-unsigned
+          name: rose-140-r8-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
