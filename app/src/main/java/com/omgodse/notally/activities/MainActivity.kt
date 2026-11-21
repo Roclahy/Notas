@@ -118,17 +118,6 @@ class MainActivity : NotasBaseActivity() {
         binding.CreateFolder.setOnClickListener { createNotebookDialog() }
     }
 
-    private fun setupGlassChrome() {
-        if (!LiquidGlass.enabled(this)) return
-        // AGSL refracts only the visible notes underneath the floating bar.
-        // It does not restyle the drawer as a huge translucent card.
-        LiquidGlass.attachBackdrop(binding.BottomPill, binding.NavHostFragment)
-        binding.BottomPill.elevation = resources.displayMetrics.density * 8f
-        binding.TakeNote.background = LiquidGlass.surface(
-            this, LiquidGlass.Role.ACCENT)
-        binding.Toolbar.setBackgroundColor(AndroidColor.TRANSPARENT)
-    }
-
     private fun setupSyncStatus() {
         fun refresh() {
             val complete = model.allNotes.value?.let { RoseDriveState.allSynced(this, it) } ?: false
