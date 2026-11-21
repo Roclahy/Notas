@@ -1,6 +1,6 @@
 package com.omgodse.notally.security
 
-import android.app.Activity
+import androidx.activity.ComponentActivity as Activity
 import android.content.DialogInterface
 import android.text.InputFilter
 import android.text.TextWatcher
