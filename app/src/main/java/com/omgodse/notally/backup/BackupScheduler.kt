@@ -7,7 +7,7 @@ import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
@@ -36,7 +36,7 @@ object BackupScheduler {
             if (refresh) ExistingPeriodicWorkPolicy.REPLACE else ExistingPeriodicWorkPolicy.KEEP,
             periodic)
         if (refresh) {
-            val first = OneTimeWorkRequestBuilder<RoseDriveWorker>()
+            val first = OneTimeWorkRequest.Builder(RoseDriveWorker::class.java)
                 .setConstraints(constraint)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL,30,TimeUnit.MINUTES)
                 .build()

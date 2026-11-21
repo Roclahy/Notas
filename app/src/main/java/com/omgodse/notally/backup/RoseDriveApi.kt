@@ -56,10 +56,6 @@ internal object RoseDriveApi {
         } finally { c.disconnect() }
     }
 
-    private fun query(q: String, fields: String): JSONObject {
-        throw UnsupportedOperationException("Needs token")
-    }
-
     private fun lookupFolder(token: String): String? {
         val q = "name = 'Rose' and mimeType = '$FOLDER_MIME' and trashed = false"
         val url = "$API?spaces=drive&pageSize=50&fields=nextPageToken,files(id,name)" +

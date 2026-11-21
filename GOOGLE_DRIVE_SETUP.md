@@ -8,7 +8,7 @@ Rose es una aplicación offline-first. Solo se utiliza Google Drive cuando el us
 2. Habilitar **Google Drive API** en ese proyecto.
 3. Configurar la pantalla de consentimiento OAuth para la app Rose.
 4. Añadir el alcance `https://www.googleapis.com/auth/drive.file` (permite operar únicamente con archivos creados o abiertos por la aplicación).
-5. Crear un cliente OAuth de **Android**, con nombre de paquete `com.rocla.notas` y la huella **SHA-1 del certificado Release persistente**, no del certificado Debug. Las compilaciones Debug requieren un cliente registrado por separado.
+5. Crear un cliente OAuth de **Android**, con paquete `com.rocla.notas` y SHA-1 del certificado Release persistente: `4C:12:50:EE:09:B4:D3:CB:B1:98:3F:3F:3F:82:22:5A:DC:57:A9:06`. Este certificado corresponde al APK Release de Rose/Notas 1.2.0. No usar el certificado Debug en este cliente. Las compilaciones Debug requieren un cliente registrado por separado.
 6. La persona usuaria debe aceptar la autorización desde **Ajustes → Google Drive** en su dispositivo. No se guardan access tokens en el código de Rose.
 
 ## Destino real
@@ -30,3 +30,7 @@ Fuentes oficiales:
 https://developer.android.com/identity/authorization
 https://developers.google.com/workspace/drive/api/guides/api-specific-auth
 https://developers.google.com/workspace/drive/api/guides/manage-uploads
+
+## Estado de implementación
+
+Código integrado en la rama de desarrollo. El disparador automático de GitHub Actions fue desactivado: las pruebas de compilación y la verificación de subida/restauración están pendientes de autorización explícita de la propietaria.

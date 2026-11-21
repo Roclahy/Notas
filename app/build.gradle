@@ -65,6 +65,8 @@ dependencies {
 
     implementation "androidx.work:work-runtime:2.9.0"
     implementation "com.google.android.gms:play-services-auth:22.0.0"
+    // Alinea lifecycle-ktx con lifecycle-viewmodel para evitar ViewModelLazy duplicada.
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
 
     implementation "androidx.navigation:navigation-ui-ktx:$navVersion"
     implementation "androidx.navigation:navigation-fragment-ktx:$navVersion"
