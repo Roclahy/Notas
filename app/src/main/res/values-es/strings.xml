@@ -177,4 +177,7 @@
         <item quantity="other">No se pueden añadir %d imágenes</item>
     </plurals>
     <string name="amoled">AMOLED (negro puro)</string>
+    <string name="creator_name" translatable="false">Rosanna Moreno</string>
+    <string name="source_code">Código fuente</string>
+    <string name="version_label">Versión</string>
 </resources>

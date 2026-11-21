@@ -1,6 +1,8 @@
 <resources>
 
     <style name="Base.AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="fontFamily">@font/notas_sans</item>
+        <item name="android:fontFamily">@font/notas_sans</item>
         <item name="colorSecondary">?attr/colorPrimary</item>
         <item name="colorOnSecondary">?attr/colorOnPrimary</item>
 
@@ -26,9 +28,10 @@
 
     <style name="AppTheme" parent="Base.AppTheme">
         <item name="colorPrimaryDark">@color/Black</item>
-        <item name="colorPrimary">@color/LightBlue500</item>
-        <item name="alternateFabTint">@color/LightBlue500</item>
-        <item name="alternateFabBackground">@color/Blue50</item>
+        <item name="colorPrimary">@color/NotasGold</item>
+        <item name="colorOnPrimary">@color/Black</item>
+        <item name="alternateFabTint">@color/Black</item>
+        <item name="alternateFabBackground">@color/NotasGold</item>
     </style>
 
     <!-- Tema AMOLED seleccionado explícitamente, independiente del oscuro convencional. -->
@@ -58,7 +61,10 @@
 
 
     <style name="TextAppearance.Headline6.Toolbar">
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">28sp</item>
+        <item name="fontFamily">@font/notas_sans</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.025</item>
     </style>
 
     <style name="TextAppearance.Headline6" parent="TextAppearance.MaterialComponents.Headline6">
@@ -79,7 +85,9 @@
 
 
     <style name="Toolbar" parent="Widget.MaterialComponents.Toolbar.Surface">
-        <item name="android:elevation">4dp</item>
+        <item name="android:background">?android:attr/colorBackground</item>
+        <item name="android:elevation">0dp</item>
+        <item name="titleTextColor">?attr/colorOnSurface</item>
         <item name="titleTextAppearance">@style/TextAppearance.Headline6.Toolbar</item>
     </style>
 
@@ -145,6 +153,12 @@
 
     <style name="AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="materialAlertDialogTitleTextStyle">@style/AlertDialog.Title</item>
+        <item name="shapeAppearanceOverlay">@style/NotasDialogShape</item>
+    </style>
+
+    <style name="NotasDialogShape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
     </style>
 
     <style name="Colorless" parent="ThemeOverlay.MaterialComponents">
@@ -153,15 +167,16 @@
 
 
     <style name="Preference" parent="TextView.Clickable">
-        <item name="android:padding">16dp</item>
+        <item name="android:padding">18dp</item>
+        <item name="android:minHeight">56dp</item>
         <item name="android:textAppearance">?attr/textAppearanceBody1</item>
     </style>
 
     <style name="PreferenceHeader" parent="Widget.AppCompat.TextView">
         <item name="android:paddingEnd">16dp</item>
         <item name="android:paddingTop">16dp</item>
-        <item name="android:paddingStart">16dp</item>
-        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingStart">18dp</item>
+        <item name="android:paddingBottom">10dp</item>
         <item name="android:textColor">?attr/colorPrimary</item>
         <item name="android:textAppearance">?attr/textAppearanceSubtitle2</item>
     </style>

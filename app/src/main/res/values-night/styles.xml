@@ -2,9 +2,10 @@
 <resources>
 
     <style name="AppTheme" parent="Base.AppTheme">
-        <item name="colorPrimary">@color/LightBlue100</item>
-        <item name="alternateFabTint">?attr/colorOnSecondary</item>
-        <item name="alternateFabBackground">@color/Indigo100</item>
+        <item name="colorPrimary">@color/NotasGold</item>
+        <item name="colorOnPrimary">@color/Black</item>
+        <item name="alternateFabTint">@color/Black</item>
+        <item name="alternateFabBackground">@color/NotasGold</item>
     </style>
 
 </resources>

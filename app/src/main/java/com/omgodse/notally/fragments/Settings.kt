@@ -72,6 +72,12 @@ class Settings : Fragment() {
         setupProgressDialog(R.string.exporting_backup, model.exportingBackup)
         setupProgressDialog(R.string.importing_backup, model.importingBackup)
 
+        binding.Creator.setOnClickListener {
+            openLink("https://roclahy.me")
+        }
+
+        binding.Version.text = "${requireContext().getString(R.string.version_label)} ${com.omgodse.notally.BuildConfig.VERSION_NAME}"
+
         binding.GitHub.setOnClickListener {
             openLink("https://github.com/Roclahy/Notas")
         }
@@ -80,11 +86,6 @@ class Settings : Fragment() {
             displayLibraries()
         }
 
-        // Hasta que Notas tenga ficha propia, no enviamos a Play Store de Notally.
-        binding.Rate.visibility = View.GONE
-
-        // Evita dirigir comentarios del fork al correo del autor original.
-        binding.SendFeedback.visibility = View.GONE
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -111,7 +112,7 @@ class Settings : Fragment() {
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
         intent.type = "application/zip"
         intent.addCategory(Intent.CATEGORY_OPENABLE)
-        intent.putExtra(Intent.EXTRA_TITLE, "Notally Backup")
+        intent.putExtra(Intent.EXTRA_TITLE, "Notas - Copia de seguridad")
         startActivityForResult(intent, REQUEST_EXPORT_BACKUP)
     }
 
@@ -153,8 +154,8 @@ class Settings : Fragment() {
         val intent = Intent(Intent.ACTION_SEND)
         intent.selector = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
 
-        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf("omgodseapps@gmail.com"))
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Notally [Feedback]")
+        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf<String>())
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Notas [Comentarios]")
 
         val app = requireContext().applicationContext as Application
         val log = Operations.getLog(app)

@@ -188,4 +188,7 @@
     <string name="please_grant_notally_notification">Please grant Notally the permission to send notifications</string>
     <string name="please_grant_notally_alarm">Please grant Notally the permission to set alarms</string>
     <string name="amoled">AMOLED (pure black)</string>
+    <string name="creator_name" translatable="false">Rosanna Moreno</string>
+    <string name="source_code">Source code</string>
+    <string name="version_label">Version</string>
 </resources>

@@ -6,19 +6,26 @@
     android:clickable="true"
     android:focusable="true"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:minHeight="66dp"
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
+    android:paddingTop="15dp"
+    android:paddingBottom="15dp">
 
     <TextView
         android:id="@+id/Title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBody1" />
+        android:textAppearance="?attr/textAppearanceBody1"
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/Value"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?attr/textAppearanceBody2"
-        android:textColor="?attr/colorControlNormal" />
+        android:textColor="?attr/colorControlNormal"
+        android:textSize="12sp"
+        android:paddingTop="4dp" />
 
 </LinearLayout>
