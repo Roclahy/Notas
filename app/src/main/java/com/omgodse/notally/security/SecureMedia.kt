@@ -62,8 +62,8 @@ object SecureMedia {
                 FileOutputStream(temp).use { output ->
                     output.write(magic)
                     output.write(iv)
-                    CipherOutputStream(output, cipher).use { protected ->
-                        input.copyTo(protected, 64 * 1024)
+                    CipherOutputStream(output, cipher).use { encryptedOut ->
+                        input.copyTo(encryptedOut, 64 * 1024)
                     }
                 }
                 // Nunca reemplazar el original antes de haber finalizado GCM.

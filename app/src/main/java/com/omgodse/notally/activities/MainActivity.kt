@@ -198,9 +198,9 @@ class MainActivity : NotasBaseActivity() {
         // táctil usa exactamente 2 segundos (no el long-click de ~500 ms).
     }
 
-    private fun selectNotebook(id: Long, title: String, protected: Boolean) {
+    private fun selectNotebook(id: Long, title: String, isProtected: Boolean) {
         model.setActiveNotebook(id)
-        selectedProtectedNotebook = protected
+        selectedProtectedNotebook = isProtected
         if (navController.currentDestination?.id != R.id.Notes) {
             navController.navigate(R.id.Notes)
         }
@@ -236,7 +236,7 @@ class MainActivity : NotasBaseActivity() {
                 setPadding(px(10), 0, 0, px(18))
             }
             container.addView(heading)
-            fun row(name: String, detail: String, protected: Boolean, action: () -> Unit) {
+            fun row(name: String, detail: String, isProtected: Boolean, action: () -> Unit) {
                 val item = LinearLayout(this@MainActivity).apply {
                     gravity = Gravity.CENTER_VERTICAL
                     orientation = LinearLayout.HORIZONTAL
@@ -246,7 +246,7 @@ class MainActivity : NotasBaseActivity() {
                         ColorStateList.valueOf(0x33F1C45B), null, null)
                 }
                 val folderIcon = ImageView(this@MainActivity).apply {
-                    setImageResource(if (protected) R.drawable.notas_lock else R.drawable.notas_nav_folder)
+                    setImageResource(if (isProtected) R.drawable.notas_lock else R.drawable.notas_nav_folder)
                     imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
                 }
                 item.addView(folderIcon, LinearLayout.LayoutParams(px(27), px(27)).apply {
