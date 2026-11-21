@@ -559,12 +559,16 @@ class MainActivity : NotasBaseActivity() {
         }
     }
 
-    private fun requestNotebookPassword(folder: NotebookFolder, onVerified: () -> Unit,
-                                        bypassBiometric: Boolean = false) {
+    private fun requestNotebookPassword(folder: NotebookFolder, onVerified: () -> Unit) =
+        requestNotebookPasswordInternal(folder, onVerified, false)
+
+    private fun requestNotebookPasswordInternal(
+        folder: NotebookFolder, onVerified: () -> Unit, bypassBiometric: Boolean
+    ) {
         val key = "folder:${folder.id}"
         if (!bypassBiometric && BiometricSecurity.isEnabled(this, key)) {
             BiometricSecurity.authenticate(this, folder.name, onVerified,
-                onFallback = { requestNotebookPassword(folder, onVerified, true) })
+                onFallback = { requestNotebookPasswordInternal(folder, onVerified, true) })
             return
         }
         val (field, input) = notebookField(R.string.notebook_password, true)
