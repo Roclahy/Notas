@@ -9,7 +9,7 @@ import org.json.JSONObject
 
 /**
  * Cliente HTTPS mínimo para Drive v3. Solo opera sobre los archivos creados
- * por rNotas con el scope restringido por archivo (drive.file).
+ * por Notas con el scope restringido por archivo (drive.file).
  *
  * No se suben archivos sin cifrar. Se usa upload resumable para evitar
  * almacenar una copia completa del archivo dentro de un cuerpo multipart.
@@ -57,7 +57,7 @@ internal object RoseDriveApi {
     }
 
     private fun lookupFolder(token: String): String? {
-        val q = "name = 'rNotas' and mimeType = '$FOLDER_MIME' and trashed = false"
+        val q = "name = 'Notas' and mimeType = '$FOLDER_MIME' and trashed = false"
         val url = "$API?spaces=drive&pageSize=50&fields=nextPageToken,files(id,name)" +
             "&q=" + URLEncoder.encode(q,"UTF-8")
         val files = getJson(url,token).optJSONArray("files") ?: return null
@@ -71,7 +71,7 @@ internal object RoseDriveApi {
     private fun folder(token: String): String {
         lookupFolder(token)?.let { return it }
         val metadata = JSONObject()
-            .put("name", "rNotas")
+            .put("name", "Notas")
             .put("mimeType", FOLDER_MIME)
         return postJson("$API?fields=id,name",token,metadata).getString("id")
     }
@@ -116,7 +116,7 @@ internal object RoseDriveApi {
         for (i in 0 until files.length()) {
             val item = files.optJSONObject(i) ?: continue
             val name = item.optString("name")
-            if (!name.startsWith("rNotas-") || !name.endsWith(".rnotas")) continue
+            if (!name.startsWith("Notas-") || !name.endsWith(".rnotas")) continue
             retained++
             if (retained > 7) {
                 val id = item.optString("id")
@@ -133,7 +133,7 @@ internal object RoseDriveApi {
     }
 
     fun backup(token: String, encryptedFile: File, filename: String) {
-        require(filename.matches(Regex("rNotas-[0-9]{8}-[0-9]{6}\\.rnotas")))
+        require(filename.matches(Regex("Notas-[0-9]{8}-[0-9]{6}\\.rnotas")))
         val destination = folder(token)
         uploadEncrypted(token,destination,encryptedFile,filename)
         try { keepLastSeven(token,destination) } catch (_: Exception) { /* cleanup no fatal */ }

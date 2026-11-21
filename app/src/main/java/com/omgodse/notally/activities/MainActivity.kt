@@ -82,7 +82,6 @@ class MainActivity : NotasBaseActivity() {
         setupActionMode()
         setupNavigation()
         setupSearch()
-        if (savedInstanceState == null) RoseSplashView.show(this)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

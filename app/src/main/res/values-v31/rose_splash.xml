@@ -4,6 +4,5 @@
     <style name="MainActivity" parent="AppTheme">
         <item name="android:statusBarColor">@color/Black</item>
         <item name="android:windowSplashScreenBackground">@color/Black</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/rose_original_art</item>
     </style>
 </resources>
