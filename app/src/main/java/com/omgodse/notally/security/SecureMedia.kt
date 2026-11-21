@@ -164,8 +164,37 @@ object SecureMedia {
         }
     }
 
+    private fun isEncryptedFile(file: File): Boolean =
+        file.isFile && file.length() > 32 &&
+            file.inputStream().use { stream ->
+                val header = ByteArray(magic.size)
+                stream.read(header) == header.size && header.contentEquals(magic)
+            }
+
     fun clearReadableCache(app: Application) {
         File(app.cacheDir, "secure_view").deleteRecursively()
+    }
+
+    fun recoverInterruptedWrites(app: Application) {
+        for (kind in arrayOf("Images", "Audios", "Wallpapers")) {
+            val directory = root(app, kind)
+            directory.listFiles()?.forEach { file ->
+                if (file.name.endsWith(".writing")) {
+                    file.delete() // Nunca publicar un GCM parcial.
+                } else if (file.name.endsWith(".plain")) {
+                    val dest = File(directory, file.name.removeSuffix(".plain"))
+                    try {
+                        if (!dest.exists()) {
+                            if (file.renameTo(dest)) encryptInPlace(app, dest)
+                        } else if (dest.isFile) {
+                            file.delete()
+                        }
+                    } catch (_: Exception) {
+                        // Mantener plaintext temporal para siguiente recuperación.
+                    }
+                }
+            }
+        }
     }
 
     fun migrateLegacy(app: Application) {
@@ -181,7 +210,7 @@ object SecureMedia {
                             old.inputStream().use { encryptFromStream(app, it, destination) }
                         } catch (_: Exception) { return@forEach }
                     }
-                    if (destination.exists()) old.delete()
+                    if (destination.exists() && isEncryptedFile(destination)) old.delete()
                 }
         }
     }

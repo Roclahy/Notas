@@ -133,6 +133,22 @@ object SecureDatabase {
         } finally { cipher?.close() }
     }
 
+    /** Si Room rechaza el esquema, restaura el SQLite anterior sin perder datos. */
+    fun rollbackFailedMigration(app: Application, databaseName: String) {
+        val original = app.getDatabasePath(databaseName)
+        val legacy = File(original.parentFile, "$databaseName.plaintext.migration")
+        if (!legacy.isFile) return
+        val failed = File(original.parentFile, "$databaseName.failed.sealed")
+        if (original.isFile) {
+            if (!original.renameTo(failed)) return
+        }
+        if (!legacy.renameTo(original)) {
+            failed.renameTo(original)
+        } else failed.delete()
+        File(original.path + "-wal").delete()
+        File(original.path + "-shm").delete()
+    }
+
     fun finishMigration(app: Application, databaseName: String) {
         val original = app.getDatabasePath(databaseName)
         val legacy = File(original.parentFile, "$databaseName.plaintext.migration")

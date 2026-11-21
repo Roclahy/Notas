@@ -33,6 +33,7 @@ class NotallyApplication : Application() {
         CoroutineScope(Dispatchers.IO).launch {
             // Migración idempotente: solo borrar el original externo cuando
             // la versión interna cifrada esté escrita y validada.
+            SecureMedia.recoverInterruptedWrites(this@NotallyApplication)
             SecureMedia.migrateLegacy(this@NotallyApplication)
         }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {

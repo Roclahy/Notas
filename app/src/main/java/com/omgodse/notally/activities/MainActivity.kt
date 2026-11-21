@@ -742,6 +742,19 @@ class MainActivity : NotasBaseActivity() {
             }
             container.addView(row)
         }
+        val folders = TextView(this).apply {
+            setText(R.string.notebook_folders)
+            textSize = 17f
+            setTextColor(dark)
+            setPadding(dp(24), dp(18), dp(24), dp(18))
+            background = android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(0x30F1C45B), null, null)
+            setOnClickListener {
+                dialog.dismiss()
+                showNotebookFolders()
+            }
+        }
+        container.addView(folders)
         dialog.setContentView(container)
         dialog.setOnShowListener {
             dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.apply {

@@ -529,15 +529,18 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                 }
             } catch (_: Exception) { hasWallpaper = false }
         }
-        if (!hasWallpaper) binding.root.setBackgroundColor(colorInt)
-        binding.RecyclerView.setBackgroundColor(
-            if (hasWallpaper) Color.TRANSPARENT else colorInt)
-        binding.Toolbar.setBackgroundColor(
-            if (hasWallpaper) Color.TRANSPARENT else colorInt)
-        binding.Search.setBackgroundColor(
-            if (hasWallpaper) Color.TRANSPARENT else colorInt)
-        binding.ToolbarContainer.setBackgroundColor(
-            if (hasWallpaper) Color.TRANSPARENT else colorInt)
+        val glassDefault = !hasWallpaper && noteColor == NoteColor.DEFAULT &&
+            com.omgodse.notally.preferences.Preferences
+                .getInstance(application).isGlassTheme()
+        if (glassDefault) {
+            binding.root.background = androidx.appcompat.content.res.AppCompatResources
+                .getDrawable(this, R.drawable.notas_glass_background)
+        } else if (!hasWallpaper) binding.root.setBackgroundColor(colorInt)
+        val surface = if (hasWallpaper || glassDefault) Color.TRANSPARENT else colorInt
+        binding.RecyclerView.setBackgroundColor(surface)
+        binding.Toolbar.setBackgroundColor(surface)
+        binding.Search.setBackgroundColor(surface)
+        binding.ToolbarContainer.setBackgroundColor(surface)
         binding.EnterTitle.setTextColor(foreground)
         binding.EnterBody.setTextColor(foreground)
         binding.EnterTitle.setHintTextColor(

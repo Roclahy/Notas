@@ -344,6 +344,21 @@ class Settings : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val binding = FragmentSettingsBinding.inflate(inflater)
+        if (model.preferences.isGlassTheme()) {
+            binding.root.background = androidx.appcompat.content.res.AppCompatResources
+                .getDrawable(requireContext(), R.drawable.notas_glass_background)
+            val content = (binding.root as? android.view.ViewGroup)?.getChildAt(0)
+                as? android.view.ViewGroup
+            if (content != null) {
+                for (index in 0 until content.childCount) {
+                    val child = content.getChildAt(index)
+                    if (child is LinearLayout) {
+                        child.background = androidx.appcompat.content.res.AppCompatResources
+                            .getDrawable(requireContext(), R.drawable.notas_glass_group)
+                    }
+                }
+            }
+        }
         setupBinding(binding)
         return binding.root
     }

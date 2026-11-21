@@ -44,17 +44,21 @@ abstract class NotallyDatabase : RoomDatabase() {
                 System.loadLibrary("sqlcipher")
                 val passphrase = SecureDatabase.databasePassphrase(app)
                 SecureDatabase.migrateLegacy(app, DatabaseName, passphrase)
-                val instance = Room.databaseBuilder(app, NotallyDatabase::class.java, DatabaseName)
-                    .openHelperFactory(SupportOpenHelperFactory(passphrase.toByteArray(Charsets.UTF_8)))
-                    .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6, Migration7)
-                    .allowMainThreadQueries()
-                    .build()
-                // Forzar apertura y validación de esquema antes de borrar
-                // la copia de transición plaintext (si existía).
-                instance.openHelper.readableDatabase
-                SecureDatabase.finishMigration(app, DatabaseName)
-                this.instance = instance
-                return instance
+                try {
+                    val instance = Room.databaseBuilder(app, NotallyDatabase::class.java, DatabaseName)
+                        .openHelperFactory(SupportOpenHelperFactory(passphrase.toByteArray(Charsets.UTF_8)))
+                        .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6, Migration7)
+                        .allowMainThreadQueries()
+                        .build()
+                    // No borrar la versión anterior hasta validar completamente Room.
+                    instance.openHelper.readableDatabase
+                    SecureDatabase.finishMigration(app, DatabaseName)
+                    this.instance = instance
+                    return instance
+                } catch (error: Exception) {
+                    SecureDatabase.rollbackFailedMigration(app, DatabaseName)
+                    throw error
+                }
             }
         }
 
