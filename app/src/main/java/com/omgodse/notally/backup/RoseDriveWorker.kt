@@ -2,6 +2,7 @@ package com.omgodse.notally.backup
 
 import android.app.Application
 import android.content.Context
+import com.omgodse.notally.room.NotallyDatabase
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.google.android.gms.auth.api.identity.Identity
@@ -19,10 +20,14 @@ import java.util.concurrent.TimeUnit
  * Este trabajador solo se ejecuta si el usuario autorizó Google Drive.
  */
 class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(context,params) {
+    companion object {
+        private val lock = java.util.concurrent.locks.ReentrantLock()
+    }
     override fun doWork(): Result {
+        if (!lock.tryLock()) return Result.retry()
         val app = applicationContext as Application
-        if (!RoseDriveState.enabled(app)) return Result.success()
-        val passphrase = BackupSecrets.read(app) ?: return Result.failure()
+        if (!RoseDriveState.enabled(app)) { lock.unlock(); return Result.success() }
+        val passphrase = BackupSecrets.read(app) ?: run { lock.unlock(); return Result.failure() }
         var file: File? = null
         try {
             val request = AuthorizationRequest.builder().setRequestedScopes(
@@ -35,18 +40,20 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
                 RoseDriveState.markNeedsAuthorization(app)
                 return Result.failure() // No abrir consentimiento desde un Worker.
             }
+            val recorded = RoseDriveState.snapshot(NotallyDatabase.getDatabase(app).getBaseNoteDao().getAllForSync())
             file = File.createTempFile("rose_backup_",".rnotas",app.cacheDir)
             file.outputStream().use { output -> EncryptedBackups.write(app,output,passphrase) }
             val name = "Notas-" +
                 SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(Date()) + ".rnotas"
             RoseDriveApi.backup(requireNotNull(authorization.accessToken),file,name)
-            RoseDriveState.markUploaded(app)
+            RoseDriveState.markUploaded(app, recorded)
             return Result.success()
         } catch (_: Exception) {
             return Result.retry() // WorkManager reintenta al regresar Internet.
         } finally {
             file?.delete() // Solo se almacena temporalmente el archivo ya cifrado.
             passphrase.fill('\u0000')
+            lock.unlock()
         }
     }
 }

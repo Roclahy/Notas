@@ -58,6 +58,9 @@ interface BaseNoteDao {
     @Query("SELECT * FROM BaseNote")
     fun getAll(): LiveData<List<BaseNote>>
 
+    @Query("SELECT * FROM BaseNote")
+    fun getAllForSync(): List<BaseNote>
+
     @Query("SELECT * FROM BaseNote WHERE id = :id")
     fun get(id: Long): BaseNote?
 

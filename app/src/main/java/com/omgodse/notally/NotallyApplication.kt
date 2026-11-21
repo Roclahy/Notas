@@ -6,6 +6,8 @@ import android.os.Bundle
 import com.omgodse.notally.security.PinSecurity
 import androidx.appcompat.app.AppCompatDelegate
 import com.omgodse.notally.backup.BackupScheduler
+import com.omgodse.notally.backup.RoseDriveState
+import com.omgodse.notally.room.NotallyDatabase
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
@@ -43,5 +45,20 @@ class NotallyApplication : Application() {
         }
 
         BackupScheduler.schedule(this)
+
+        // Centraliza cambios de notas, tareas, fijados, eliminaciones y medios.
+        // El estado solo pasa a sincronizado después de que Drive acepte
+        // una copia cifrada completa, no al ejecutar esta observación.
+        var observed: Map<Long, String>? = null
+        NotallyDatabase.getDatabase(this).getBaseNoteDao().getAll().observeForever { notes ->
+            val current = RoseDriveState.snapshot(notes)
+            if (current != observed) {
+                observed = current
+                RoseDriveState.invalidate()
+                if (RoseDriveState.enabled(this) && !RoseDriveState.allSynced(this, notes)) {
+                    BackupScheduler.changed(this)
+                }
+            }
+        }
     }
 }
