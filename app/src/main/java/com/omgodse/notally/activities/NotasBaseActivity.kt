@@ -30,10 +30,20 @@ open class NotasBaseActivity : AppCompatActivity() {
 
     override fun onContentChanged() {
         super.onContentChanged()
-        // Cubre todas las pantallas, no solo Inicio y el editor.
+        // El DrawerLayout de Inicio ocupa toda la ventana (también detrás
+        // de las barras). Solo su contenido principal necesita la zona segura:
+        // dar padding al DrawerLayout entero desplazaba también el cajón y
+        // podía dejar la cabecera debajo de las notificaciones en Android 14.
         val container = findViewById<ViewGroup>(android.R.id.content)
         container?.getChildAt(0)?.let { root ->
-            NotasEdgeInsets.install(root, includeKeyboard = this is NotallyActivity)
+            val safeContent = if (this is MainActivity) {
+                root.findViewById<View>(R.id.RelativeLayout) ?: root
+            } else root
+            NotasEdgeInsets.install(
+                root = root,
+                content = safeContent,
+                includeKeyboard = this is NotallyActivity
+            )
         }
     }
 
