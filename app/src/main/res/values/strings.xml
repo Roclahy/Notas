@@ -219,4 +219,5 @@
     <string name="white_ink">White</string>
     <string name="empty_drawing">Draw something before saving</string>
     <string name="drawing_save_error">Could not save drawing</string>
+    <string name="pin_access_notice">PIN restricts access in the app but does not encrypt notes or backups.</string>
 </resources>

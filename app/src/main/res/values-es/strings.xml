@@ -208,4 +208,5 @@
     <string name="white_ink">Blanco</string>
     <string name="empty_drawing">Dibuja algo antes de guardar</string>
     <string name="drawing_save_error">No se pudo guardar el dibujo</string>
+    <string name="pin_access_notice">El PIN restringe el acceso desde la aplicación, pero no cifra las notas ni las copias de seguridad.</string>
 </resources>

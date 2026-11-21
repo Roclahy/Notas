@@ -24,9 +24,10 @@ class WidgetFactory(private val app: Application, private val id: Long) : Remote
 
 
     override fun getCount(): Int {
-        val copy = baseNote
-        if (PinSecurity.appEnabled(app) || PinSecurity.noteLocked(app, id)) return 1
-        return if (copy != null) {
+        val copy = baseNote ?: return 0
+        return if (PinSecurity.appEnabled(app) || PinSecurity.noteLocked(app, id)) {
+            1
+        } else {
             when (copy.type) {
                 Type.NOTE -> 1
                 Type.LIST -> 1 + copy.items.size
@@ -39,8 +40,6 @@ class WidgetFactory(private val app: Application, private val id: Long) : Remote
     }
 
     override fun getViewAt(position: Int): RemoteViews {
-        val copy = baseNote
-        requireNotNull(copy)
         if (PinSecurity.appEnabled(app) || PinSecurity.noteLocked(app, id)) {
             val view = RemoteViews(app.packageName, R.layout.widget_note)
             view.setTextViewText(R.id.Title, "\uD83D\uDD12")
@@ -50,6 +49,7 @@ class WidgetFactory(private val app: Application, private val id: Long) : Remote
             return view
         }
 
+        val copy = requireNotNull(baseNote)
         return when (copy.type) {
             Type.NOTE -> getNoteView(copy)
             Type.LIST -> {
