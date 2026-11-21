@@ -942,6 +942,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                     if (folder == null || folder.passwordHash.isEmpty()) {
                         model.notebookId = folder?.id ?: 0L
                         markNoteEdited()
+                        applyNoteAppearance(model.color.value)
                     } else {
                         val input = EditText(this@NotallyActivity).apply {
                             inputType = InputType.TYPE_CLASS_TEXT or
@@ -964,6 +965,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                                         if (verified) {
                                             model.notebookId = folder.id
                                             markNoteEdited()
+                                            applyNoteAppearance(model.color.value)
                                             dialog.dismiss()
                                         } else {
                                             input.error = getString(R.string.notebook_wrong_password)
