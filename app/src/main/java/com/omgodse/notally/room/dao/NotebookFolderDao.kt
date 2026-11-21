@@ -47,6 +47,9 @@ abstract class NotebookFolderDao {
     @Query("DELETE FROM NotebookFolder WHERE id = :id")
     abstract suspend fun delete(id: Long)
 
+    @Query("UPDATE NotebookFolder SET wallpaperName = :filename WHERE id = :id")
+    abstract suspend fun updateWallpaper(id: Long, filename: String)
+
     @Query("UPDATE BaseNote SET notebookId = 0 WHERE notebookId = :id")
     abstract suspend fun unfile(id: Long)
 }

@@ -58,7 +58,7 @@ object RoseDriveState {
         val foldersText = com.omgodse.notally.room.NotallyDatabase
             .getDatabase(c.applicationContext as android.app.Application)
             .getNotebookFolderDao().listSnapshot()
-            .joinToString("\\n") { "${it.id}|${it.name}|${it.passwordHash}|${it.createdAt}" }
+            .joinToString("\\n") { "${it.id}|${it.name}|${it.passwordHash}|${it.createdAt}|${it.wallpaperName}" }
         val pinsText = PinSecurity.backupHashes(c)
             .toSortedMap().entries.joinToString("\\n") { "${it.key}:${it.value}" }
         val canonical = preferenceText + "\\nfolders=" + foldersText +

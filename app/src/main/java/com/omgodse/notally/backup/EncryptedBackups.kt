@@ -134,7 +134,9 @@ object EncryptedBackups {
             .forEach { SecureMedia.backupFile(app, zip, audios,"Audios",it.name) }
 
         val wallpaperRoot = File(app.filesDir, "SecureMedia/Wallpapers")
-        database.getBaseNoteDao().getAllWallpapers().asSequence().distinct()
+        (database.getBaseNoteDao().getAllWallpapers().asSequence() +
+            database.getNotebookFolderDao().listSnapshot().asSequence().map { it.wallpaperName })
+            .filter { it.isNotBlank() }.distinct()
             .forEach { SecureMedia.backupFile(app, zip, wallpaperRoot, "Wallpapers", it) }
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(app)

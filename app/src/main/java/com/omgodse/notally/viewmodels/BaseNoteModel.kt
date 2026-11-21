@@ -285,15 +285,34 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                                 id = rows.getLong(rows.getColumnIndexOrThrow("id")),
                                 name = rows.getString(rows.getColumnIndexOrThrow("name")),
                                 passwordHash = rows.getString(rows.getColumnIndexOrThrow("passwordHash")),
-                                createdAt = rows.getLong(rows.getColumnIndexOrThrow("createdAt"))
+                                createdAt = rows.getLong(rows.getColumnIndexOrThrow("createdAt")),
+                                wallpaperName = rows.getColumnIndex("wallpaperName")
+                                    .takeIf { it >= 0 }?.let(rows::getString) ?: ""
                             ))
                         }
                     }
                 }
+                // Restaurar una sola vez los fondos compartidos. Las carpetas
+                // y las notas se enlazan a nuevos nombres aleatorios locales.
+                val wallpaperNames = (notebooks.map { it.wallpaperName } +
+                    baseNotes.map { it.wallpaperName }).filter { it.isNotBlank() }.distinct()
+                val wallpaperRemap = HashMap<String, String>()
+                val wallpaperRoot = File(app.filesDir, "SecureMedia/Wallpapers")
+                    .apply { mkdirs() }
+                for (oldName in wallpaperNames) {
+                    val entry = zipFile.getEntry("Wallpapers/$oldName")
+                        ?: throw java.io.IOException("Missing folder or note wallpaper in encrypted backup")
+                    val newName = "${UUID.randomUUID()}.wall"
+                    SecureMedia.encryptFromStream(app, zipFile.getInputStream(entry),
+                        File(wallpaperRoot, newName))
+                    wallpaperRemap[oldName] = newName
+                }
+
                 val remap = HashMap<Long, Long>()
                 for (folder in notebooks) {
                     val newId = this@BaseNoteModel.database.getNotebookFolderDao()
-                        .insert(folder.copy(id = 0L))
+                        .insert(folder.copy(id = 0L,
+                            wallpaperName = wallpaperRemap[folder.wallpaperName] ?: ""))
                     remap[folder.id] = newId
                 }
                 val resolvedNotes = baseNotes.map { note ->
@@ -302,14 +321,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
                 delay(1000)
 
-                val total = baseNotes.fold(0) { acc, baseNote ->
-                    acc + baseNote.images.size + baseNote.audios.size +
-                        if (baseNote.wallpaperName.isBlank()) 0 else 1
+                val total = wallpaperNames.size + baseNotes.fold(0) { acc, baseNote ->
+                    acc + baseNote.images.size + baseNote.audios.size
                 }
-                var current = 1
+                var current = wallpaperNames.size + 1
 
                 // Don't let a single image bring down the entire backup
-                val wallpaperRemap = HashMap<String, String>()
                 baseNotes.forEach { baseNote ->
                     baseNote.images.forEach { image ->
                         try {
@@ -327,17 +344,6 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                         } finally {
                             importingBackup.postValue(Progress(true, current, total, false))
                             current++
-                        }
-                    }
-                    if (baseNote.wallpaperName.isNotBlank()) {
-                        val entry = zipFile.getEntry("Wallpapers/${baseNote.wallpaperName}")
-                        if (entry != null) {
-                            val name = "${UUID.randomUUID()}.wall"
-                            val root = File(app.filesDir, "SecureMedia/Wallpapers")
-                                .apply { mkdirs() }
-                            com.omgodse.notally.security.SecureMedia.encryptFromStream(
-                                app, zipFile.getInputStream(entry), File(root, name))
-                            wallpaperRemap[baseNote.wallpaperName] = name
                         }
                     }
                     baseNote.audios.forEach { audio ->
