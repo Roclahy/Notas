@@ -1,4 +1,4 @@
-name: Build Rose 1.4.0 development (debug and R8) # retry corrected Kotlin
+name: Build Rose Native AES 1.4.0 (no SQLCipher)
 
 on:
   workflow_dispatch:
