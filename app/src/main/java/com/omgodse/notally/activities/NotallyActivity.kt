@@ -421,6 +421,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     private fun setupColor() {
         model.color.observe(this, Observer { color ->
+            if (permittedToSave) markNoteEdited()
             // Las notas heredan negro puro en AMOLED, incluso si tenían color previo.
             val isAmoled = com.omgodse.notally.preferences.Preferences.getInstance(application).isAmoledTheme()
             val colorInt = if (isAmoled && color == NoteColor.DEFAULT) Color.BLACK else Operations.extractColor(color, this)
@@ -461,6 +462,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         PagerSnapHelper().attachToRecyclerView(binding.ImagePreview)
 
         model.images.observe(this, Observer { list ->
+            if (permittedToSave) markNoteEdited()
             adapter.submitList(list)
             binding.ImagePreview.isVisible = list.isNotEmpty()
         })
@@ -519,6 +521,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         binding.AudioRecyclerView.adapter = adapter
 
         model.audios.observe(this, Observer { list ->
+            if (permittedToSave) markNoteEdited()
             adapter.submitList(list)
             binding.AudioHeader.isVisible = list.isNotEmpty()
             binding.AudioRecyclerView.isVisible = list.isNotEmpty()
@@ -530,6 +533,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         val padding = (resources.displayMetrics.density * 16).toInt()
         val formatter = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
         model.reminder.observe(this, Observer { reminder ->
+            if (permittedToSave) markNoteEdited()
             if (reminder != null) {
                 val date = formatter.format(reminder.timestamp)
                 binding.Reminder.text = when (reminder.frequency) {
@@ -901,6 +905,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         binding.EnterBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getEditBodySize(model.textSize))
 
         model.labels.observe(this, Observer { labels ->
+            if (permittedToSave) markNoteEdited()
             Operations.bindLabels(binding.LabelGroup, labels, bodySize)
         })
 
