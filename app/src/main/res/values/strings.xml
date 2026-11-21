@@ -190,7 +190,7 @@
     <string name="please_grant_notally_notification">Please grant Notally the permission to send notifications</string>
     <string name="please_grant_notally_alarm">Please grant Notally the permission to set alarms</string>
     <string name="amoled">AMOLED (pure black)</string>
-    <string name="creator_name" translatable="false">Creadora: Rosanna Moreno</string>
+    <string name="creator_name" translatable="false">Rosanna Moreno</string>
     <string name="source_code">Source code</string>
     <string name="version_label">Version</string>
     <string name="more_options">More options</string>
@@ -298,4 +298,10 @@
     <string name="link_target_missing">This link no longer has a valid target</string>
     <string name="backlinks">Notes linking here</string>
     <string name="backlinks_empty">No notes link to this note yet.</string>
+    <string name="app_language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+    <string name="website">Website</string>
+    <string name="privacy_policy">Privacy policy</string>
 </resources>

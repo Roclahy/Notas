@@ -1,6 +1,8 @@
 package com.omgodse.notally.activities
 
 import android.os.Bundle
+import android.content.Context
+import com.omgodse.notally.preferences.RoseLanguage
 import android.os.Build
 import android.content.res.Configuration
 import androidx.core.view.WindowCompat
@@ -25,6 +27,10 @@ import com.omgodse.notally.preferences.Preferences
  */
 open class NotasBaseActivity : AppCompatActivity() {
     private var pinOverlay: View? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(RoseLanguage.wrap(newBase))
+    }
 
     protected open fun onAppAccessGranted() {}
 

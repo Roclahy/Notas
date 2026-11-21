@@ -43,7 +43,7 @@ object EncryptedBackups {
     private val settingKeys = setOf(
         "theme", "view", "dateFormat", "textSize",
         "maxItemsToDisplayInList.v1", "maxLinesToDisplayInNote.v1",
-        "maxLinesToDisplayInTitle"
+        "maxLinesToDisplayInTitle", "uiLanguage"
     )
 
     fun isEncrypted(app: Application, uri: Uri): Boolean {

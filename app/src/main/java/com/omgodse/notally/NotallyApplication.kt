@@ -1,6 +1,8 @@
 package com.omgodse.notally
 
 import android.app.Application
+import android.content.Context
+import com.omgodse.notally.preferences.RoseLanguage
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import android.app.Activity
@@ -22,6 +24,10 @@ import com.omgodse.notally.preferences.Theme
 import java.util.concurrent.TimeUnit
 
 class NotallyApplication : Application() {
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(RoseLanguage.wrap(base))
+    }
+
     private var settingsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     override fun onCreate() {

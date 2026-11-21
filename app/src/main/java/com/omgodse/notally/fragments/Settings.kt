@@ -49,6 +49,7 @@ import com.omgodse.notally.databinding.PreferenceBinding
 import com.omgodse.notally.databinding.PreferenceSeekbarBinding
 import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.preferences.*
+import com.omgodse.notally.preferences.RoseLanguage
 import com.omgodse.notally.viewmodels.BaseNoteModel
 
 class Settings : Fragment() {
@@ -297,6 +298,36 @@ class Settings : Fragment() {
             binding.Theme.setup(Theme, value)
         }
 
+        fun updateLanguage() {
+            binding.Language.Title.setText(R.string.app_language)
+            binding.Language.Value.text = when (RoseLanguage.selected(requireContext())) {
+                RoseLanguage.SPANISH -> getString(R.string.language_spanish)
+                RoseLanguage.ENGLISH -> getString(R.string.language_english)
+                else -> getString(R.string.language_system)
+            }
+        }
+        updateLanguage()
+        binding.Language.root.setOnClickListener {
+            val choices = arrayOf(
+                getString(R.string.language_system),
+                getString(R.string.language_spanish),
+                getString(R.string.language_english)
+            )
+            val values = arrayOf(RoseLanguage.SYSTEM, RoseLanguage.SPANISH, RoseLanguage.ENGLISH)
+            val selected = values.indexOf(RoseLanguage.selected(requireContext())).coerceAtLeast(0)
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.app_language)
+                .setSingleChoiceItems(choices, selected) { dialog, which ->
+                    dialog.dismiss()
+                    if (values[which] != RoseLanguage.selected(requireContext()) &&
+                        RoseLanguage.set(requireContext(), values[which])) {
+                        requireActivity().recreate()
+                    }
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+
         model.preferences.dateFormat.observe(viewLifecycleOwner) { value ->
             binding.DateFormat.setup(DateFormat, value)
         }
@@ -343,6 +374,12 @@ class Settings : Fragment() {
         // La autoría es texto informativo; el canal abre Telegram.
         binding.TelegramChannel.setOnClickListener {
             openLink("https://t.me/notas_app")
+        }
+        binding.Website.setOnClickListener {
+            openLink("https://notas.roclahy.com/")
+        }
+        binding.PrivacyPolicy.setOnClickListener {
+            openLink("https://notas.roclahy.com/privacidad/")
         }
 
         binding.Version.text = "${requireContext().getString(R.string.version_label)} ${com.omgodse.notally.BuildConfig.VERSION_NAME}"

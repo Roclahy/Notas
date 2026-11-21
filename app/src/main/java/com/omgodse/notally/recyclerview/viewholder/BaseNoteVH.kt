@@ -110,29 +110,24 @@ class BaseNoteVH(
         updateCheck(checked)
         val locked = PinSecurity.noteLocked(binding.root.context, baseNote.id)
         showingLockedNote = locked
-        binding.LockIndicator.isVisible = locked
-        binding.Space.isVisible = !locked
-        binding.LabelGroup.isVisible = !locked
+        binding.PreviewContent.isVisible = !locked
+        binding.LockedPreview.isVisible = locked
         if (locked) {
-            // Únicamente el título explícito: nunca usar la primera línea
-            // del cuerpo como sustituto en una nota bloqueada.
-            binding.Title.text = baseNote.title.ifBlank {
+            // Título separado abajo, candado centrado en la tarjeta.
+            // No se muestra ninguna parte del contenido ni los adjuntos.
+            binding.LockedTitle.text = baseNote.title.ifBlank {
                 binding.root.context.getString(R.string.locked_note)
             }
-            binding.Title.visibility = View.VISIBLE
-            binding.Date.visibility = View.GONE
+            binding.Title.text = ""
             binding.Note.text = ""
-            binding.Note.visibility = View.GONE
-            binding.ImageView.visibility = View.GONE
-            binding.Message.visibility = View.GONE
             Glide.with(binding.ImageView).clear(binding.ImageView)
-            binding.LinearLayout.visibility = View.GONE
-            binding.Reminder.text = ""
-            binding.Reminder.visibility = View.GONE
             binding.LabelGroup.removeAllViews()
             setColor(Color.DEFAULT)
             return
         }
+        binding.LockedTitle.text = ""
+        binding.Space.isVisible = true
+        binding.LabelGroup.isVisible = true
 
         when (baseNote.type) {
             Type.NOTE -> bindNote(baseNote.body, baseNote.spans)

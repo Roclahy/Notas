@@ -13,6 +13,7 @@
     app:strokeWidth="0dp">
 
     <LinearLayout
+        android:id="@+id/PreviewContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -36,20 +37,6 @@
                 android:textAppearance="?attr/textAppearanceBody2" />
 
         </FrameLayout>
-
-        <ImageView
-            android:id="@+id/LockIndicator"
-            android:layout_width="match_parent"
-            android:layout_height="37dp"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:scaleType="fitEnd"
-            android:contentDescription="@string/locked_note"
-            android:visibility="gone"
-            app:srcCompat="@drawable/notas_lock"
-            app:tint="@color/NotasGold" />
 
         <Space
             android:id="@+id/Space"
@@ -179,5 +166,40 @@
             app:drawableStartCompat="@drawable/reminder_16" />
 
     </LinearLayout>
+
+    <!-- Exclusive locked-state surface; never exposes date, body, or thumbnails. -->
+    <FrameLayout
+        android:id="@+id/LockedPreview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:minHeight="192dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/LockIndicator"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_gravity="center"
+            android:padding="4dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/locked_note"
+            app:srcCompat="@drawable/notas_lock"
+            app:tint="@color/NotasGold" />
+
+        <TextView
+            android:id="@+id/LockedTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="16dp"
+            android:gravity="start"
+            android:fontFamily="@font/notas_sans"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="15sp"
+            android:maxLines="2"
+            android:ellipsize="end" />
+    </FrameLayout>
 
 </com.google.android.material.card.MaterialCardView>
