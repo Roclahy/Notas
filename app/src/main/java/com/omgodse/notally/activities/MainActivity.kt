@@ -386,10 +386,9 @@ class MainActivity : NotasBaseActivity() {
         binding.Toolbar.navigationIcon = null
         binding.Toolbar.title = ""
         binding.Toolbar.setNavigationOnClickListener { onSupportNavigateUp() }
-        binding.SectionTitle.setOnClickListener {
+        binding.OpenSections.setOnClickListener {
             val top = setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)
             if (navController.currentDestination?.id in top) showNavigationSheet()
-            else onSupportNavigateUp()
         }
 
         var fragmentIdToLoad: Int? = null
@@ -420,6 +419,7 @@ class MainActivity : NotasBaseActivity() {
         binding.Toolbar.title = ""
         binding.SectionTitle.text = if (destination.id == R.id.Notes) getString(R.string.internal_app_name) else (destination.label ?: getString(R.string.notes))
         binding.SectionTitle.visibility = if (destination.id == R.id.Search) View.GONE else View.VISIBLE
+        binding.OpenSections.visibility = if (destination.id == R.id.Search) View.GONE else View.VISIBLE
         binding.BottomPill.visibility =
             if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
 

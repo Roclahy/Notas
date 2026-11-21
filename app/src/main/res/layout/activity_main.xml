@@ -33,11 +33,19 @@
                 android:fontFamily="@font/notas_sans"
                 android:textSize="30sp"
                 android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:clickable="true"
-                android:focusable="true"
+                android:textColor="?attr/colorOnSurface" />
+
+            <ImageButton
+                android:id="@+id/OpenSections"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end|center_vertical"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/explore_sections"
-                android:background="?attr/selectableItemBackgroundBorderless" />
+                android:padding="12dp"
+                android:scaleType="centerInside"
+                app:srcCompat="@drawable/settings"
+                app:tint="?attr/colorOnSurface" />
 
             <EditText
                 android:id="@+id/EnterSearchKeyword"
