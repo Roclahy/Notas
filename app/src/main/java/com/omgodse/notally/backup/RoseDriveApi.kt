@@ -1,6 +1,9 @@
 package com.omgodse.notally.backup
 
+import android.content.Context
 import java.io.File
+import java.security.MessageDigest
+import java.util.UUID
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -19,6 +22,8 @@ internal object RoseDriveApi {
     private const val UPLOAD = "https://www.googleapis.com/upload/drive/v3/files"
     private const val MIME = "application/octet-stream"
     private const val FOLDER_MIME = "application/vnd.google-apps.folder"
+    private const val SMALL_BACKUP = 5L * 1024L * 1024L
+    @Volatile private var cachedFolder: Pair<String, String>? = null
 
     private fun connection(url: String, method: String, token: String): HttpURLConnection =
         (URL(url).openConnection() as HttpURLConnection).apply {
@@ -69,11 +74,43 @@ internal object RoseDriveApi {
     }
 
     private fun folder(token: String): String {
-        lookupFolder(token)?.let { return it }
-        val metadata = JSONObject()
-            .put("name", "Notas")
-            .put("mimeType", FOLDER_MIME)
-        return postJson("$API?fields=id,name",token,metadata).getString("id")
+        // Cache ligada a la autorización actual; no mezclar carpetas de cuentas.
+        val key = MessageDigest.getInstance("SHA-256")
+            .digest(token.toByteArray(Charsets.UTF_8))
+            .take(12).joinToString("") { "%02x".format(it) }
+        cachedFolder?.takeIf { it.first == key }?.second?.let { return it }
+        val id = lookupFolder(token) ?: postJson("$API?fields=id,name", token,
+            JSONObject().put("name", "Notas").put("mimeType", FOLDER_MIME)).getString("id")
+        cachedFolder = key to id
+        return id
+    }
+
+    /**
+     * Para archivos cifrados pequeños, Drive recomienda multipart: metadatos
+     * y contenido en un único POST. Evita abrir una sesión resumable extra.
+     */
+    private fun uploadSmallEncrypted(token: String, parent: String, file: File, name: String) {
+        val boundary = "RoseEncrypted" + UUID.randomUUID().toString().replace("-", "")
+        val meta = JSONObject().put("name", name)
+            .put("mimeType", MIME).put("parents", JSONArray().put(parent))
+        val before = ("--$boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" +
+            meta.toString() + "\r\n--$boundary\r\nContent-Type: $MIME\r\n\r\n")
+            .toByteArray(Charsets.UTF_8)
+        val after = "\r\n--$boundary--\r\n".toByteArray(Charsets.US_ASCII)
+        val url = "$UPLOAD?uploadType=multipart&fields=id,name"
+        val request = connection(url, "POST", token).apply {
+            doOutput = true
+            setRequestProperty("Content-Type", "multipart/related; boundary=$boundary")
+            setFixedLengthStreamingMode(file.length() + before.size + after.size)
+        }
+        try {
+            request.outputStream.use { output ->
+                output.write(before)
+                file.inputStream().use { it.copyTo(output, 64 * 1024) }
+                output.write(after)
+            }
+            checkResponse(request)
+        } finally { request.disconnect() }
     }
 
     private fun uploadEncrypted(token: String, parent: String, file: File, name: String) {
@@ -184,10 +221,20 @@ internal object RoseDriveApi {
         }
     }
 
-    fun backup(token: String, encryptedFile: File, filename: String) {
+    fun backup(context: Context, token: String, encryptedFile: File, filename: String) {
         require(filename.matches(Regex("Notas-[0-9]{8}-[0-9]{6}\\.rnotas")))
         val destination = folder(token)
-        uploadEncrypted(token,destination,encryptedFile,filename)
-        try { keepLastSeven(token,destination) } catch (_: Exception) { /* cleanup no fatal */ }
+        if (encryptedFile.length() <= SMALL_BACKUP)
+            uploadSmallEncrypted(token, destination, encryptedFile, filename)
+        else uploadEncrypted(token, destination, encryptedFile, filename)
+
+        // La limpieza remota se ejecuta solo cada cuarta copia. No retrasa
+        // cada guardado (especialmente importante con enlaces lentos).
+        val preferences = context.getSharedPreferences("rose_drive_cleanup", Context.MODE_PRIVATE)
+        val count = preferences.getInt("uploads", 0) + 1
+        preferences.edit().putInt("uploads", count).apply()
+        if (count % 4 == 0) {
+            try { keepLastSeven(token, destination) } catch (_: Exception) { /* no fatal */ }
+        }
     }
 }
