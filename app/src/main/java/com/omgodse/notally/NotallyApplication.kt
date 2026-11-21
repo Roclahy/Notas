@@ -5,6 +5,7 @@ import android.app.Activity
 import android.os.Bundle
 import com.omgodse.notally.security.PinSecurity
 import androidx.appcompat.app.AppCompatDelegate
+import com.omgodse.notally.backup.BackupScheduler
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
@@ -39,7 +40,6 @@ class NotallyApplication : Application() {
             }
         }
 
-        val request = PeriodicWorkRequest.Builder(AutoBackupWorker::class.java, 12, TimeUnit.HOURS).build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork("Auto Backup", ExistingPeriodicWorkPolicy.KEEP, request)
+        BackupScheduler.schedule(this)
     }
 }

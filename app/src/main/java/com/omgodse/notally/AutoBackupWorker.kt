@@ -6,68 +6,37 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.omgodse.notally.miscellaneous.Export
-import com.omgodse.notally.miscellaneous.IO
+import com.omgodse.notally.backup.BackupSecrets
+import com.omgodse.notally.backup.EncryptedBackups
 import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.preferences.AutoBackup
 import com.omgodse.notally.preferences.Preferences
-import com.omgodse.notally.room.Converters
-import com.omgodse.notally.room.NotallyDatabase
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.zip.ZipOutputStream
 
 class AutoBackupWorker(private val context: Context, params: WorkerParameters) : Worker(context, params) {
-
     override fun doWork(): Result {
         val app = context.applicationContext as Application
-        val preferences = Preferences.getInstance(app)
-        val backupPath = preferences.autoBackup.value
-
-        if (backupPath != AutoBackup.emptyPath) {
-            val uri = Uri.parse(backupPath)
-            val folder = requireNotNull(DocumentFile.fromTreeUri(app, uri))
-
-            if (folder.exists()) {
-                val formatter = SimpleDateFormat("yyyyMMdd HHmmss '(Notally Backup)'", Locale.ENGLISH)
-                val name = formatter.format(System.currentTimeMillis())
-                val file = requireNotNull(folder.createFile("application/zip", name))
-                val outputStream = requireNotNull(app.contentResolver.openOutputStream(file.uri))
-
-                val zipStream = ZipOutputStream(outputStream)
-
-                val database = NotallyDatabase.getDatabase(app)
-                database.checkpoint()
-
-                Export.backupDatabase(app, zipStream)
-
-                val imageRoot = IO.getExternalImagesDirectory(app)
-                val audioRoot = IO.getExternalAudioDirectory(app)
-                database.getBaseNoteDao().getAllImages()
-                    .asSequence()
-                    .flatMap { string -> Converters.jsonToImages(string) }
-                    .forEach { image ->
-                        try {
-                            Export.backupFile(zipStream, imageRoot, "Images", image.name)
-                        } catch (exception: Exception) {
-                            Operations.log(app, exception)
-                        }
-                    }
-                database.getBaseNoteDao().getAllAudios()
-                    .asSequence()
-                    .flatMap { string -> Converters.jsonToAudios(string) }
-                    .forEach { audio ->
-                        try {
-                            Export.backupFile(zipStream, audioRoot, "Audios", audio.name)
-                        } catch (exception: Exception) {
-                            Operations.log(app, exception)
-                        }
-                    }
-
-                zipStream.close()
+        val savedPath = Preferences.getInstance(app).autoBackup.value
+        if (savedPath == AutoBackup.emptyPath) return Result.success()
+        // Si aún no se configuró una contraseña, nunca crear un respaldo sin cifrar.
+        val password = BackupSecrets.read(app) ?: return Result.failure()
+        var file: DocumentFile? = null
+        return try {
+            val folder = requireNotNull(DocumentFile.fromTreeUri(app,Uri.parse(savedPath)))
+            if (!folder.exists() || !folder.canWrite()) return Result.retry()
+            val name = SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(System.currentTimeMillis())
+            file = requireNotNull(folder.createFile("application/octet-stream","Notas-$name.rnotas"))
+            requireNotNull(app.contentResolver.openOutputStream(requireNotNull(file).uri,"w")).use { output ->
+                EncryptedBackups.write(app,output,password)
             }
+            Result.success()
+        } catch (e: Exception) {
+            file?.delete() // No dejar copias incompletas en el proveedor.
+            Operations.log(app,e)
+            Result.retry()
+        } finally {
+            password.fill('\u0000')
         }
-
-        return Result.success()
     }
 }
