@@ -1,11 +1,6 @@
 name: Build Rose 1.3.0 R8 release
 
 on:
-  push:
-    branches:
-      - work/notas-apple-amoled-v1
-    paths:
-      - .github/rose-build-request.txt
   workflow_dispatch:
 
 permissions:
