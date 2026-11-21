@@ -270,4 +270,9 @@
     <string name="google_drive_restore_failed">No se pudo descargar o descifrar la copia de Drive</string>
     <string name="liquid_glass_description">Cristal adaptativo sobre Claro, Oscuro o AMOLED</string>
     <string name="liquid_glass_accessibility">Activar efecto Liquid Glass</string>
+    <string name="notebook_create">Crear carpeta</string>
+    <string name="notebook_options">Opciones de la carpeta</string>
+    <string name="notebook_wallpaper">Fondo de carpeta</string>
+    <string name="notebook_remove_wallpaper">Quitar fondo de carpeta</string>
+    <string name="notebook_wallpaper_saved">Fondo de carpeta actualizado</string>
 </resources>

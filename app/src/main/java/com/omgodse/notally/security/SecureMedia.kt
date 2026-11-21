@@ -55,9 +55,12 @@ object SecureMedia {
             destination.parentFile?.mkdirs()
             val temp = File(destination.parentFile, destination.name + ".writing")
             try {
-                val iv = ByteArray(12).also(random::nextBytes)
                 val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-                cipher.init(Cipher.ENCRYPT_MODE, key(), GCMParameterSpec(128, iv))
+                // Android Keystore no permite que el llamante fije el IV
+                // para cifrar por defecto. El proveedor genera uno aleatorio.
+                cipher.init(Cipher.ENCRYPT_MODE, key())
+                val iv = cipher.iv
+                require(iv.size == 12) { "Unexpected AES-GCM IV length" }
                 cipher.updateAAD(magic)
                 FileOutputStream(temp).use { output ->
                     output.write(magic)

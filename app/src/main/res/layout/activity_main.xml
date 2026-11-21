@@ -84,12 +84,83 @@
 
         </com.google.android.material.appbar.MaterialToolbar>
 
+        <!-- Carpetas desde Inicio; nunca dentro de Ajustes ni en el FAB. -->
+        <LinearLayout
+            android:id="@+id/FoldersBar"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_below="@id/Toolbar"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingEnd="12dp">
+
+            <LinearLayout
+                android:id="@+id/OpenFolders"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="3dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/notebook_folders">
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    app:srcCompat="@drawable/notas_nav_folder"
+                    app:tint="@color/NotasGold" />
+                <TextView
+                    android:id="@+id/FoldersLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:text="@string/notebook_folders"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="15sp"
+                    android:fontFamily="@font/notas_sans" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/CreateFolder"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="9dp"
+                android:paddingEnd="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/notebook_create">
+                <ImageView
+                    android:layout_width="21dp"
+                    android:layout_height="21dp"
+                    android:contentDescription="@null"
+                    app:srcCompat="@drawable/notas_folder_plus"
+                    app:tint="@color/NotasGold"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:text="@string/notebook_create"
+                    android:textColor="@color/NotasGold"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/notas_sans"/>
+            </LinearLayout>
+        </LinearLayout>
+
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/ActionMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="?android:attr/colorBackground"
-            android:layout_below="@id/Toolbar"
+            android:layout_below="@id/FoldersBar"
             app:navigationIcon="?attr/homeAsUpIndicator" />
 
         <androidx.fragment.app.FragmentContainerView

@@ -283,4 +283,9 @@
     <string name="google_drive_restore_failed">Could not download or decrypt Drive backup</string>
     <string name="liquid_glass_description">Adaptive glass over Light, Dark or AMOLED</string>
     <string name="liquid_glass_accessibility">Enable Liquid Glass effect</string>
+    <string name="notebook_create">Create folder</string>
+    <string name="notebook_options">Folder options</string>
+    <string name="notebook_wallpaper">Folder background</string>
+    <string name="notebook_remove_wallpaper">Remove folder background</string>
+    <string name="notebook_wallpaper_saved">Folder background updated</string>
 </resources>

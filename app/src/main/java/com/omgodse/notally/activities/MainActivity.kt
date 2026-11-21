@@ -12,8 +12,6 @@ import android.widget.EditText
 import android.view.Gravity
 import android.view.ViewGroup
 import android.text.InputType
-import android.os.Handler
-import android.os.Looper
 import com.omgodse.notally.security.NotebookPassword
 import com.omgodse.notally.room.NotebookFolder
 import com.omgodse.notally.miscellaneous.Constants
@@ -75,8 +73,14 @@ class MainActivity : NotasBaseActivity() {
     private lateinit var configuration: AppBarConfiguration
 
     private val model: BaseNoteModel by viewModels()
-    private val longPressHandler = Handler(Looper.getMainLooper())
     private var selectedProtectedNotebook = false
+    private var pendingWallpaperFolderId: Long? = null
+    private val wallpaperPicker =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
+            val folderId = pendingWallpaperFolderId
+            pendingWallpaperFolderId = null
+            if (folderId != null && uri != null) saveNotebookWallpaper(folderId, uri)
+        }
 
     override fun onBackPressed() {
         if (model.actionMode.enabled.value) {
@@ -111,6 +115,8 @@ class MainActivity : NotasBaseActivity() {
         setupSearch()
         setupSyncStatus()
         setupGlassChrome()
+        binding.OpenFolders.setOnClickListener { showNotebookFolders() }
+        binding.CreateFolder.setOnClickListener { createNotebookDialog() }
     }
 
     /** Glass es una capa sobre Claro, Oscuro y AMOLED; nunca cambia el fondo. */
@@ -182,36 +188,22 @@ class MainActivity : NotasBaseActivity() {
     }
 
     private fun installPillPressAnimation(button: View) {
-        var folderGestureTriggered = false
-        val openFolders = Runnable {
-            folderGestureTriggered = true
-            button.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-            showNotebookFolders()
-        }
         button.setOnTouchListener { target, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    folderGestureTriggered = false
-                    if (target === binding.TakeNote) {
-                        longPressHandler.postDelayed(openFolders, 2_000L)
-                    }
                     if (LiquidGlass.enabled(this)) LiquidGlass.animatePress(target, true)
                     else target.animate().scaleX(0.94f).scaleY(0.94f).setDuration(90L).start()
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    longPressHandler.removeCallbacks(openFolders)
                     if (LiquidGlass.enabled(this)) LiquidGlass.animatePress(target, false)
                     else target.animate().scaleX(1f).scaleY(1f).setDuration(135L).start()
-                    if (event.actionMasked == MotionEvent.ACTION_UP &&
-                        !folderGestureTriggered) {
+                    if (event.actionMasked == MotionEvent.ACTION_UP) {
                         target.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
                 }
             }
-            folderGestureTriggered
+            false // No gesto oculto; pulsación prolongada crea nada.
         }
-        // Alternativa accesible desde el menú de secciones; el gesto
-        // táctil usa exactamente 2 segundos (no el long-click de ~500 ms).
     }
 
     private fun selectNotebook(id: Long, title: String, isProtected: Boolean) {
@@ -223,6 +215,7 @@ class MainActivity : NotasBaseActivity() {
         binding.SectionTitle.text = if (id == -1L) {
             getString(R.string.internal_app_name)
         } else title
+        binding.FoldersLabel.text = if (id == -1L) getString(R.string.notebook_folders) else title
     }
 
     /** Selector Apple Notes con carpetas protegidas y acceso principal sin carpetas. */
@@ -254,7 +247,7 @@ class MainActivity : NotasBaseActivity() {
                 setPadding(px(10), 0, 0, px(18))
             }
             container.addView(heading)
-            fun row(name: String, detail: String, isProtected: Boolean, action: () -> Unit) {
+            fun row(name: String, detail: String, folder: NotebookFolder?, action: () -> Unit) {
                 val item = LinearLayout(this@MainActivity).apply {
                     gravity = Gravity.CENTER_VERTICAL
                     orientation = LinearLayout.HORIZONTAL
@@ -264,7 +257,7 @@ class MainActivity : NotasBaseActivity() {
                         ColorStateList.valueOf(0x33F1C45B), null, null)
                 }
                 val folderIcon = ImageView(this@MainActivity).apply {
-                    setImageResource(if (isProtected) R.drawable.notas_lock else R.drawable.notas_nav_folder)
+                    setImageResource(R.drawable.notas_nav_folder)
                     imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
                 }
                 item.addView(folderIcon, LinearLayout.LayoutParams(px(27), px(27)).apply {
@@ -278,17 +271,40 @@ class MainActivity : NotasBaseActivity() {
                         0xFFFFFFFF.toInt()))
                 }
                 item.addView(text, LinearLayout.LayoutParams(0, -2, 1f))
+                if (folder?.passwordHash?.isNotEmpty() == true) {
+                    item.addView(ImageView(this@MainActivity).apply {
+                        setImageResource(R.drawable.notas_lock)
+                        imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+                    }, LinearLayout.LayoutParams(px(17), px(17)).apply { marginEnd = px(12) })
+                }
+                if (folder != null) {
+                    val options = ImageView(this@MainActivity).apply {
+                        setImageResource(android.R.drawable.ic_menu_more)
+                        imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+                        contentDescription = getString(R.string.notebook_options)
+                        setPadding(px(9), px(9), px(9), px(9))
+                        background = android.graphics.drawable.RippleDrawable(
+                            ColorStateList.valueOf(0x33F1C45B), null, null)
+                        setOnClickListener {
+                            dialog.dismiss()
+                            if (folder.passwordHash.isNotBlank()) {
+                                requestNotebookPassword(folder) { showNotebookOptions(folder) }
+                            } else showNotebookOptions(folder)
+                        }
+                    }
+                    item.addView(options, LinearLayout.LayoutParams(px(45), px(45)))
+                }
                 item.setOnClickListener { dialog.dismiss(); action() }
                 container.addView(item)
             }
-            row(getString(R.string.notebook_all), "", false) {
+            row(getString(R.string.notebook_all), "", null) {
                 selectNotebook(-1L, getString(R.string.notebook_all), false)
             }
-            row(getString(R.string.notebook_unfiled), "", false) {
+            row(getString(R.string.notebook_unfiled), "", null) {
                 selectNotebook(0L, getString(R.string.notebook_unfiled), false)
             }
             folders.forEach { folder ->
-                row(folder.name, "", folder.passwordHash.isNotEmpty()) {
+                row(folder.name, "", folder) {
                     if (folder.passwordHash.isEmpty()) {
                         selectNotebook(folder.id, folder.name, false)
                     } else requestNotebookPassword(folder) {
@@ -296,7 +312,6 @@ class MainActivity : NotasBaseActivity() {
                     }
                 }
             }
-            row(getString(R.string.notebook_new), "+", false) { createNotebookDialog() }
             dialog.setContentView(container)
             dialog.setOnShowListener {
                 dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
@@ -417,11 +432,13 @@ class MainActivity : NotasBaseActivity() {
                 binding.ActionMode.visibility = View.VISIBLE
                 binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
                 binding.BottomPill.visibility = View.GONE
+                binding.FoldersBar.visibility = View.GONE
             } else {
                 binding.Toolbar.visibility = View.VISIBLE
                 binding.ActionMode.visibility = View.GONE
                 binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
                 binding.BottomPill.visibility = if (navController.currentDestination?.id == R.id.Notes) View.VISIBLE else View.GONE
+                binding.FoldersBar.visibility = if (navController.currentDestination?.id == R.id.Notes) View.VISIBLE else View.GONE
             }
         }
 
@@ -695,6 +712,8 @@ class MainActivity : NotasBaseActivity() {
         binding.SyncStatus.visibility = if (destination.id == R.id.Notes) View.VISIBLE else View.GONE
         binding.BottomPill.visibility =
             if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
+        binding.FoldersBar.visibility =
+            if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
 
         val inputManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         if (destination.id == R.id.Search) {
@@ -767,19 +786,6 @@ class MainActivity : NotasBaseActivity() {
             }
             container.addView(row)
         }
-        val folders = TextView(this).apply {
-            setText(R.string.notebook_folders)
-            textSize = 17f
-            setTextColor(dark)
-            setPadding(dp(24), dp(18), dp(24), dp(18))
-            background = android.graphics.drawable.RippleDrawable(
-                ColorStateList.valueOf(0x30F1C45B), null, null)
-            setOnClickListener {
-                dialog.dismiss()
-                showNotebookFolders()
-            }
-        }
-        container.addView(folders)
         dialog.setContentView(container)
         dialog.setOnShowListener {
             dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.apply {
