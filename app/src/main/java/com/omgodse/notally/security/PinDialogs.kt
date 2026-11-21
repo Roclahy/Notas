@@ -6,16 +6,55 @@ import android.text.InputFilter
 import android.text.InputType
 import android.view.WindowManager
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.view.Gravity
+import android.graphics.drawable.GradientDrawable
+import android.graphics.Color
+import android.content.res.ColorStateList
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.omgodse.notally.R
 
 object PinDialogs {
-    private fun pinField(activity: Activity): EditText = EditText(activity).apply {
-        inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-        filters = arrayOf(InputFilter.LengthFilter(4))
-        hint = activity.getString(R.string.four_digit_pin)
-        isSingleLine = true
-        setPadding(32, 20, 32, 20)
+    private fun pinField(activity: Activity): Pair<LinearLayout, EditText> {
+        val density = activity.resources.displayMetrics.density
+        fun dp(i: Int) = (i * density).toInt()
+        val panel = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(20),dp(10),dp(20),dp(14))
+        }
+        val lock = ImageView(activity).apply {
+            setImageResource(R.drawable.notas_lock)
+            imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+            setPadding(dp(10),dp(10),dp(10),dp(10))
+        }
+        panel.addView(lock, LinearLayout.LayoutParams(dp(58),dp(58)))
+        val subtitle = android.widget.TextView(activity).apply {
+            setText(R.string.four_digit_pin)
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setTextColor(com.google.android.material.color.MaterialColors.getColor(activity, com.google.android.material.R.attr.colorOnSurface, 0xFFEEEEEE.toInt()))
+            setPadding(0,dp(8),0,dp(15))
+        }
+        panel.addView(subtitle)
+        val input = EditText(activity).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            filters = arrayOf(InputFilter.LengthFilter(4))
+            isSingleLine = true
+            gravity = Gravity.CENTER
+            textSize = 27f
+            letterSpacing = 0.5f
+            minHeight = dp(65)
+            setPadding(dp(14),dp(10),dp(14),dp(10))
+            background = GradientDrawable().apply {
+                setColor(com.google.android.material.color.MaterialColors.getColor(activity, com.google.android.material.R.attr.colorSurface, Color.WHITE))
+                cornerRadius = dp(17).toFloat()
+                setStroke(dp(1), 0xFFF1C45B.toInt())
+            }
+        }
+        panel.addView(input, LinearLayout.LayoutParams(-1,dp(65)))
+        return panel to input
     }
 
     fun setup(activity: Activity, onCreated: (String) -> Unit) {
@@ -45,11 +84,11 @@ object PinDialogs {
         onCancel: () -> Unit,
         onEntered: (String) -> Boolean
     ) {
-        val input = pinField(activity)
+        val (panel, input) = pinField(activity)
         var finished = false
         val dialog = MaterialAlertDialogBuilder(activity)
             .setTitle(title)
-            .setView(input)
+            .setView(panel)
             .setPositiveButton(R.string.continue_, null)
             .setNegativeButton(R.string.cancel) { _, _ ->
                 if (!finished) { finished = true; onCancel() }
@@ -77,6 +116,9 @@ object PinDialogs {
         }
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
         dialog.show()
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(0xFFF1C45B.toInt())
+        input.requestFocus()
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
     }
 
 }

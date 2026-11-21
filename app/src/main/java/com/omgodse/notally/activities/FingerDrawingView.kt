@@ -28,6 +28,7 @@ class FingerDrawingView(context: Context) : View(context) {
 
     fun setGoldInk() { ink = Color.rgb(241,196,91) }
     fun setWhiteInk() { ink = Color.WHITE }
+    fun setInkColor(color: Int) { ink = color }
     fun undo() {
         if (strokes.isNotEmpty()) {
             strokes.removeAt(strokes.lastIndex)
@@ -39,7 +40,8 @@ class FingerDrawingView(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawColor(Color.BLACK)
+        val bg = com.google.android.material.color.MaterialColors.getColor(this, android.R.attr.colorBackground, Color.BLACK)
+        canvas.drawColor(bg)
         drawStrokes(canvas)
     }
 

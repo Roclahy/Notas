@@ -4,6 +4,11 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.graphics.Color
+import android.view.Gravity
+import android.widget.LinearLayout
+import android.widget.ImageView
+import android.widget.TextView
+import android.content.res.ColorStateList
 import android.view.WindowManager
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.PinDialogs
@@ -25,11 +30,35 @@ open class NotasBaseActivity : AppCompatActivity() {
         if (PinSecurity.appEnabled(this) && !PinSecurity.appUnlocked) {
             window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
             val content = window.decorView as ViewGroup
-            val overlay = View(this).apply {
-                setBackgroundColor(Color.BLACK)
+            val density = resources.displayMetrics.density
+            fun dp(v: Int) = (density * v).toInt()
+            val overlay = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setBackgroundColor(com.google.android.material.color.MaterialColors.getColor(this@NotasBaseActivity, android.R.attr.colorBackground, Color.BLACK))
                 isClickable = true
                 elevation = 10000f
             }
+            val lock = ImageView(this).apply {
+                setImageResource(R.drawable.notas_lock)
+                imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+            }
+            overlay.addView(lock, LinearLayout.LayoutParams(dp(64),dp(64)))
+            val name = TextView(this).apply {
+                text = getString(R.string.app_name)
+                gravity = Gravity.CENTER
+                textSize = 32f
+                setTextColor(com.google.android.material.color.MaterialColors.getColor(this@NotasBaseActivity, com.google.android.material.R.attr.colorOnSurface, Color.WHITE))
+                setPadding(0,dp(20),0,dp(10))
+            }
+            overlay.addView(name)
+            val helper = TextView(this).apply {
+                setText(R.string.lock_screen_hint)
+                gravity = Gravity.CENTER
+                textSize = 14f
+                setTextColor(0xFFF1C45B.toInt())
+            }
+            overlay.addView(helper)
             content.addView(overlay, ViewGroup.LayoutParams(-1, -1))
             pinOverlay = overlay
             PinDialogs.check(this, "pin:app", onVerified = {

@@ -9,6 +9,10 @@ import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.SeekBar
+import android.graphics.drawable.GradientDrawable
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.omgodse.notally.R
@@ -24,7 +28,7 @@ class DrawingActivity : NotasBaseActivity() {
         fun dp(n: Int) = (n * d).toInt()
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.BLACK)
+            setBackgroundColor(com.google.android.material.color.MaterialColors.getColor(this@DrawingActivity, android.R.attr.colorBackground, Color.BLACK))
         }
         val actions = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
@@ -49,10 +53,70 @@ class DrawingActivity : NotasBaseActivity() {
             gravity = Gravity.CENTER
             setPadding(dp(10),dp(4),dp(10),dp(12))
         }
-        colors.addView(button(R.string.gold_ink) { canvasView.setGoldInk() })
-        colors.addView(button(R.string.white_ink) { canvasView.setWhiteInk() })
+        colors.addView(button(R.string.choose_color) { showColorPicker() })
         root.addView(colors)
         setContentView(root)
+    }
+
+    private fun showColorPicker() {
+        val d = resources.displayMetrics.density
+        fun dp(v: Int) = (v * d).toInt()
+        val values = floatArrayOf(44f, 0.75f, 0.94f)
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), dp(8))
+        }
+        val indicator = TextView(this).apply {
+            textSize = 17f
+            gravity = Gravity.CENTER
+            setTextColor(Color.BLACK)
+            setPadding(dp(10), dp(16), dp(10), dp(16))
+        }
+        fun updatePreview() {
+            val value = Color.HSVToColor(values)
+            indicator.text = String.format("#%06X", 0xFFFFFF and value)
+            indicator.background = GradientDrawable().apply {
+                setColor(value)
+                cornerRadius = dp(16).toFloat()
+            }
+        }
+        updatePreview()
+        layout.addView(indicator, LinearLayout.LayoutParams(-1, dp(58)))
+        val labels = arrayOf(R.string.hue, R.string.saturation, R.string.brightness)
+        for (index in 0..2) {
+            val label = TextView(this).apply {
+                setText(labels[index])
+                textSize = 13f
+                setPadding(0, dp(15), 0, dp(5))
+            }
+            layout.addView(label)
+            val bar = SeekBar(this).apply {
+                max = if (index == 0) 360 else 100
+                progress = when (index) {
+                    0 -> values[0].toInt()
+                    else -> (values[index] * 100).toInt()
+                }
+                progressTintList = android.content.res.ColorStateList.valueOf(0xFFF1C45B.toInt())
+                thumbTintList = android.content.res.ColorStateList.valueOf(0xFFF1C45B.toInt())
+                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                        values[index] = if (index == 0) progress.toFloat() else progress / 100f
+                        updatePreview()
+                    }
+                    override fun onStartTrackingTouch(seekBar: SeekBar) {}
+                    override fun onStopTrackingTouch(seekBar: SeekBar) {}
+                })
+            }
+            layout.addView(bar)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.choose_color)
+            .setView(layout)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.save) { _, _ ->
+                canvasView.setInkColor(Color.HSVToColor(values))
+            }
+            .show()
     }
 
     private fun saveDrawing() {
