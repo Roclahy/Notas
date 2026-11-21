@@ -236,7 +236,7 @@
     <string name="google_drive_pending">Drive autorizado · primera copia pendiente</string>
     <string name="google_drive_uploading">Subiendo copia cifrada a Drive…</string>
     <string name="google_drive_last_upload">Última copia confirmada: %1$s</string>
-    <string name="google_drive_upload_error">Error de respaldo: %1$s · se reintentará</string>
+    <string name="google_drive_upload_error">Error de respaldo: %1$s</string>
     <string name="google_drive_needs_auth">Volver a autorizar Google Drive</string>
     <string name="google_drive_disconnect">Desactivar copia automática en Drive</string>
     <string name="google_drive_backup_now">Crear copia en Drive ahora</string>

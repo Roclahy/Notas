@@ -249,7 +249,7 @@
     <string name="google_drive_pending">Drive authorized · first backup pending</string>
     <string name="google_drive_uploading">Uploading encrypted backup to Drive…</string>
     <string name="google_drive_last_upload">Last confirmed backup: %1$s</string>
-    <string name="google_drive_upload_error">Backup error: %1$s · retry scheduled</string>
+    <string name="google_drive_upload_error">Backup error: %1$s</string>
     <string name="google_drive_needs_auth">Reauthorize Google Drive</string>
     <string name="google_drive_disconnect">Disable automatic Drive backup</string>
     <string name="google_drive_backup_now">Back up to Drive now</string>
