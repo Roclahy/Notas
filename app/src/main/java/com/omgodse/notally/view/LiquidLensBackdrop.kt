@@ -45,12 +45,23 @@ internal class LiquidLensBackdrop(
     private var snapshot: Bitmap? = null
     private var shader: RuntimeShader? = runCatching { RuntimeShader(AGSL) }.getOrNull()
     private var lastCapture = 0L
+    private var dirty = true
     private var observer: ViewTreeObserver? = null
+
+    private val onScroll = ViewTreeObserver.OnScrollChangedListener {
+        // Recalcular solo durante desplazamientos, no a 12 FPS estando quieta.
+        dirty = true
+    }
+    private val onLayout = ViewTreeObserver.OnGlobalLayoutListener {
+        dirty = true
+    }
     private var opacity = 255
 
     private val preDraw = ViewTreeObserver.OnPreDrawListener {
         val now = SystemClock.uptimeMillis()
-        if (target.isShown && behind.isShown && now - lastCapture >= 85L) {
+        if (dirty && target.isShown && behind.isShown &&
+            now - lastCapture >= 85L) {
+            dirty = false
             lastCapture = now
             updateBackdrop()
         }
@@ -72,12 +83,19 @@ internal class LiquidLensBackdrop(
         if (tree.isAlive && observer !== tree) {
             unregister()
             observer = tree
+            dirty = true
             tree.addOnPreDrawListener(preDraw)
+            tree.addOnScrollChangedListener(onScroll)
+            tree.addOnGlobalLayoutListener(onLayout)
         }
     }
 
     private fun unregister() {
-        observer?.takeIf { it.isAlive }?.removeOnPreDrawListener(preDraw)
+        observer?.takeIf { it.isAlive }?.let { tree ->
+            tree.removeOnPreDrawListener(preDraw)
+            tree.removeOnScrollChangedListener(onScroll)
+            tree.removeOnGlobalLayoutListener(onLayout)
+        }
         observer = null
         snapshot?.recycle()
         snapshot = null
