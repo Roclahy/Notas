@@ -136,6 +136,14 @@
     <string name="exporting_backup">Exportando copia de seguridad</string>
     <string name="importing_backup">Importando copia de seguridad</string>
     <string name="calculating">Calculando…</string>
+    <string name="sticky_widget_label">Notas · Stickie 2×2</string>
+    <string name="sticky_choose_style">Color del widget</string>
+    <string name="sticky_gold">Dorado</string>
+    <string name="sticky_light">Claro</string>
+    <string name="sticky_dark">Negro</string>
+    <string name="sticky_amoled">AMOLED</string>
+    <string name="sticky_hint">Toca para escribir una nota</string>
+    <string name="quick_add_note">Agregar nota</string>
     <string name="single_note_or_list">Nota o lista individual</string>
     <string name="select_note">Seleccionar nota</string>
     <string name="adding_images">Añadiendo imágenes</string>

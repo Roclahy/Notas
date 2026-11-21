@@ -44,8 +44,16 @@ class Preferences private constructor(app: Application) {
 
     fun getWidgetData(id: Int) = preferences.getLong("widget:$id", 0)
 
+    fun getWidgetTheme(id: Int): String =
+        preferences.getString("widget-theme:$id", "gold") ?: "gold"
+
+    fun setWidgetTheme(id: Int, theme: String) {
+        require(theme in setOf("gold", "light", "dark", "amoled"))
+        preferences.edit().putString("widget-theme:$id", theme).apply()
+    }
+
     fun deleteWidget(id: Int) {
-        editor.remove("widget:$id")
+        editor.remove("widget:$id").remove("widget-theme:$id")
         editor.commit()
     }
 

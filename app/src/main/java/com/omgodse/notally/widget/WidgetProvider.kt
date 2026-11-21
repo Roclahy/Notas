@@ -1,153 +1,65 @@
 package com.omgodse.notally.widget
 
-import android.app.Application
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.widget.RemoteViews
 import com.omgodse.notally.R
-import com.omgodse.notally.activities.ConfigureWidget
-import com.omgodse.notally.activities.MakeList
 import com.omgodse.notally.activities.TakeNote
-import com.omgodse.notally.miscellaneous.Constants
-import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.preferences.Preferences
-import com.omgodse.notally.room.NotallyDatabase
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
+/** Widget independiente de las notas almacenadas: evita filtrar contenido protegido. */
 class WidgetProvider : AppWidgetProvider() {
-
-    @OptIn(DelicateCoroutinesApi::class)
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-
-        when (intent.action) {
-            ACTION_NOTES_MODIFIED -> {
-                val noteIds = intent.getLongArrayExtra(EXTRA_MODIFIED_NOTES)
-                if (noteIds != null) {
-                    updateWidgets(context, noteIds)
-                }
-            }
-            ACTION_OPEN_NOTE -> openActivity(context, intent, TakeNote::class.java)
-            ACTION_OPEN_LIST -> openActivity(context, intent, MakeList::class.java)
-            ACTION_CHECKED_CHANGED -> {
-                val noteId = intent.getLongExtra(Constants.SelectedBaseNote, 0)
-                val position = intent.getIntExtra(EXTRA_POSITION, 0)
-                val checked = intent.getBooleanExtra(RemoteViews.EXTRA_CHECKED, false)
-
-                val database = NotallyDatabase.getDatabase(context.applicationContext as Application)
-                val pendingResult = goAsync()
-                GlobalScope.launch {
-                    withContext(Dispatchers.IO) {
-                        try {
-                            database.getBaseNoteDao().updateChecked(noteId, position, checked)
-                        } finally {
-                            updateWidgets(context, longArrayOf(noteId))
-                            pendingResult.finish()
-                        }
-                    }
-                }
-            }
-        }
+    override fun onDeleted(context: Context, ids: IntArray) {
+        val prefs = Preferences.getInstance(context.applicationContext as android.app.Application)
+        ids.forEach(prefs::deleteWidget)
     }
 
-    private fun updateWidgets(context: Context, noteIds: LongArray) {
-        val app = context.applicationContext as Application
-        val preferences = Preferences.getInstance(app)
-
-        val manager = AppWidgetManager.getInstance(context)
-        val updatableWidgets = preferences.getUpdatableWidgets(noteIds)
-
-        updatableWidgets.forEach { pair -> updateWidget(context, manager, pair.first, pair.second) }
-    }
-
-    private fun openActivity(context: Context, originalIntent: Intent, clazz: Class<*>) {
-        val id = originalIntent.getLongExtra(Constants.SelectedBaseNote, 0)
-        val intent = Intent(context, clazz)
-        intent.putExtra(Constants.SelectedBaseNote, id)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
-    }
-
-
-    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
-        val app = context.applicationContext as Application
-        val preferences = Preferences.getInstance(app)
-
-        appWidgetIds.forEach { id -> preferences.deleteWidget(id) }
-    }
-
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        val app = context.applicationContext as Application
-        val preferences = Preferences.getInstance(app)
-
-        appWidgetIds.forEach { id ->
-            val noteId = preferences.getWidgetData(id)
-            updateWidget(context, appWidgetManager, id, noteId)
-        }
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        ids.forEach { updateWidget(context, manager, it) }
     }
 
     companion object {
-
-        fun updateWidget(context: Context, manager: AppWidgetManager, id: Int, noteId: Long) {
-            // Widgets displaying the same note share the same factory since only the noteId is embedded
-            val intent = Intent(context, WidgetService::class.java)
-            intent.putExtra(Constants.SelectedBaseNote, noteId)
-            Operations.embedIntentExtras(intent)
-
-            val view = RemoteViews(context.packageName, R.layout.widget)
-            view.setRemoteAdapter(R.id.ListView, intent)
-            view.setEmptyView(R.id.ListView, R.id.Empty)
-
-            val selectNote = getSelectNoteIntent(context, id)
-            view.setOnClickPendingIntent(R.id.Empty, selectNote)
-
-            val openNote = getOpenNoteIntent(context, noteId)
-            view.setPendingIntentTemplate(R.id.ListView, openNote)
-
-            manager.updateAppWidget(id, view)
-            manager.notifyAppWidgetViewDataChanged(id, R.id.ListView)
+        fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
+            val prefs = Preferences.getInstance(context.applicationContext as android.app.Application)
+            val style = prefs.getWidgetTheme(id)
+            val background = when (style) {
+                "light" -> R.drawable.sticky_widget_light
+                "dark" -> R.drawable.sticky_widget_dark
+                "amoled" -> R.drawable.sticky_widget_amoled
+                else -> R.drawable.sticky_widget_gold
+            }
+            val ink = if (style == "gold" || style == "light") {
+                Color.rgb(30, 28, 25)
+            } else {
+                Color.rgb(241, 196, 91)
+            }
+            val views = RemoteViews(context.packageName, R.layout.sticky_widget)
+            views.setInt(R.id.StickyCard, "setBackgroundResource", background)
+            views.setTextColor(R.id.StickyTitle, ink)
+            views.setTextColor(R.id.StickyHint, ink)
+            views.setTextColor(R.id.StickyAction, ink)
+            views.setInt(R.id.StickyIcon, "setColorFilter", ink)
+            val launch = Intent(context, TakeNote::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            val click = PendingIntent.getActivity(context, id, launch,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            views.setOnClickPendingIntent(R.id.StickyCard, click)
+            manager.updateAppWidget(id, views)
         }
 
-        fun sendBroadcast(app: Application, ids: LongArray) {
-            val intent = Intent(app, WidgetProvider::class.java)
-            intent.action = ACTION_NOTES_MODIFIED
-            intent.putExtra(EXTRA_MODIFIED_NOTES, ids)
-            app.sendBroadcast(intent)
+        /** Se conserva para que los editores existentes no necesiten cambios. */
+        fun sendBroadcast(app: android.app.Application, ids: LongArray) {
+            val context: Context = app
+            val manager = AppWidgetManager.getInstance(context)
+            val component = android.content.ComponentName(context, WidgetProvider::class.java)
+            manager.getAppWidgetIds(component).forEach { updateWidget(context, manager, it) }
         }
 
-        fun sendBroadcast(app: Application, id: Long) = sendBroadcast(app, longArrayOf(id))
-
-        // Each widget has it's own intent since the widget id is embedded
-        private fun getSelectNoteIntent(context: Context, id: Int): PendingIntent {
-            val intent = Intent(context, ConfigureWidget::class.java)
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
-            Operations.embedIntentExtras(intent)
-            val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            return PendingIntent.getActivity(context, 0, intent, flags)
-        }
-
-        private fun getOpenNoteIntent(context: Context, noteId: Long): PendingIntent {
-            val intent = Intent(context, WidgetProvider::class.java)
-            intent.putExtra(Constants.SelectedBaseNote, noteId)
-            Operations.embedIntentExtras(intent)
-            val flags = PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT or Intent.FILL_IN_ACTION
-            return PendingIntent.getBroadcast(context, 0, intent, flags)
-        }
-
-        private const val EXTRA_MODIFIED_NOTES = "com.omgodse.notally.EXTRA_MODIFIED_NOTES"
-        private const val ACTION_NOTES_MODIFIED = "com.omgodse.notally.ACTION_NOTE_MODIFIED"
-
-        const val ACTION_OPEN_NOTE = "com.omgodse.notally.ACTION_OPEN_NOTE"
-        const val ACTION_OPEN_LIST = "com.omgodse.notally.ACTION_OPEN_LIST"
-
-        const val ACTION_CHECKED_CHANGED = "com.omgodse.notally.ACTION_CHECKED_CHANGED"
-        const val EXTRA_POSITION = "com.omgodse.notally.EXTRA_POSITION"
+        fun sendBroadcast(app: android.app.Application, id: Long) =
+            sendBroadcast(app, longArrayOf(id))
     }
 }

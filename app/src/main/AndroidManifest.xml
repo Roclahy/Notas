@@ -95,7 +95,7 @@
         <receiver
             android:name=".widget.WidgetProvider"
             android:exported="false"
-            android:label="@string/single_note_or_list">
+            android:label="@string/sticky_widget_label">
 
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -119,8 +119,15 @@
         </receiver>
 
         <service
-            android:name=".widget.WidgetService"
-            android:permission="android.permission.BIND_REMOTEVIEWS" />
+            android:name=".widget.AddNoteTileService"
+            android:label="@string/quick_add_note"
+            android:icon="@drawable/notas_tile_sticky_note03"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <service
             android:name=".AttachmentDeleteService"

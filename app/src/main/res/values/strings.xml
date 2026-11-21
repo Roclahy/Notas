@@ -139,6 +139,14 @@
 
     <string name="github" translatable="false">GitHub</string>
 
+    <string name="sticky_widget_label">Notes · Sticky 2×2</string>
+    <string name="sticky_choose_style">Choose sticky note color</string>
+    <string name="sticky_gold">Gold</string>
+    <string name="sticky_light">Light</string>
+    <string name="sticky_dark">Black</string>
+    <string name="sticky_amoled">AMOLED</string>
+    <string name="sticky_hint">Tap to write a note</string>
+    <string name="quick_add_note">Add note</string>
     <!-- Widget -->
     <string name="single_note_or_list">Single note or list</string>
     <string name="select_note">Select note</string>
