@@ -67,6 +67,11 @@ class NotallyApplication : Application() {
 
         BackupScheduler.schedule(this)
 
+        PinSecurity.noteChanges.observeForever {
+            RoseDriveState.invalidate()
+            if (RoseDriveState.enabled(this)) BackupScheduler.changed(this)
+        }
+
         val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key != null && key in RoseDriveState.trackedSettings) {
                 RoseDriveState.invalidate()

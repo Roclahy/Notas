@@ -28,7 +28,7 @@ interface BaseNoteDao {
     suspend fun insert(baseNote: BaseNote): Long
 
     @Insert
-    suspend fun insert(baseNotes: List<BaseNote>)
+    suspend fun insert(baseNotes: List<BaseNote>): List<Long>
 
 
     @Query(

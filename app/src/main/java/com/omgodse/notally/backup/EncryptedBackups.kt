@@ -8,6 +8,8 @@ import com.omgodse.notally.miscellaneous.Export
 import com.omgodse.notally.miscellaneous.IO
 import com.omgodse.notally.security.SecureMedia
 import com.omgodse.notally.security.SecureDatabase
+import com.omgodse.notally.security.PinSecurity
+import org.json.JSONObject
 import com.omgodse.notally.room.Converters
 import com.omgodse.notally.room.NotallyDatabase
 import java.io.DataInputStream
@@ -143,6 +145,31 @@ object EncryptedBackups {
         zip.putNextEntry(ZipEntry("Notas/settings.properties"))
         settings.store(zip, "Notas settings (no PIN or backup credentials)")
         zip.closeEntry()
+
+        val hashes = PinSecurity.backupHashes(app)
+        val json = JSONObject()
+        for ((id, value) in hashes) json.put(id.toString(), value)
+        zip.putNextEntry(ZipEntry("Notas/note_pins.json"))
+        zip.write(json.toString().toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+    }
+
+    /** Invocado solo tras autenticar íntegramente el archivo RNBACK01. */
+    fun readNotePins(zip: ZipFile): Map<Long, String> {
+        val item = zip.getEntry("Notas/note_pins.json") ?: return emptyMap()
+        if (item.size > 2L * 1024L * 1024L) return emptyMap()
+        val raw = zip.getInputStream(item).use { it.readBytes() }
+        if (raw.size > 2 * 1024 * 1024) return emptyMap()
+        val json = JSONObject(String(raw, Charsets.UTF_8))
+        val out = LinkedHashMap<Long, String>()
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val id = key.toLongOrNull() ?: continue
+            val hash = json.optString(key)
+            if (id > 0L && hash.length <= 200) out[id] = hash
+        }
+        return out
     }
 
     fun restoreSettings(app: Application, archive: File) {

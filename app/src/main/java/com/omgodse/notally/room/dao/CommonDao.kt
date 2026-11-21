@@ -38,8 +38,9 @@ abstract class CommonDao(private val database: NotallyDatabase) {
     }
 
     @Transaction
-    open suspend fun importBackup(baseNotes: List<BaseNote>, labels: List<Label>) {
-        database.getBaseNoteDao().insert(baseNotes)
+    open suspend fun importBackup(baseNotes: List<BaseNote>, labels: List<Label>): List<Long> {
+        val ids = database.getBaseNoteDao().insert(baseNotes)
         database.getLabelDao().insert(labels)
+        return ids
     }
 }

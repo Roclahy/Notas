@@ -29,6 +29,41 @@ object PinSecurity {
     fun noteLocked(context: Context, id: Long): Boolean = id > 0 && enabled(context, noteKey(id))
     fun noteKey(id: Long): String = "pin:note:$id"
 
+    /** Solo hashes PBKDF2; jamás incluye PIN sin cifrar ni contadores. */
+    fun backupHashes(context: Context): Map<Long, String> =
+        prefs(context).all.mapNotNull { (key, value) ->
+            val id = key.removePrefix("pin:note:").takeIf {
+                key.startsWith("pin:note:")
+            }?.toLongOrNull()
+            val hash = value as? String
+            if (id != null && id > 0L && hash?.contains(':') == true) {
+                id to hash
+            } else null
+        }.toMap()
+
+    fun restoreHashes(context: Context, oldToNew: Map<Long, Long>,
+                      hashes: Map<Long, String>) {
+        val edit = prefs(context).edit()
+        var changed = false
+        for ((oldId, value) in hashes) {
+            val newId = oldToNew[oldId] ?: continue
+            val parts = value.split(':')
+            if (newId <= 0L || parts.size != 2) continue
+            // Rechazar cadenas arbitrarias o malformadas en un respaldo externo.
+            val valid = try {
+                Base64.decode(parts[0], Base64.NO_WRAP).size == 16 &&
+                    Base64.decode(parts[1], Base64.NO_WRAP).size == 32
+            } catch (_: Exception) { false }
+            if (!valid) continue
+            edit.putString(noteKey(newId), value)
+            changed = true
+        }
+        if (changed) {
+            check(edit.commit()) { "Failed to restore note PIN hashes" }
+            mutableNoteChanges.postValue(-1L)
+        }
+    }
+
     private fun prefs(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private fun enabled(c: Context, key: String) = prefs(c).contains(key)
 

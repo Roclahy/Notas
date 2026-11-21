@@ -29,6 +29,8 @@ import com.omgodse.notally.legacy.XMLUtils
 import com.omgodse.notally.miscellaneous.Export
 import com.omgodse.notally.miscellaneous.IO
 import com.omgodse.notally.security.SecureMedia
+import com.omgodse.notally.security.PinSecurity
+import com.omgodse.notally.backup.EncryptedBackups
 import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.miscellaneous.applySpans
 import com.omgodse.notally.preferences.AutoBackup
@@ -263,7 +265,12 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 val baseNoteCursor = database.query("BaseNote", null, null, null, null, null, null)
 
                 val labels = convertCursorToList(labelCursor) { cursor -> convertCursorToLabel(cursor) }
-                val baseNotes = convertCursorToList(baseNoteCursor) { cursor -> convertCursorToBaseNote(cursor) }
+                val previousIds = ArrayList<Long>()
+                val baseNotes = convertCursorToList(baseNoteCursor) { cursor ->
+                    previousIds.add(cursor.getLong(cursor.getColumnIndexOrThrow("id")))
+                    convertCursorToBaseNote(cursor)
+                }
+                val pinHashes = EncryptedBackups.readNotePins(zipFile)
 
                 // Preservar relaciones de las carpetas aunque haya IDs ocupados
                 // por carpetas existentes en este dispositivo.
@@ -352,9 +359,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     }
                 }
 
-                commonDao.importBackup(resolvedNotes.map { note ->
+                val importedIds = commonDao.importBackup(resolvedNotes.map { note ->
                     note.copy(wallpaperName = wallpaperRemap[note.wallpaperName] ?: "")
                 }, labels)
+                PinSecurity.restoreHashes(app, previousIds.zip(importedIds).toMap(), pinHashes)
                 val reminders = baseNoteDao.getAllReminders()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     if (manager.canScheduleExactAlarms()) {

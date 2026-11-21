@@ -4,6 +4,7 @@ import android.content.Context
 import android.preference.PreferenceManager
 import androidx.lifecycle.MutableLiveData
 import com.omgodse.notally.room.BaseNote
+import com.omgodse.notally.security.PinSecurity
 import org.json.JSONObject
 import java.security.MessageDigest
 
@@ -58,7 +59,10 @@ object RoseDriveState {
             .getDatabase(c.applicationContext as android.app.Application)
             .getNotebookFolderDao().listSnapshot()
             .joinToString("\\n") { "${it.id}|${it.name}|${it.passwordHash}|${it.createdAt}" }
-        val canonical = preferenceText + "\\nfolders=" + foldersText
+        val pinsText = PinSecurity.backupHashes(c)
+            .toSortedMap().entries.joinToString("\\n") { "${it.key}:${it.value}" }
+        val canonical = preferenceText + "\\nfolders=" + foldersText +
+            "\\npin_hashes=" + pinsText
         return MessageDigest.getInstance("SHA-256")
             .digest(canonical.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
