@@ -1,4 +1,4 @@
-name: Build Rose Native AES 1.4.0 (no SQLCipher)
+name: Build Rose Native AES + AGSL Liquid Glass
 
 on:
   workflow_dispatch:
@@ -7,6 +7,7 @@ on:
       - work/notas-apple-amoled-v1
     paths:
       - .github/workflows/build-notas-dev.yml
+      - app/**
 
 permissions:
   contents: read
