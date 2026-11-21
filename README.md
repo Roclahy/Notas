@@ -58,3 +58,9 @@ La rosa blanca se incorpora como imagen WebP reducida de la ilustración aportad
 - Al tocar cualquier indicador se puede solicitar un respaldo inmediato; los iconos no deben mostrar éxito antes de la confirmación de Drive.
 - **Importante**: esto es respaldo de instantáneas cifradas, no sincronización bidireccional entre dispositivos. Incluye la base de datos y los adjuntos completos: cada nueva copia puede consumir datos móviles en función del tamaño acumulado.
 - El OAuth de Google y el comportamiento en dispositivos reales requieren pruebas. No se ha ejecutado la compilación 1.4.0; GitHub Actions permanece exclusivamente manual.
+
+## Versión 1.4.2 — avisos sin conexión y código fuente
+
+- El respaldo de Google Drive diferencia la falta de conectividad de los problemas de acceso al servicio. Si no hay Internet, mantiene la copia pendiente y reintenta al recuperarse la conexión.
+- Los errores de red usan mensajes localizados; se elimina «Servidor inaccesible» para el estado sin conexión.
+- En Ajustes → Acerca de aparece «Código fuente», que abre https://github.com/Roclahy/Notas. El proyecto mantiene GPLv3 y la atribución a Notally.
