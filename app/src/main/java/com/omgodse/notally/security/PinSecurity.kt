@@ -18,7 +18,35 @@ object PinSecurity {
     private const val PREFS = "notas_access_control"
     private const val APP_KEY = "pin:app"
     @Volatile var appUnlocked = false
+    // Monotonic time, never system wall-clock time (resistant to date changes).
+    @Volatile private var backgroundAtMs = -1L
+    private val allowedRelockSeconds = setOf(5, 10, 30, 60, 300)
     private val random = SecureRandom()
+
+    fun appRelockDelaySeconds(context: Context): Int =
+        prefs(context).getInt("app:relock_seconds", 5)
+            .takeIf { it in allowedRelockSeconds } ?: 5
+
+    fun setAppRelockDelaySeconds(context: Context, seconds: Int) {
+        require(seconds in allowedRelockSeconds)
+        prefs(context).edit().putInt("app:relock_seconds", seconds).apply()
+    }
+
+    /** Recordar cuándo toda la aplicación deja de estar visible, no entre pantallas internas. */
+    fun onAppWentToBackground() {
+        backgroundAtMs = SystemClock.elapsedRealtime()
+    }
+
+    /** Comprobar al volver: el bloqueo se pide solo cuando ya venció el intervalo. */
+    fun onAppReturnedToForeground(context: Context) {
+        val backgroundAt = backgroundAtMs
+        backgroundAtMs = -1L
+        if (appEnabled(context) && backgroundAt >= 0L &&
+            SystemClock.elapsedRealtime() - backgroundAt >=
+                appRelockDelaySeconds(context) * 1000L) {
+            appUnlocked = false
+        }
+    }
 
     // El PIN vive fuera de Room: los cambios deben avisar a las tarjetas
     // aunque el contenido de la nota no haya sido modificado.

@@ -9,7 +9,8 @@
     android:checkable="true"
     app:cardCornerRadius="18dp"
     app:cardElevation="0dp"
-    app:checkedIcon="@drawable/checked_circle"
+    app:checkedIcon="@drawable/notas_huge_check"
+    app:checkedIconTint="@color/NotasGold"
     app:strokeWidth="0dp">
 
     <LinearLayout

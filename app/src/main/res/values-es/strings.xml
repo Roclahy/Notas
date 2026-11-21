@@ -204,6 +204,13 @@
     <string name="task_list">Lista de tareas</string>
     <plurals name="task_items_summary"><item quantity="one">%d tarea pendiente</item><item quantity="other">%d tareas pendientes</item></plurals>
     <string name="privacy">Privacidad</string>
+    <string name="lock_delay_title">Bloquear al salir de la app</string>
+    <string name="lock_delay_setting">Bloquear después de %1$s</string>
+    <string name="lock_delay_5">5 segundos</string>
+    <string name="lock_delay_10">10 segundos</string>
+    <string name="lock_delay_30">30 segundos</string>
+    <string name="lock_delay_60">1 minuto</string>
+    <string name="lock_delay_300">5 minutos</string>
     <string name="enable_app_pin">Activar PIN de la aplicación</string>
     <string name="disable_app_pin">Desactivar PIN de la aplicación</string>
     <string name="create_pin">Crear PIN de 4 dígitos</string>

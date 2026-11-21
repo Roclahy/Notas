@@ -215,6 +215,13 @@
     <string name="task_list">Task list</string>
     <plurals name="task_items_summary"><item quantity="one">%d task remaining</item><item quantity="other">%d tasks remaining</item></plurals>
     <string name="privacy">Privacy</string>
+    <string name="lock_delay_title">Lock when leaving the app</string>
+    <string name="lock_delay_setting">Lock after %1$s</string>
+    <string name="lock_delay_5">5 seconds</string>
+    <string name="lock_delay_10">10 seconds</string>
+    <string name="lock_delay_30">30 seconds</string>
+    <string name="lock_delay_60">1 minute</string>
+    <string name="lock_delay_300">5 minutes</string>
     <string name="enable_app_pin">Enable app PIN</string>
     <string name="disable_app_pin">Disable app PIN</string>
     <string name="create_pin">Create 4-digit PIN</string>

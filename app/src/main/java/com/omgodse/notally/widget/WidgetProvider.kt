@@ -64,8 +64,7 @@ class WidgetProvider : AppWidgetProvider() {
                 NotallyDatabase.getDatabase(app).getNotebookFolderDao().getNow(it)
                     ?.passwordHash?.isNotBlank() == true
             } ?: false
-            val locked = PinSecurity.appEnabled(context) ||
-                (noteId > 0L && PinSecurity.noteLocked(context, noteId)) || protectedFolder
+            val locked = (noteId > 0L && PinSecurity.noteLocked(context, noteId)) || protectedFolder
 
             val heading = when {
                 locked -> context.getString(R.string.sticky_locked)
@@ -104,7 +103,7 @@ class WidgetProvider : AppWidgetProvider() {
             val prefs = Preferences.getInstance(app)
             val relevant = prefs.getUpdatableWidgets(ids).map { it.first }.toSet()
             manager.getAppWidgetIds(component).forEach {
-                if (ids.isEmpty() || it in relevant || PinSecurity.appEnabled(app))
+                if (ids.isEmpty() || it in relevant)
                     updateWidget(app, manager, it)
             }
         }

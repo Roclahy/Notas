@@ -315,7 +315,7 @@ class BaseNoteVH(
 
     private fun handleChecked(textView: TextView, checked: Boolean) {
         if (checked) {
-            textView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.checkbox_16, 0, 0, 0)
+            textView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.notas_task_checkmark_circle02_small, 0, 0, 0)
         } else textView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.checkbox_outline_16, 0, 0, 0)
     }
 }

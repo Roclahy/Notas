@@ -364,6 +364,17 @@ class Settings : Fragment() {
             binding.AppBiometric.setText(
                 if (BiometricSecurity.isEnabled(requireContext(), "pin:app"))
                     R.string.disable_app_biometric else R.string.enable_app_biometric)
+            binding.AppLockDelay.visibility = if (enabled) View.VISIBLE else View.GONE
+            val delay = PinSecurity.appRelockDelaySeconds(requireContext())
+            val choice = when (delay) {
+                5 -> R.string.lock_delay_5
+                10 -> R.string.lock_delay_10
+                30 -> R.string.lock_delay_30
+                60 -> R.string.lock_delay_60
+                else -> R.string.lock_delay_300
+            }
+            binding.AppLockDelay.text =
+                getString(R.string.lock_delay_setting, getString(choice))
         }
         updatePinLabel()
         binding.AppPin.setOnClickListener {
@@ -398,6 +409,26 @@ class Settings : Fragment() {
                         }, onFallback = {})
                 }
             })
+        }
+
+        binding.AppLockDelay.setOnClickListener {
+            if (!PinSecurity.appEnabled(requireContext())) return@setOnClickListener
+            val intervals = intArrayOf(5, 10, 30, 60, 300)
+            val labels = arrayOf(
+                getString(R.string.lock_delay_5), getString(R.string.lock_delay_10),
+                getString(R.string.lock_delay_30), getString(R.string.lock_delay_60),
+                getString(R.string.lock_delay_300)
+            )
+            val current = intervals.indexOf(PinSecurity.appRelockDelaySeconds(requireContext()))
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.lock_delay_title)
+                .setSingleChoiceItems(labels, current) { dialog, selected ->
+                    PinSecurity.setAppRelockDelaySeconds(requireContext(), intervals[selected])
+                    updatePinLabel()
+                    dialog.dismiss()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
         }
 
         // La autoría es texto informativo; el canal abre Telegram.

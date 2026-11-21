@@ -207,20 +207,26 @@ class MainActivity : NotasBaseActivity() {
     }
 
     private fun installPillPressAnimation(button: View) {
-        val lift = 6f * resources.displayMetrics.density
+        // Efecto de salto hacia el usuario (escala), sin desplazamiento vertical.
+        // Mantener escala dentro de la zona táctil para que no se recorte el glifo.
+        val front = 5f * resources.displayMetrics.density
         button.setOnTouchListener { target, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     target.animate().cancel()
-                    target.animate().translationY(-lift).scaleX(0.94f).scaleY(0.94f)
-                        .setDuration(95L).setInterpolator(android.view.animation.DecelerateInterpolator())
+                    target.bringToFront()
+                    target.animate()
+                        .translationZ(front).scaleX(1.12f).scaleY(1.12f)
+                        .setDuration(110L)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
                         .start()
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     target.animate().cancel()
-                    target.animate().translationY(0f).scaleX(1f).scaleY(1f)
-                        .setDuration(300L)
-                        .setInterpolator(android.view.animation.OvershootInterpolator(1.35f))
+                    target.animate()
+                        .translationZ(0f).scaleX(1f).scaleY(1f)
+                        .setDuration(215L)
+                        .setInterpolator(android.view.animation.OvershootInterpolator(0.7f))
                         .start()
                     if (event.actionMasked == MotionEvent.ACTION_UP) {
                         target.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)

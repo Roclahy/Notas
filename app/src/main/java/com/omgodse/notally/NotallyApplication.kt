@@ -54,12 +54,15 @@ class NotallyApplication : Application() {
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             private var visibleActivities = 0
             override fun onActivityCreated(activity: Activity, state: Bundle?) {}
-            override fun onActivityStarted(activity: Activity) { visibleActivities++ }
+            override fun onActivityStarted(activity: Activity) {
+                if (visibleActivities == 0) PinSecurity.onAppReturnedToForeground(this@NotallyApplication)
+                visibleActivities++
+            }
             override fun onActivityResumed(activity: Activity) {}
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {
                 visibleActivities = (visibleActivities - 1).coerceAtLeast(0)
-                if (visibleActivities == 0) PinSecurity.appUnlocked = false
+                if (visibleActivities == 0) PinSecurity.onAppWentToBackground()
             }
             override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {}
