@@ -4,6 +4,23 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
 import android.text.Spanned
+import android.text.Editable
+import android.text.TextWatcher
+import android.text.InputType
+import android.content.res.ColorStateList
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import androidx.lifecycle.lifecycleScope
+import com.omgodse.notally.room.NotallyDatabase
+import com.omgodse.notally.room.Folder
+import com.omgodse.notally.security.RoseInternalLinks
+import com.omgodse.notally.miscellaneous.Constants
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Locale
 import android.text.style.CharacterStyle
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
@@ -40,6 +57,19 @@ class TakeNote : NotallyActivity(Type.NOTE) {
 
     private fun setupEditor() {
         setupMovementMethod()
+        binding.EnterBody.setLinkTextColor(0xFFF1C45B.toInt())
+        // Los enlaces web tecleados se detectan sin modificar los vínculos
+        // internos. No se añaden dependencias ni se consulta Internet.
+        val autoLink = Runnable { detectWebLinks() }
+        binding.EnterBody.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                binding.EnterBody.removeCallbacks(autoLink)
+                binding.EnterBody.postDelayed(autoLink, 350L)
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+        binding.EnterBody.post(autoLink)
 
         binding.EnterBody.customSelectionActionModeCallback = object : ActionMode.Callback {
             override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?) = false
@@ -56,8 +86,19 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                             mode?.finish()
                         }
                         menu.add(R.string.link, 0) {
-                            applySpan(URLSpan(null))
+                            val range = selectedRange()
                             mode?.finish()
+                            if (range != null) showWebLinkEditor(range.first, range.second)
+                        }
+                        menu.add(R.string.link_to_note, 0) {
+                            val range = selectedRange()
+                            mode?.finish()
+                            if (range != null) showLinkPicker("note", range.first, range.second)
+                        }
+                        menu.add(R.string.link_to_folder, 0) {
+                            val range = selectedRange()
+                            mode?.finish()
+                            if (range != null) showLinkPicker("folder", range.first, range.second)
                         }
                         menu.add(R.string.italic, 0) {
                             applySpan(StyleSpan(Typeface.ITALIC))
@@ -89,34 +130,208 @@ class TakeNote : NotallyActivity(Type.NOTE) {
     }
 
     private fun setupMovementMethod() {
-        val items = arrayOf(getString(R.string.edit), getString(R.string.open_link))
-        val movementMethod = LinkMovementMethod { span ->
+        binding.EnterBody.movementMethod = LinkMovementMethod { span ->
+            val stored = span.url
+            val fallback = binding.EnterBody.text?.let { text ->
+                val from = text.getSpanStart(span)
+                val to = text.getSpanEnd(span)
+                if (from < 0 || to <= from) null
+                else getURLFrom(text.substring(from, to))
+            }
+            val target = stored?.takeIf { it.isNotBlank() } ?: fallback
+            if (target.isNullOrBlank()) return@LinkMovementMethod
+            val internal = RoseInternalLinks.parse(target)
+            if (target.startsWith("rose://") && internal == null) {
+                Toast.makeText(this, R.string.link_target_missing, Toast.LENGTH_LONG).show()
+                return@LinkMovementMethod
+            }
+            val uri = Uri.parse(target)
+            if (internal == null && uri.scheme !in setOf("https", "http", "mailto", "tel")) {
+                Toast.makeText(this, R.string.cant_open_link, Toast.LENGTH_LONG).show()
+                return@LinkMovementMethod
+            }
             MaterialAlertDialogBuilder(this)
-                .setItems(items) { dialog, which ->
-                    if (which == 1) {
-                        val spanStart = binding.EnterBody.text?.getSpanStart(span)
-                        val spanEnd = binding.EnterBody.text?.getSpanEnd(span)
-
-                        ifBothNotNullAndInvalid(spanStart, spanEnd) { start, end ->
-                            val text = binding.EnterBody.text?.substring(start, end)
-                            if (text != null) {
-                                val link = getURLFrom(text)
-                                val uri = Uri.parse(link)
-
-                                val intent = Intent(Intent.ACTION_VIEW, uri)
-                                try {
-                                    startActivity(intent)
-                                } catch (exception: Exception) {
-                                    Toast.makeText(this, R.string.cant_open_link, Toast.LENGTH_LONG).show()
-                                }
+                .setTitle(R.string.open_link)
+                .setMessage(if (internal == null) target else
+                    getString(if (internal.first == "note") R.string.link_open_note
+                        else R.string.link_open_folder))
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.open_link) { _, _ ->
+                    if (internal != null) {
+                        lifecycleScope.launch {
+                            // Guardar la nota original antes de abrir otra.
+                            model.saveNote()
+                            if (internal.first == "note") {
+                                startActivity(Intent(this@TakeNote, TakeNote::class.java)
+                                    .putExtra(Constants.SelectedBaseNote, internal.second))
+                            } else {
+                                startActivity(Intent(this@TakeNote, MainActivity::class.java)
+                                    .putExtra(MainActivity.EXTRA_LINKED_FOLDER, internal.second))
                             }
+                        }
+                    } else {
+                        try {
+                            startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        } catch (_: Exception) {
+                            Toast.makeText(this, R.string.cant_open_link, Toast.LENGTH_LONG).show()
                         }
                     }
                 }.show()
         }
-        binding.EnterBody.movementMethod = movementMethod
     }
 
+    private fun selectedRange(): Pair<Int, Int>? {
+        val from = binding.EnterBody.selectionStart
+        val to = binding.EnterBody.selectionEnd
+        if (from < 0 || to < 0) return null
+        return minOf(from, to) to maxOf(from, to)
+    }
+
+    private fun installLink(start: Int, end: Int, title: String, target: String) {
+        val text = binding.EnterBody.text ?: return
+        if (start !in 0..text.length || end !in start..text.length) return
+        val last = if (start == end) {
+            text.insert(start, title)
+            start + title.length
+        } else end
+        text.getSpans<URLSpan>(start, last).toList().forEach(text::removeSpan)
+        text.setSpan(URLSpan(target), start, last, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        binding.EnterBody.setSelection(last)
+        markNoteEdited()
+    }
+
+    /** Buscar por el título de la nota o de la carpeta, siempre localmente. */
+    private fun showLinkPicker(kind: String, start: Int, end: Int) {
+        lifecycleScope.launch {
+            val entries: List<Pair<Long, String>> = withContext(Dispatchers.IO) {
+                val db = NotallyDatabase.getDatabase(application)
+                if (kind == "note") {
+                    db.getBaseNoteDao().getAllForSync()
+                        .filter { it.folder == Folder.NOTES && it.id != model.id }
+                        .map { it.id to it.title.ifBlank {
+                            it.body.lineSequence().firstOrNull()?.take(70).orEmpty()
+                                .ifBlank { getString(R.string.untitled_note_link) }
+                        } }
+                } else {
+                    db.getNotebookFolderDao().listOnce().map { it.id to it.name }
+                }
+            }
+            val density = resources.displayMetrics.density
+            fun dp(n: Int) = (n * density).toInt()
+            val column = LinearLayout(this@TakeNote).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(20), dp(8), dp(20), dp(12))
+            }
+            val search = EditText(this@TakeNote).apply {
+                hint = getString(R.string.search)
+                isSingleLine = true
+                inputType = InputType.TYPE_CLASS_TEXT
+                setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_menu_search, 0, 0, 0)
+                compoundDrawablePadding = dp(8)
+                compoundDrawableTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+            }
+            column.addView(search, LinearLayout.LayoutParams(-1, dp(52)))
+            val scroll = ScrollView(this@TakeNote)
+            val results = LinearLayout(this@TakeNote).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+            scroll.addView(results)
+            column.addView(scroll, LinearLayout.LayoutParams(-1, dp(285)))
+            val dialog = MaterialAlertDialogBuilder(this@TakeNote)
+                .setTitle(if (kind == "note") R.string.link_to_note else R.string.link_to_folder)
+                .setView(column)
+                .setNegativeButton(R.string.cancel, null)
+                .create()
+            fun render(query: String) {
+                results.removeAllViews()
+                val matching = entries.filter { (_, name) ->
+                    name.contains(query, ignoreCase = true)
+                }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.second })
+                if (matching.isEmpty()) {
+                    results.addView(TextView(this@TakeNote).apply {
+                        setText(R.string.link_no_results)
+                        setPadding(dp(12), dp(24), dp(12), dp(24))
+                    })
+                } else matching.take(150).forEach { (id, name) ->
+                    val row = TextView(this@TakeNote).apply {
+                        text = name
+                        textSize = 15f
+                        maxLines = 2
+                        setPadding(dp(12), dp(14), dp(12), dp(14))
+                        setCompoundDrawablesWithIntrinsicBounds(
+                            if (kind == "note") android.R.drawable.ic_menu_edit
+                                else android.R.drawable.ic_menu_agenda, 0, 0, 0)
+                        compoundDrawablePadding = dp(12)
+                        background = android.graphics.drawable.RippleDrawable(
+                            ColorStateList.valueOf(0x33F1C45B), null, null)
+                        setOnClickListener {
+                            dialog.dismiss()
+                            val uri = if (kind == "note") RoseInternalLinks.note(id)
+                                else RoseInternalLinks.folder(id)
+                            installLink(start, end, name, uri)
+                        }
+                    }
+                    results.addView(row, LinearLayout.LayoutParams(-1, -2))
+                }
+            }
+            render("")
+            search.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    render(s?.toString().orEmpty().trim())
+                }
+                override fun afterTextChanged(s: Editable?) {}
+            })
+            dialog.show()
+        }
+    }
+
+    private fun showWebLinkEditor(start: Int, end: Int) {
+        val selected = binding.EnterBody.text?.subSequence(start, end)?.toString().orEmpty()
+        val input = EditText(this).apply {
+            hint = "https://"
+            isSingleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setText(if (selected.startsWith("https://") || selected.startsWith("http://"))
+                selected else "")
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.link)
+            .setView(input)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.link, null).create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                val raw = input.text?.toString()?.trim().orEmpty()
+                val target = getURLFrom(raw)
+                val uri = Uri.parse(target)
+                if (uri.scheme !in setOf("https", "http", "mailto", "tel")) {
+                    input.error = getString(R.string.invalid_link)
+                } else {
+                    installLink(start, end, selected.ifBlank { target }, target)
+                    dialog.dismiss()
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun detectWebLinks() {
+        val editable = binding.EnterBody.text ?: return
+        val value = editable.toString()
+        if (value.length > 250_000) return // Evitar búsquedas costosas en notas enormes.
+        val matcher = android.util.Patterns.WEB_URL.matcher(value)
+        while (matcher.find()) {
+            val start = matcher.start()
+            val end = matcher.end()
+            val found = value.substring(start, end)
+            if (found.length > 2048) continue
+            if (editable.getSpans<URLSpan>(start, end).isNotEmpty()) continue
+            val canonical = getURLFrom(found)
+            if (Uri.parse(canonical).scheme !in setOf("https", "http")) continue
+            editable.setSpan(URLSpan(canonical), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+    }
 
     private fun removeSpans() {
         val selectionEnd = binding.EnterBody.selectionEnd
