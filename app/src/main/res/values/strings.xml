@@ -237,7 +237,7 @@
     <string name="enable_folder_biometric">Allow biometrics for this folder</string>
     <string name="disable_folder_biometric">Remove biometric access for this folder</string>
     <string name="use_pin">Use PIN or password</string>
-PIN restricts access in the app but does not encrypt notes or backups.</string>
+    <string name="pin_access_notice">PIN restricts access in the app but does not encrypt notes or backups.</string>
     <string name="choose_color">Choose color</string>
     <string name="hue">Hue</string>
     <string name="saturation">Saturation</string>

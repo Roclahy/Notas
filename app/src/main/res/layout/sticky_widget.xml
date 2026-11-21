@@ -18,7 +18,7 @@
             android:orientation="horizontal">
             <ImageView android:id="@+id/StickyIcon"
                 android:layout_width="23dp" android:layout_height="23dp"
-                android:src="@drawable/notas_huge_sticky_note03"
+                android:src="@drawable/notas_huge_sticky_note03" android:tint="#1E1C19"
                 android:contentDescription="@null"/>
             <TextView android:id="@+id/StickyTitle" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:layout_marginStart="7dp"

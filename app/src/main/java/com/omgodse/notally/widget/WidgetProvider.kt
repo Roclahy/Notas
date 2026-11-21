@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.widget.RemoteViews
 import com.omgodse.notally.R
 import com.omgodse.notally.activities.TakeNote
@@ -26,23 +25,13 @@ class WidgetProvider : AppWidgetProvider() {
         fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
             val prefs = Preferences.getInstance(context.applicationContext as android.app.Application)
             val style = prefs.getWidgetTheme(id)
-            val background = when (style) {
-                "light" -> R.drawable.sticky_widget_light
-                "dark" -> R.drawable.sticky_widget_dark
-                "amoled" -> R.drawable.sticky_widget_amoled
-                else -> R.drawable.sticky_widget_gold
+            val layout = when (style) {
+                "light" -> R.layout.sticky_widget_light
+                "dark" -> R.layout.sticky_widget_dark
+                "amoled" -> R.layout.sticky_widget_amoled
+                else -> R.layout.sticky_widget
             }
-            val ink = if (style == "gold" || style == "light") {
-                Color.rgb(30, 28, 25)
-            } else {
-                Color.rgb(241, 196, 91)
-            }
-            val views = RemoteViews(context.packageName, R.layout.sticky_widget)
-            views.setInt(R.id.StickyCard, "setBackgroundResource", background)
-            views.setTextColor(R.id.StickyTitle, ink)
-            views.setTextColor(R.id.StickyHint, ink)
-            views.setTextColor(R.id.StickyAction, ink)
-            views.setInt(R.id.StickyIcon, "setColorFilter", ink)
+            val views = RemoteViews(context.packageName, layout)
             val launch = Intent(context, TakeNote::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             val click = PendingIntent.getActivity(context, id, launch,

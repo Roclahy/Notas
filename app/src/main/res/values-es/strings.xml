@@ -231,7 +231,7 @@
     <string name="enable_folder_biometric">Permitir biometría para esta carpeta</string>
     <string name="disable_folder_biometric">Quitar acceso biométrico a esta carpeta</string>
     <string name="use_pin">Usar PIN o contraseña</string>
-Protegido con tu PIN</string>
+    <string name="lock_screen_hint">Protegido con tu PIN</string>
     <string name="encrypted_auto_backup">Respaldo cifrado automático</string>
     <string name="backup_not_configured">Desactivado · sin conexión por defecto</string>
     <string name="daily_encrypted_backup">Cada 24 horas · cifrado de extremo a extremo</string>
