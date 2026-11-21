@@ -35,14 +35,6 @@ Sitio oficial: [notas.roclahy.com](https://notas.roclahy.com/)
 - Si el respaldo no está activado, la app no envía nada por Internet. La copia automática de Android (Auto Backup) está deshabilitada.
 
 
-## Identidad
-
-
-- Icono: bloc de notas negro con franja amarilla y cuatro líneas, creado a partir de la ilustración aportada por la propietaria, sobre fondo negro.
-- Apertura nativa en negro puro con el icono, sin GIF ni dependencias de animación dentro del APK.
-- La aplicación se llama «Notas» en el launcher y en su interior.
-
-
 ## Compilación
 
 
