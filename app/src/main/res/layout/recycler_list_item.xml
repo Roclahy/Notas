@@ -51,7 +51,6 @@
             android:inputType="textMultiLine"
             android:padding="8dp"
             android:minHeight="48dp"
-            android:layout_width="match_parent"
             android:textAppearance="?attr/textAppearanceBody1" />
 
         <ImageButton
