@@ -19,7 +19,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.View
 import android.view.WindowManager
-import android.view.accessibility.AccessibilityManager
+import android.provider.Settings
 import android.view.animation.DecelerateInterpolator
 import androidx.core.graphics.ColorUtils
 import com.google.android.material.card.MaterialCardView
@@ -60,8 +60,11 @@ object LiquidGlass {
     private fun palette(context: Context, role: Role, backdrop: Int?): Palette {
         val isNight = night(context)
         val isAmoled = amoled(context)
-        val highContrast = (context.getSystemService(Context.ACCESSIBILITY_SERVICE)
-            as? AccessibilityManager)?.isHighTextContrastEnabled == true
+        val highContrast = runCatching {
+            Settings.Secure.getInt(
+                context.contentResolver, "high_text_contrast_enabled", 0
+            ) != 0
+        }.getOrDefault(false)
         val onDark = backdrop?.let {
             ColorUtils.calculateLuminance(it) < 0.48
         } ?: isNight
