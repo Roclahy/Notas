@@ -28,6 +28,15 @@ open class NotasBaseActivity : AppCompatActivity() {
 
     protected open fun onAppAccessGranted() {}
 
+    override fun onContentChanged() {
+        super.onContentChanged()
+        // Cubre todas las pantallas, no solo Inicio y el editor.
+        val container = findViewById<ViewGroup>(android.R.id.content)
+        container?.getChildAt(0)?.let { root ->
+            NotasEdgeInsets.install(root, includeKeyboard = this is NotallyActivity)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         if (PinSecurity.appEnabled(this) && !PinSecurity.appUnlocked) {

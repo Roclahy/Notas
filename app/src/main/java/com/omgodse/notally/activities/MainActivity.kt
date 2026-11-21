@@ -78,7 +78,6 @@ class MainActivity : NotasBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        NotasEdgeInsets.install(binding.root, includeKeyboard = false)
 
         setSupportActionBar(binding.Toolbar)
         setupBottomPill()

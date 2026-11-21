@@ -131,7 +131,6 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         model.marker.color = ContextCompat.getColor(this, R.color.highlight)
         initialiseBinding()
         setContentView(binding.root)
-        NotasEdgeInsets.install(binding.root, includeKeyboard = true)
         pendingState = savedInstanceState
         binding.ScrollView.visibility = View.GONE
     }
