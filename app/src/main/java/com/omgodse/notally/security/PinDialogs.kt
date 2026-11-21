@@ -3,6 +3,13 @@ package com.omgodse.notally.security
 import android.app.Activity
 import android.content.DialogInterface
 import android.text.InputFilter
+import android.text.TextWatcher
+import android.text.Editable
+import android.view.View
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.text.InputType
 import android.view.WindowManager
 import android.widget.EditText
@@ -72,16 +79,17 @@ object PinDialogs {
     }
 
     fun check(activity: Activity, key: String, onVerified: () -> Unit, onCancel: () -> Unit = {}) {
-        ask(activity, R.string.enter_pin, true, onCancel) { input ->
-            val good = PinSecurity.verify(activity, key, input)
-            if (good) onVerified()
-            good
+        ask(activity, R.string.enter_pin, true, onCancel,
+            validator = { input -> PinSecurity.verify(activity, key, input) }) {
+            onVerified()
+            true
         }
     }
 
     private fun ask(
         activity: Activity, title: Int, requiresValidation: Boolean,
         onCancel: () -> Unit,
+        validator: ((String) -> Boolean)? = null,
         onEntered: (String) -> Boolean
     ) {
         val (panel, input) = pinField(activity)
@@ -97,13 +105,15 @@ object PinDialogs {
         dialog.setOnCancelListener {
             if (!finished) { finished = true; onCancel() }
         }
-        dialog.setOnShowListener {
-            dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text.toString()
-                if (pin.length != 4 || !pin.all(Char::isDigit)) {
-                    input.error = activity.getString(R.string.four_digit_pin)
-                    return@setOnClickListener
-                }
+        var verifying = false
+        fun submitted(pin: String) {
+            if (finished || verifying) return
+            if (pin.length != 4 || !pin.all(Char::isDigit)) {
+                input.error = activity.getString(R.string.four_digit_pin)
+                return
+            }
+            if (validator == null) {
+                // Solo la configuración inicial del PIN necesita continuar.
                 if (onEntered(pin)) {
                     finished = true
                     input.text?.clear()
@@ -112,6 +122,44 @@ object PinDialogs {
                     input.text?.clear()
                     input.error = activity.getString(R.string.invalid_pin)
                 }
+                return
+            }
+            verifying = true
+            input.isEnabled = false
+            activity.lifecycleScope.launch {
+                val valid = try {
+                    withContext(Dispatchers.Default) { validator(pin) }
+                } catch (_: Exception) { false }
+                if (finished || !dialog.isShowing) return@launch
+                verifying = false
+                input.isEnabled = true
+                if (valid) {
+                    finished = true
+                    input.text?.clear()
+                    dialog.dismiss()
+                    // El desbloqueo sucede automáticamente en el cuarto dígito.
+                    onEntered(pin)
+                } else {
+                    input.text?.clear()
+                    input.error = activity.getString(R.string.invalid_pin)
+                    input.requestFocus()
+                }
+            }
+        }
+        dialog.setOnShowListener {
+            val positive = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
+            if (requiresValidation && validator != null) {
+                // Se oculta Aceptar: el PIN válido se reconoce al cuarto dígito.
+                positive.visibility = View.GONE
+                input.addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                    override fun afterTextChanged(s: Editable?) {
+                        if (s?.length == 4) submitted(s.toString())
+                    }
+                })
+            } else {
+                positive.setOnClickListener { submitted(input.text.toString()) }
             }
         }
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
