@@ -2,6 +2,7 @@
 <resources>
     <color name="Default">#121212</color>
     <color name="NotasMuted">#98989D</color>
+    <color name="NotasGoldTrack">#504328</color>
     <color name="NotasDivider">#343438</color>
     <color name="NotasSurface">#1C1C1E</color>
     <color name="Coral">#76172D</color>

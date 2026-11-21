@@ -251,7 +251,6 @@
     <string name="sync_note_pending">Nota pendiente de copia cifrada</string>
     <string name="sync_queued">Copia cifrada solicitada. Consulta su estado en Ajustes.</string>
     <string name="sync_not_configured">Activa la copia cifrada en Google Drive desde Ajustes</string>
-    <string name="liquid_glass">Liquid Glass</string>
     <string name="notebook_folders">Carpetas</string>
     <string name="notebook_all">Todas las notas</string>
     <string name="notebook_unfiled">Sin carpeta</string>
@@ -268,8 +267,6 @@
     <string name="google_drive_restore">Restaurar desde Google Drive</string>
     <string name="google_drive_no_backups">No hay copias cifradas disponibles en Drive</string>
     <string name="google_drive_restore_failed">No se pudo descargar o descifrar la copia de Drive</string>
-    <string name="liquid_glass_description">Cristal adaptativo sobre Claro, Oscuro o AMOLED</string>
-    <string name="liquid_glass_accessibility">Activar efecto Liquid Glass</string>
     <string name="notebook_create">Crear carpeta</string>
     <string name="notebook_options">Opciones de la carpeta</string>
     <string name="notebook_wallpaper">Fondo de carpeta</string>

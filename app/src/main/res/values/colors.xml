@@ -11,8 +11,6 @@
     <color name="NotasGoldTrack">#E8DAB6</color>
     <color name="NotasLightCard">#F0F0F4</color>
     <color name="NotasLightCardBorder">#E1E1E8</color>
-    <color name="NotasGlassBackground">#101827</color>
-    <color name="NotasGlassSurface">#7A273347</color>
     <color name="NotasLightBackground">#F5F5F7</color>
     <color name="NotasLightSurface">#FFFFFF</color>
     <color name="NotasDarkBackground">#111114</color>

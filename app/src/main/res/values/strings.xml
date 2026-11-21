@@ -264,7 +264,6 @@
     <string name="sync_note_pending">Note awaiting encrypted backup</string>
     <string name="sync_queued">Encrypted backup requested. Check its status in Settings.</string>
     <string name="sync_not_configured">Enable encrypted Google Drive backup in Settings</string>
-    <string name="liquid_glass">Liquid Glass</string>
     <string name="notebook_folders">Folders</string>
     <string name="notebook_all">All notes</string>
     <string name="notebook_unfiled">Unfiled</string>
@@ -281,8 +280,6 @@
     <string name="google_drive_restore">Restore from Google Drive</string>
     <string name="google_drive_no_backups">No encrypted backups found in Drive</string>
     <string name="google_drive_restore_failed">Could not download or decrypt Drive backup</string>
-    <string name="liquid_glass_description">Adaptive glass over Light, Dark or AMOLED</string>
-    <string name="liquid_glass_accessibility">Enable Liquid Glass effect</string>
     <string name="notebook_create">Create folder</string>
     <string name="notebook_options">Folder options</string>
     <string name="notebook_wallpaper">Folder background</string>
