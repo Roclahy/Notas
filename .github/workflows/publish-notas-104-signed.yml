@@ -62,6 +62,7 @@ jobs:
       - name: Publish verified APK in GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
