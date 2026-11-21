@@ -8,7 +8,7 @@
 
     <color name="Black">#000000</color>
     <color name="NotasGold">#F1C45B</color>
-    <color name="NotasSurface">#1C1C1E</color>
+    <color name="NotasSurface">#F5F5F7</color>
     <color name="NotasWhite">#F5F5F7</color>
     <color name="NotasMuted">#707078</color>
     <color name="NotasDivider">#DDDEE3</color>

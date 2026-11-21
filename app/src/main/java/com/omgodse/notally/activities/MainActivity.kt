@@ -383,9 +383,9 @@ class MainActivity : NotasBaseActivity() {
         configuration = AppBarConfiguration(topLevelDestinations, binding.DrawerLayout)
         setupActionBarWithNavController(navController, configuration)
         binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
-        binding.Toolbar.setNavigationIcon(R.drawable.notas_nav_folder)
-        binding.Toolbar.setNavigationContentDescription(R.string.explore_sections)
-        binding.Toolbar.setNavigationOnClickListener {
+        binding.Toolbar.navigationIcon = null
+        binding.Toolbar.title = ""
+        binding.SectionTitle.setOnClickListener {
             val top = setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)
             if (navController.currentDestination?.id in top) showNavigationSheet()
             else onSupportNavigateUp()
@@ -414,9 +414,11 @@ class MainActivity : NotasBaseActivity() {
     }
 
     private fun handleDestinationChange(destination: NavDestination) {
-        if (destination.id in setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)) {
-            binding.Toolbar.setNavigationIcon(R.drawable.notas_nav_folder)
-        }
+        val top = destination.id in setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)
+        binding.Toolbar.navigationIcon = if (top) null else androidx.appcompat.content.res.AppCompatResources.getDrawable(this, R.drawable.previous)
+        binding.Toolbar.title = ""
+        binding.SectionTitle.text = destination.label ?: getString(R.string.notes)
+        binding.SectionTitle.visibility = if (destination.id == R.id.Search) View.GONE else View.VISIBLE
         binding.BottomPill.visibility =
             if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
 
@@ -433,19 +435,21 @@ class MainActivity : NotasBaseActivity() {
 
     private fun showNavigationSheet() {
         val dialog = BottomSheetDialog(this)
+        val dark = com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0xFF1C1C1E.toInt())
+        val surface = com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface, 0xFFF5F5F7.toInt())
         val density = resources.displayMetrics.density
         fun dp(value: Int) = (value * density).toInt()
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(22), dp(18), dp(30))
             background = GradientDrawable().apply {
-                setColor(if (model.preferences.isAmoledTheme()) 0xFF1C1C1E.toInt() else 0xFF303034.toInt())
+                setColor(surface)
                 cornerRadii = floatArrayOf(dp(28).toFloat(),dp(28).toFloat(),dp(28).toFloat(),dp(28).toFloat(),0f,0f,0f,0f)
             }
         }
         val header = TextView(this).apply {
             text = getString(R.string.notes)
-            setTextColor(0xFFF5F5F7.toInt())
+            setTextColor(dark)
             textSize = 23f
             typeface = androidx.core.content.res.ResourcesCompat.getFont(this@MainActivity, R.font.notas_sans)
             setPadding(dp(9),0,0,dp(16))
@@ -476,7 +480,7 @@ class MainActivity : NotasBaseActivity() {
             })
             val label = TextView(this).apply {
                 setText(textRes)
-                setTextColor(0xFFF5F5F7.toInt())
+                setTextColor(dark)
                 textSize = 16f
                 typeface = androidx.core.content.res.ResourcesCompat.getFont(this@MainActivity, R.font.notas_sans)
             }
@@ -488,8 +492,15 @@ class MainActivity : NotasBaseActivity() {
             container.addView(row)
         }
         dialog.setContentView(container)
+        dialog.setOnShowListener {
+            dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.apply {
+                backgroundTintList = null
+                background = android.graphics.drawable.ColorDrawable(AndroidColor.TRANSPARENT)
+                clipToOutline = false
+            }
+            dialog.window?.navigationBarColor = surface
+        }
         dialog.show()
-        dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.setBackgroundColor(AndroidColor.TRANSPARENT)
     }
 
     private fun navigateWithAnimation(id: Int) {

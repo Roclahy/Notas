@@ -19,6 +19,24 @@
             android:elevation="0dp"
             app:contentInsetEnd="18dp">
 
+            <TextView
+                android:id="@+id/SectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="start|center_vertical"
+                android:gravity="center_vertical"
+                android:paddingStart="23dp"
+                android:paddingEnd="20dp"
+                android:text="@string/notes"
+                android:fontFamily="@font/notas_sans"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/explore_sections"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
             <EditText
                 android:id="@+id/EnterSearchKeyword"
                 android:layout_width="match_parent"

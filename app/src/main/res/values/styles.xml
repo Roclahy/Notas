@@ -8,7 +8,7 @@
 
         <item name="colorPrimaryDark">?attr/colorSurface</item>
 
-        <item name="android:navigationBarColor">@color/Black</item>
+        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
 
         <item name="windowActionModeOverlay">true</item>
 
