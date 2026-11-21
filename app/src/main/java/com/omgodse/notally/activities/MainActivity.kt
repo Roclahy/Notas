@@ -116,13 +116,13 @@ class MainActivity : NotasBaseActivity() {
     /** Glass es una capa sobre Claro, Oscuro y AMOLED; nunca cambia el fondo. */
     private fun setupGlassChrome() {
         if (!LiquidGlass.enabled(this)) return
-        binding.BottomPill.background = LiquidGlass.surface(
-            this, LiquidGlass.Role.NAVIGATION)
-        binding.BottomPill.elevation = resources.displayMetrics.density * 16f
+        // AGSL refracts only the visible notes underneath the floating bar.
+        // It does not restyle the drawer as a huge translucent card.
+        LiquidGlass.attachBackdrop(binding.BottomPill, binding.NavHostFragment)
+        binding.BottomPill.elevation = resources.displayMetrics.density * 8f
         binding.TakeNote.background = LiquidGlass.surface(
             this, LiquidGlass.Role.ACCENT)
         binding.Toolbar.setBackgroundColor(AndroidColor.TRANSPARENT)
-        LiquidGlass.styleCard(binding.NavigationView, this)
     }
 
     private fun setupSyncStatus() {
