@@ -31,7 +31,7 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             // Una copia ya está en curso; esa copia programará un sucesor
             // al terminar. No perder una edición en esta carrera.
             RoseDriveState.markDirty(app)
-            return androidx.work.ListenableWorker.androidx.work.ListenableWorker.Result.retry()
+            return androidx.work.ListenableWorker.Result.retry()
         }
         var file: File? = null
         var passphrase: CharArray? = null
