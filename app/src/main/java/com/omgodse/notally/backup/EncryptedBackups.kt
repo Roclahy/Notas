@@ -7,6 +7,7 @@ import android.preference.PreferenceManager
 import com.omgodse.notally.miscellaneous.Export
 import com.omgodse.notally.miscellaneous.IO
 import com.omgodse.notally.security.SecureMedia
+import com.omgodse.notally.security.SecureDatabase
 import com.omgodse.notally.room.Converters
 import com.omgodse.notally.room.NotallyDatabase
 import java.io.DataInputStream
@@ -120,7 +121,7 @@ object EncryptedBackups {
     private fun populateZip(app: Application, zip: ZipOutputStream) {
         val database = NotallyDatabase.getDatabase(app)
         database.checkpoint()
-        Export.backupDatabase(app, zip)
+        SecureDatabase.writePortableBackup(app, database, zip)
         val images = IO.getExternalImagesDirectory(app)
         val audios = IO.getExternalAudioDirectory(app)
         database.getBaseNoteDao().getAllImages().asSequence()
