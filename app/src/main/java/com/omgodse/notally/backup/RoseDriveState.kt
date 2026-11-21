@@ -149,7 +149,10 @@ object RoseDriveState {
 
     /** Un proceso anterior pudo morir durante una subida. */
     fun resetInterruptedUpload(c: Context) {
-        prefs(c).edit().putBoolean("uploading", false).apply()
+        // "queued" de la antigua cola podía sobrevivir al cambio de versión
+        // aunque ya no existiese un trabajo de WorkManager ejecutable.
+        prefs(c).edit().putBoolean("uploading", false)
+            .putBoolean("queued", false).apply()
         invalidate()
     }
 
