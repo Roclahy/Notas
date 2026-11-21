@@ -156,26 +156,28 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
 
     fun disableAutoBackup() {
-        clearPersistedUriPermissions()
+        releasePreviousBackupFolder()
         executeAsync { preferences.savePreference(AutoBackup, AutoBackup.emptyPath) }
     }
 
     fun setAutoBackupPath(uri: Uri) {
-        clearPersistedUriPermissions()
         val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        // Primero aseguramos el nuevo destino; no revocamos el anterior en caso de error.
         app.contentResolver.takePersistableUriPermission(uri, flags)
+        releasePreviousBackupFolder(except = uri)
         executeAsync { preferences.savePreference(AutoBackup, uri.toString()) }
     }
 
-    /**
-     * Release previously persisted permissions, if any
-     * There is a hard limit of 128 before Android 11, 512 after
-     * Check -> https://commonsware.com/blog/2020/06/13/count-your-saf-uri-permission-grants.html
-     */
-    private fun clearPersistedUriPermissions() {
+    private fun releasePreviousBackupFolder(except: Uri? = null) {
+        val old = preferences.autoBackup.value
+        if (old == AutoBackup.emptyPath) return
+        val priorUri = Uri.parse(old)
+        if (priorUri == except) return
         val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        app.contentResolver.persistedUriPermissions.forEach { permission ->
-            app.contentResolver.releasePersistableUriPermission(permission.uri, flags)
+        try {
+            app.contentResolver.releasePersistableUriPermission(priorUri, flags)
+        } catch (_: SecurityException) {
+            // El proveedor pudo revocar el permiso externamente.
         }
     }
 
