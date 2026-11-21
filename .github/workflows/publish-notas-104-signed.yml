@@ -1,0 +1,77 @@
+name: Publish Notas 1.4.0 (104) - signed APK
+
+on:
+  push:
+    branches:
+      - work/notas-apple-amoled-v1
+    paths:
+      - .github/workflows/publish-notas-104-signed.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notas-104-publish
+  cancel-in-progress: false
+
+jobs:
+  publish-signed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APK: Notas-1.4.0-104-Drive-Carpetas-Release-firmada.apk
+      TAG: v1.4.0-104-drive-carpetas
+      BLOB_SHA: db7bffb896010327d38df551a67a74b688cff324
+      EXPECTED_SHA256: 7286146ff9dba0a2c02eda651b3cf0b2ef9a4476c75ef47e13a9aae7d7b5e7b7
+      EXPECTED_CERT_SHA1: 4c1250ee09b4d3cbb1983f3f3f8225adc57a906
+      EXPECTED_CERT_SHA256: 3e66fb1e49dd7f63d438e8d3e1ed446051bd5f82f91112c31503cb3a0d5e6536
+
+    steps:
+      - name: Recover exact signed APK through GitHub Git Blob API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 3 \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/blobs/${BLOB_SHA}" \
+            | jq -er '.content' | tr -d '\n' | base64 --decode > "${APK}"
+          echo "${EXPECTED_SHA256}  ${APK}" | sha256sum --check
+
+      - name: Verify official release signature (v2/v3 and OAuth certificate)
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -n "${SDKMANAGER}"
+          yes | "${SDKMANAGER}" --licenses >/dev/null || true
+          "${SDKMANAGER}" --install "build-tools;36.0.0"
+          SIGNER="${ANDROID_HOME}/build-tools/36.0.0/apksigner"
+          test -x "${SIGNER}"
+          "${SIGNER}" verify --verbose --print-certs "${APK}" > signature-report.txt
+          cat signature-report.txt
+          grep -Fqi "Signer #1 certificate SHA-1 digest: ${EXPECTED_CERT_SHA1}" signature-report.txt
+          grep -Fqi "Signer #1 certificate SHA-256 digest: ${EXPECTED_CERT_SHA256}" signature-report.txt
+          grep -Fq "Verified using v2 scheme (APK Signature Scheme v2): true" signature-report.txt
+          grep -Fq "Verified using v3 scheme (APK Signature Scheme v3): true" signature-report.txt
+
+      - name: Publish verified APK in GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${APK}" --clobber
+          else
+            gh release create "${TAG}" "${APK}" \
+              --target "${GITHUB_SHA}" \
+              --title "Notas 1.4.0 (104) — Drive y carpetas" \
+              --notes "APK Release oficial de Notas (com.rocla.notas), firmada con el certificado de distribución registrado en Google OAuth. Incluye las correcciones de eliminación de carpetas, diálogos y copias automáticas de Google Drive. Cifrado nativo, sin cambiar el alcance drive.file. La sincronización automática debe verificarse en un dispositivo real." \
+              --latest
+          fi
+          gh release view "${TAG}" --json url,assets --jq '{url,assets:[.assets[].name]}'
