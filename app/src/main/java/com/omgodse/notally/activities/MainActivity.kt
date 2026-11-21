@@ -3,7 +3,7 @@ package com.omgodse.notally.activities
 import android.app.Activity
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.Color
+import android.graphics.Color as AndroidColor
 import android.graphics.drawable.GradientDrawable
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -484,7 +484,7 @@ class MainActivity : NotasBaseActivity() {
         }
         dialog.setContentView(container)
         dialog.show()
-        dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.setBackgroundColor(Color.TRANSPARENT)
+        dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.setBackgroundColor(AndroidColor.TRANSPARENT)
     }
 
     private fun navigateWithAnimation(id: Int) {
