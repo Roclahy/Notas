@@ -42,8 +42,10 @@ abstract class NotallyFragment : Fragment(), ItemListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding?.ImageView?.setImageResource(getBackground())
 
-        setupAdapter()
+        // Instalar primero la cuadrícula LTR, ANTES de su primera lista.
+        // Evita la pasada inicial con un span a la derecha.
         setupRecyclerView()
+        setupAdapter()
         setupObserver()
     }
 
@@ -100,14 +102,6 @@ abstract class NotallyFragment : Fragment(), ItemListener {
         val shortFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
 
         adapter = BaseNoteAdapter(model.actionMode.selectedIds, dateFormat, textSize, maxItems, maxLines, maxTitle, fullFormat, shortFormat, model.mediaRoot, this, model.preferences.view.value)
-        adapter?.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                if (itemCount > 0) {
-                    binding?.RecyclerView?.scrollToPosition(positionStart)
-                }
-            }
-        })
         binding?.RecyclerView?.adapter = adapter
         binding?.RecyclerView?.setHasFixedSize(true)
         // Sin animaciones predictivas de reordenamiento: evita que la primera
@@ -132,8 +126,23 @@ abstract class NotallyFragment : Fragment(), ItemListener {
             }
         }
 
+        var previousNotebookId: Long? = null
+        var resetPosition = true
+        model.selectedNotebookId.observe(viewLifecycleOwner) { id ->
+            if (id != previousNotebookId) {
+                previousNotebookId = id
+                resetPosition = true
+                binding?.RecyclerView?.stopScroll()
+                binding?.RecyclerView?.scrollToPosition(0)
+            }
+        }
         getObservable().observe(viewLifecycleOwner) { list ->
-            adapter?.submitList(list)
+            adapter?.submitList(list) {
+                if (resetPosition) {
+                    resetPosition = false
+                    binding?.RecyclerView?.scrollToPosition(0)
+                }
+            }
             binding?.ImageView?.isVisible = list.isEmpty()
         }
 
@@ -149,8 +158,12 @@ abstract class NotallyFragment : Fragment(), ItemListener {
     }
 
     private fun setupRecyclerView() {
+        binding?.RecyclerView?.apply {
+            layoutDirection = View.LAYOUT_DIRECTION_LTR
+            isSaveEnabled = false // Nunca restaurar ancla de columna de otra carpeta.
+        }
         binding?.RecyclerView?.layoutManager = if (model.preferences.view.value == ViewPref.grid) {
-            GridLayoutManager(requireContext(), 2).apply {
+            GridLayoutManager(requireContext(), 2, RecyclerView.VERTICAL, false).apply {
                 // Orden determinista: primera nota siempre en columna izquierda.
                 // Las cabeceras (Fijadas/Otras) ocupan la fila entera.
                 spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
