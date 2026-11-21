@@ -6,6 +6,10 @@ import android.preference.PreferenceManager
 import android.app.Activity
 import android.os.Bundle
 import com.omgodse.notally.security.PinSecurity
+import com.omgodse.notally.security.SecureMedia
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import androidx.appcompat.app.AppCompatDelegate
 import com.omgodse.notally.backup.BackupScheduler
 import com.omgodse.notally.backup.RoseDriveState
@@ -24,6 +28,13 @@ class NotallyApplication : Application() {
         super.onCreate()
         // Elimina archivos ZIP temporales de restauraciones interrumpidas.
         java.io.File(cacheDir,"encrypted_restore").listFiles()?.forEach { it.delete() }
+        // Los temporales legibles de la sesión anterior nunca se conservan.
+        SecureMedia.clearReadableCache(this)
+        CoroutineScope(Dispatchers.IO).launch {
+            // Migración idempotente: solo borrar el original externo cuando
+            // la versión interna cifrada esté escrita y validada.
+            SecureMedia.migrateLegacy(this@NotallyApplication)
+        }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             private var visibleActivities = 0
             override fun onActivityCreated(activity: Activity, state: Bundle?) {}

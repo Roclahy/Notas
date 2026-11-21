@@ -28,6 +28,7 @@ import com.omgodse.notally.legacy.Migrations
 import com.omgodse.notally.legacy.XMLUtils
 import com.omgodse.notally.miscellaneous.Export
 import com.omgodse.notally.miscellaneous.IO
+import com.omgodse.notally.security.SecureMedia
 import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.miscellaneous.applySpans
 import com.omgodse.notally.preferences.AutoBackup
@@ -352,7 +353,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                                 val file = File(mediaRoot, name)
                                 image.name = name
                                 val imageStream = zipFile.getInputStream(entry)
-                                IO.copyStreamToFile(imageStream, file)
+                                SecureMedia.encryptFromStream(app, imageStream, file)
                             }
                         } catch (exception: Exception) {
                             Operations.log(app, exception)
@@ -369,7 +370,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                                 val file = File(audioRoot, name)
                                 audio.name = name
                                 val audioStream = zipFile.getInputStream(entry)
-                                IO.copyStreamToFile(audioStream, file)
+                                SecureMedia.encryptFromStream(app, audioStream, file)
                             }
                         } catch (exception: Exception) {
                             Operations.log(app, exception)

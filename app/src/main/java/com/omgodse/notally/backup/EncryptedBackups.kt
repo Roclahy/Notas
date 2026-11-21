@@ -6,6 +6,7 @@ import android.os.Build
 import android.preference.PreferenceManager
 import com.omgodse.notally.miscellaneous.Export
 import com.omgodse.notally.miscellaneous.IO
+import com.omgodse.notally.security.SecureMedia
 import com.omgodse.notally.room.Converters
 import com.omgodse.notally.room.NotallyDatabase
 import java.io.DataInputStream
@@ -124,10 +125,10 @@ object EncryptedBackups {
         val audios = IO.getExternalAudioDirectory(app)
         database.getBaseNoteDao().getAllImages().asSequence()
             .flatMap { Converters.jsonToImages(it) }.distinctBy { it.name }
-            .forEach { Export.backupFile(zip, images,"Images",it.name) }
+            .forEach { SecureMedia.backupFile(app, zip, images,"Images",it.name) }
         database.getBaseNoteDao().getAllAudios().asSequence()
             .flatMap { Converters.jsonToAudios(it) }.distinctBy { it.name }
-            .forEach { Export.backupFile(zip, audios,"Audios",it.name) }
+            .forEach { SecureMedia.backupFile(app, zip, audios,"Audios",it.name) }
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(app)
         val settings = Properties()

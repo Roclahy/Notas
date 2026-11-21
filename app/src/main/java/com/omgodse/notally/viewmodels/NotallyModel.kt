@@ -30,6 +30,7 @@ import com.omgodse.notally.ReminderReceiver
 import com.omgodse.notally.image.Event
 import com.omgodse.notally.image.ImageError
 import com.omgodse.notally.miscellaneous.IO
+import com.omgodse.notally.security.SecureMedia
 import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.miscellaneous.applySpans
 import com.omgodse.notally.preferences.BetterLiveData
@@ -120,9 +121,13 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                 original.delete()
 
                 val retriever = MediaMetadataRetriever()
-                retriever.setDataSource(final.path)
-                val duration = requireNotNull(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION))
-                Audio(name, duration.toLong(), System.currentTimeMillis())
+                try {
+                    retriever.setDataSource(final.path)
+                    val duration = requireNotNull(
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION))
+                    SecureMedia.encryptInPlace(app, final)
+                    Audio(name, duration.toLong(), System.currentTimeMillis())
+                } finally { retriever.release() }
             }
             val copy = ArrayList(audios.value)
             copy.add(audio)
@@ -187,6 +192,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                             if (extension != null) {
                                 val name = "${UUID.randomUUID()}.$extension"
                                 if (IO.renameFile(temp, name)) {
+                                    SecureMedia.encryptInPlace(app, File(imageRoot, name))
                                     successes.add(Image(name, mimeType))
                                 } else {
                                     // I don't expect this error to ever happen but just in case

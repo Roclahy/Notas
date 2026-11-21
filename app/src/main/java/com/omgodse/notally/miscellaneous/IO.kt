@@ -20,30 +20,17 @@ object IO {
 
     fun getExternalAudioDirectory(app: Application) = getExternalDirectory(app, "Audios")
 
+    // Compatibilidad de API: los nombres históricos continúan iguales,
+    // pero ahora devuelven un directorio PRIVADO de la app, no externalMediaDirs.
     private fun getExternalDirectory(app: Application, name: String): File? {
-        var file: File? = null
-
-        try {
-            val mediaDir = app.externalMediaDirs.firstOrNull()
-            if (mediaDir != null) {
-                file = File(mediaDir, name)
-                if (file.exists()) {
-                    if (!file.isDirectory) {
-                        file.delete()
-                        createDirectory(file)
-                    }
-                } else createDirectory(file)
-            }
-        } catch (exception: Exception) {
-            exception.printStackTrace()
-        }
-
-        return file
+        val file = File(app.filesDir, "SecureMedia/$name")
+        if (!file.exists()) file.mkdirs()
+        return file.takeIf { it.isDirectory }
     }
 
 
     fun getTempAudioFile(context: Context): File {
-        return File(context.externalCacheDir, "Temp.m4a")
+        return File(context.cacheDir, "Temp.m4a")
     }
 
 
