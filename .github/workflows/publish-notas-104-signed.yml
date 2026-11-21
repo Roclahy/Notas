@@ -3,7 +3,7 @@ name: Publish Notas 1.4.0 (104) - signed APK
 on:
   push:
     branches:
-      - work/notas-apple-amoled-v1
+      - main
     paths:
       - .github/workflows/publish-notas-104-signed.yml
   workflow_dispatch:
