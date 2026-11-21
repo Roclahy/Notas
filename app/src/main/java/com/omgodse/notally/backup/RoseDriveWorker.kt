@@ -69,10 +69,11 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
                 requireNotNull(file), name)
             // Únicamente después de obtener éxito HTTP en Google Drive.
             RoseDriveState.markUploaded(app, recorded, settingsHash)
-            // Una nota puede cambiar mientras se subía esta versión. Encolar
-            // la nueva sin cancelar ni invalidar el archivo ya confirmado.
-            if (!RoseDriveState.allSynced(app, dao.getAllForSync())) {
-                BackupScheduler.changed(app, urgent = true)
+            // Si una nota cambió durante la transferencia, guardar un
+            // sucesor en la cola, SIN cancelar el Worker que acaba de subir.
+            val changesDuringUpload = RoseDriveState.consumeDirty(app)
+            if (changesDuringUpload || !RoseDriveState.allSynced(app, dao.getAllForSync())) {
+                BackupScheduler.followUp(app)
             }
             Result.success()
         } catch (error: Exception) {

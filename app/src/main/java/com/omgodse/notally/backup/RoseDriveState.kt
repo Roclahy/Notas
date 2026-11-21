@@ -34,7 +34,7 @@ object RoseDriveState {
         if (!enabled) {
             editor.remove(BACKED_UP).remove(BACKED_UP_SETTINGS).remove("last_upload")
                 .remove("needs_authorization").remove("last_failure").remove("uploading")
-                .remove("queued")
+                .remove("queued").remove("changes_during_upload")
         }
         editor.apply()
         invalidate()
@@ -130,6 +130,26 @@ object RoseDriveState {
 
     fun markQueued(c: Context) {
         prefs(c).edit().putBoolean("queued", true).apply()
+        invalidate()
+    }
+
+    /** Se produjo una edición mientras la copia actual se estaba enviando. */
+    fun markDirty(c: Context) {
+        prefs(c).edit().putBoolean("changes_during_upload", true).apply()
+        invalidate()
+    }
+
+    /** Consumir una sola vez el indicador de cambios concurrentes. */
+    fun consumeDirty(c: Context): Boolean {
+        val state = prefs(c)
+        val dirty = state.getBoolean("changes_during_upload", false)
+        state.edit().putBoolean("changes_during_upload", false).commit()
+        return dirty
+    }
+
+    /** Un proceso anterior pudo morir durante una subida. */
+    fun resetInterruptedUpload(c: Context) {
+        prefs(c).edit().putBoolean("uploading", false).apply()
         invalidate()
     }
 

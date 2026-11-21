@@ -2,7 +2,6 @@ package com.omgodse.notally.backup
 
 import android.app.Application
 import android.net.Uri
-import android.os.SystemClock
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -15,85 +14,108 @@ import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
 /**
- * Una cola serializada para cambios y solicitudes manuales: no se interrumpe
- * un upload en curso para atender otra edición. Las copias se compactan al
- * comprobar el último estado confirmado de Drive dentro del trabajador.
+ * Notas: un solo trabajo activo y como máximo una petición pendiente.
+ * El Worker lee el estado más reciente de Room; no se pierde ninguna edición.
+ *
+ * Las copias solicitadas al guardar no usan CONNECTED como constraint:
+ * HyperOS/VPN puede no detectar correctamente una red funcional y dejar
+ * una copia esperando indefinidamente. Se intenta HTTPS directamente y
+ * WorkManager reintenta con backoff ante fallos temporales.
+ * El respaldo diario SÍ espera una red validada para ahorrar energía.
  */
 object BackupScheduler {
     private const val LEGACY_JOB = "Notas encrypted daily backup"
-    private const val CLOUD_JOB = "Rose Google Drive encrypted daily backup"
-    private const val OLD_NOW = "Rose Google Drive encrypted first backup"
+    private const val DAILY_JOB = "Rose Google Drive encrypted daily backup"
+    private const val OLD_FIRST = "Rose Google Drive encrypted first backup"
     private const val OLD_CHANGED = "Rose Google Drive encrypted changed notes"
-    private const val CLOUD_QUEUE = "Rose Google Drive encrypted uploads"
-    private const val DEBOUNCE_MS = 8_000L
-    @Volatile private var lastQueuedAt = 0L
+    private const val OLD_QUEUE = "Rose Google Drive encrypted uploads"
+    private const val CLOUD_QUEUE = "Notas Drive encrypted uploads v2"
 
     private fun ready(app: Application): Boolean =
         RoseDriveState.enabled(app) && BackupSecrets.read(app) != null
 
-    private fun internet() = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED).build()
-
     private fun request(delaySeconds: Long, manual: Boolean) =
         OneTimeWorkRequest.Builder(RoseDriveWorker::class.java)
-            .setConstraints(internet())
             .setInputData(workDataOf("manual" to manual))
             .setInitialDelay(delaySeconds, TimeUnit.SECONDS)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 20, TimeUnit.SECONDS)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
 
     fun schedule(app: Application, selectedUri: Uri? = null, refresh: Boolean = false) {
-        val work = WorkManager.getInstance(app)
-        work.cancelUniqueWork("Auto Backup")
-        work.cancelUniqueWork(LEGACY_JOB)
-        // Solo estos dos nombres pertenecen a la implementación anterior.
-        work.cancelUniqueWork(OLD_NOW)
-        work.cancelUniqueWork(OLD_CHANGED)
+        val wm = WorkManager.getInstance(app)
+        wm.cancelUniqueWork("Auto Backup")
+        wm.cancelUniqueWork(LEGACY_JOB)
+        wm.cancelUniqueWork(OLD_FIRST)
+        wm.cancelUniqueWork(OLD_CHANGED)
+        wm.cancelUniqueWork(OLD_QUEUE) // limpiar cola obsoleta que podía quedar atascada
+        RoseDriveState.resetInterruptedUpload(app)
         if (!ready(app)) {
-            work.cancelUniqueWork(CLOUD_JOB)
-            work.cancelUniqueWork(CLOUD_QUEUE)
+            wm.cancelUniqueWork(DAILY_JOB)
+            wm.cancelUniqueWork(CLOUD_QUEUE)
             return
         }
-        val periodic = PeriodicWorkRequest.Builder(RoseDriveWorker::class.java, 24, TimeUnit.HOURS)
-            .setConstraints(internet())
+        val periodic = PeriodicWorkRequest.Builder(
+            RoseDriveWorker::class.java, 24, TimeUnit.HOURS)
+            .setConstraints(Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED).build())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
-        work.enqueueUniquePeriodicWork(
-            CLOUD_JOB, ExistingPeriodicWorkPolicy.KEEP, periodic)
+        // UPDATE mantiene el calendario, pero corrige las constraints previas.
+        wm.enqueueUniquePeriodicWork(DAILY_JOB, ExistingPeriodicWorkPolicy.UPDATE, periodic)
         if (refresh) force(app)
     }
 
-    /** Al guardar, agrupa ediciones cercanas y encadena sin cancelar subidas. */
+    /**
+     * Cada cambio reinicia una sola ventana breve de 3 s. Una subida
+     * ya iniciada no se cancela: queda marcada como sucia y el propio
+     * Worker añade como máximo un trabajo posterior.
+     */
     @Synchronized
     fun changed(app: Application, urgent: Boolean = false) {
         if (!ready(app)) return
-        val now = SystemClock.elapsedRealtime()
-        if (!urgent && lastQueuedAt > 0 && now >= lastQueuedAt &&
-            now - lastQueuedAt < DEBOUNCE_MS) return
-        lastQueuedAt = now
+        if (RoseDriveState.isUploading(app)) {
+            RoseDriveState.markDirty(app)
+            return
+        }
         RoseDriveState.markQueued(app)
         WorkManager.getInstance(app).enqueueUniqueWork(
-            CLOUD_QUEUE, ExistingWorkPolicy.APPEND_OR_REPLACE,
-            request(if (urgent) 0 else 8, false))
+            CLOUD_QUEUE, ExistingWorkPolicy.REPLACE, request(if (urgent) 0 else 3, false))
     }
 
-    /** El botón manual salta el debounce, pero mantiene el orden seguro. */
+    /** Una petición manual no queda retenida detrás de un retry antiguo. */
+    @Synchronized
     fun force(app: Application): Boolean {
         if (!ready(app)) return false
+        if (RoseDriveState.isUploading(app)) {
+            RoseDriveState.markDirty(app)
+            return true
+        }
         RoseDriveState.markQueued(app)
         WorkManager.getInstance(app).enqueueUniqueWork(
-            CLOUD_QUEUE, ExistingWorkPolicy.APPEND_OR_REPLACE, request(0, true))
+            CLOUD_QUEUE, ExistingWorkPolicy.REPLACE, request(0, true))
         return true
     }
 
+    /**
+     * Invocado al FINAL del Worker, antes de regresar SUCCESS: agrega un
+     * sucesor a la ejecución presente sin cancelarse a sí mismo.
+     */
+    fun followUp(app: Application) {
+        if (!ready(app)) return
+        RoseDriveState.markQueued(app)
+        WorkManager.getInstance(app).enqueueUniqueWork(
+            CLOUD_QUEUE, ExistingWorkPolicy.APPEND_OR_REPLACE, request(0, false))
+    }
+
     fun disable(app: Application) {
-        val work = WorkManager.getInstance(app)
-        work.cancelUniqueWork(CLOUD_QUEUE)
-        work.cancelUniqueWork(CLOUD_JOB)
-        work.cancelUniqueWork(OLD_NOW)
-        work.cancelUniqueWork(OLD_CHANGED)
-        work.cancelUniqueWork(LEGACY_JOB)
-        work.cancelUniqueWork("Auto Backup")
-        lastQueuedAt = 0L
+        val wm = WorkManager.getInstance(app)
+        wm.cancelUniqueWork(CLOUD_QUEUE)
+        wm.cancelUniqueWork(DAILY_JOB)
+        wm.cancelUniqueWork(OLD_QUEUE)
+        wm.cancelUniqueWork(OLD_FIRST)
+        wm.cancelUniqueWork(OLD_CHANGED)
+        wm.cancelUniqueWork(LEGACY_JOB)
+        wm.cancelUniqueWork("Auto Backup")
+        RoseDriveState.resetInterruptedUpload(app)
     }
 }
