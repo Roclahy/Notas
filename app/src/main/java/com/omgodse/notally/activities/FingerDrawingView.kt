@@ -83,8 +83,8 @@ class FingerDrawingView(context: Context) : View(context) {
     }
 
     fun snapshot(): Bitmap {
-        val width = max(1, width)
-        val height = max(1, height)
+        val width = max(1, this.width)
+        val height = max(1, this.height)
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val output = Canvas(bitmap)
         drawStrokes(output)

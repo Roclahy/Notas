@@ -103,7 +103,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLong("id", model.id)
+        outState.putLong("id", if (permittedToSave) model.id
+            else intent.getLongExtra(Constants.SelectedBaseNote, 0L))
         if (permittedToSave) {
             lifecycleScope.launch {
                 model.saveNote()
@@ -767,12 +768,14 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             action(R.string.remove_note_pin, R.drawable.notas_lock) {
                 PinDialogs.check(this, PinSecurity.noteKey(model.id), onVerified = {
                     PinSecurity.removeNotePin(this, model.id)
+                    WidgetProvider.sendBroadcast(application, model.id)
                 })
             }
         } else {
             action(R.string.lock_note, R.drawable.notas_lock) {
                 PinDialogs.setup(this) { pin ->
                     PinSecurity.setNotePin(this, model.id, pin)
+                    WidgetProvider.sendBroadcast(application, model.id)
                 }
             }
         }

@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import com.omgodse.notally.R
+import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.room.BaseNote
 import com.omgodse.notally.room.NotallyDatabase
 import com.omgodse.notally.room.Type
@@ -24,6 +25,7 @@ class WidgetFactory(private val app: Application, private val id: Long) : Remote
 
     override fun getCount(): Int {
         val copy = baseNote
+        if (PinSecurity.appEnabled(app) || PinSecurity.noteLocked(app, id)) return 1
         return if (copy != null) {
             when (copy.type) {
                 Type.NOTE -> 1
@@ -39,6 +41,14 @@ class WidgetFactory(private val app: Application, private val id: Long) : Remote
     override fun getViewAt(position: Int): RemoteViews {
         val copy = baseNote
         requireNotNull(copy)
+        if (PinSecurity.appEnabled(app) || PinSecurity.noteLocked(app, id)) {
+            val view = RemoteViews(app.packageName, R.layout.widget_note)
+            view.setTextViewText(R.id.Title, "\uD83D\uDD12")
+            view.setViewVisibility(R.id.Title, View.VISIBLE)
+            view.setViewVisibility(R.id.Date, View.GONE)
+            view.setViewVisibility(R.id.Note, View.GONE)
+            return view
+        }
 
         return when (copy.type) {
             Type.NOTE -> getNoteView(copy)

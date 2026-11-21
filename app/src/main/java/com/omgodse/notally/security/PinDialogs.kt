@@ -65,10 +65,6 @@ object PinDialogs {
                     input.error = activity.getString(R.string.four_digit_pin)
                     return@setOnClickListener
                 }
-                if (requiresValidation) {
-                    val remaining = PinSecurity.remainingLockout(activity, getSecurityKeyForError(activity))
-                    // The verifier below is authoritative; this value is not used to bypass lockout.
-                }
                 if (onEntered(pin)) {
                     finished = true
                     input.text?.clear()
@@ -83,5 +79,4 @@ object PinDialogs {
         dialog.show()
     }
 
-    private fun getSecurityKeyForError(activity: Activity): String = "pin:app"
 }
