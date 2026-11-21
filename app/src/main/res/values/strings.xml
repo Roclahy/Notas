@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name" translatable="false">Notas</string>
-    <!-- Nombre de la aplicación: Notas, en el launcher y dentro de la app. -->
-    <string name="internal_app_name" translatable="false">Notas</string>
+    <string name="app_name" translatable="false">rNotas</string>
+    <!-- Nombre de la aplicación: rNotas, en el launcher y dentro de la app. -->
+    <string name="internal_app_name" translatable="false">rNotas</string>
 
     <!-- Fragment Titles -->
     <string name="notes">Notes</string>
@@ -253,5 +253,5 @@
     <string name="google_drive_authorization_needed">Drive access requires authorization</string>
     <string name="google_drive_authorized">Google Drive connected. Backups will be encrypted before upload.</string>
     <string name="google_drive_require_google">This feature requires a Google account and Play Services.</string>
-    <string name="google_drive_backup_description">End-to-end encrypted · Daily · Files in My Drive/Notas</string>
+    <string name="google_drive_backup_description">End-to-end encrypted · Daily · Files in My Drive/rNotas</string>
 </resources>

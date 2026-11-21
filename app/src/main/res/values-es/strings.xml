@@ -240,5 +240,5 @@
     <string name="google_drive_authorization_needed">El acceso a Drive requiere autorización</string>
     <string name="google_drive_authorized">Google Drive conectado. Tus copias se cifrarán antes de subir.</string>
     <string name="google_drive_require_google">Se necesita una cuenta de Google y Play Services para esta función.</string>
-    <string name="google_drive_backup_description">Cifrado de extremo a extremo · Diario · Archivos en Mi unidad/Notas</string>
+    <string name="google_drive_backup_description">Cifrado de extremo a extremo · Diario · Archivos en Mi unidad/rNotas</string>
 </resources>
