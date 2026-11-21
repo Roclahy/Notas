@@ -2,6 +2,9 @@
 <resources>
 
     <style name="AppTheme" parent="Base.AppTheme">
+        <item name="android:colorBackground">@color/NotasDarkBackground</item>
+        <item name="android:windowBackground">@color/NotasDarkBackground</item>
+        <item name="colorSurface">@color/NotasDarkSurface</item>
         <item name="colorPrimary">@color/NotasGold</item>
         <item name="colorOnPrimary">@color/Black</item>
         <item name="alternateFabTint">@color/Black</item>

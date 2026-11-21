@@ -95,8 +95,10 @@ open class NotasBaseActivity : AppCompatActivity() {
         }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (Preferences.getInstance(application).isAmoledTheme()) {
-            setTheme(R.style.AppThemeAmoled)
+        val appearance = Preferences.getInstance(application)
+        when {
+            appearance.isAmoledTheme() -> setTheme(R.style.AppThemeAmoled)
+            appearance.isGlassTheme() -> setTheme(R.style.AppThemeGlass)
         }
         super.onCreate(savedInstanceState)
         // Edge-to-edge también en Android 7-14: dibujo por detrás de las

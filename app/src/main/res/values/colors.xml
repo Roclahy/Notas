@@ -8,6 +8,12 @@
 
     <color name="Black">#000000</color>
     <color name="NotasGold">#F1C45B</color>
+    <color name="NotasGlassBackground">#101827</color>
+    <color name="NotasGlassSurface">#7A273347</color>
+    <color name="NotasLightBackground">#F5F5F7</color>
+    <color name="NotasLightSurface">#FFFFFF</color>
+    <color name="NotasDarkBackground">#111114</color>
+    <color name="NotasDarkSurface">#242429</color>
     <color name="NotasSurface">#F5F5F7</color>
     <color name="NotasWhite">#F5F5F7</color>
     <color name="NotasMuted">#707078</color>

@@ -206,7 +206,12 @@ class BaseNoteVH(
         val context = binding.root.context
 
         val amoled = Preferences.getInstance(context.applicationContext as Application).isAmoledTheme()
-        if (amoled && color == Color.DEFAULT) {
+        val glass = Preferences.getInstance(context.applicationContext as Application).isGlassTheme()
+        if (glass && color == Color.DEFAULT) {
+            binding.root.strokeWidth = (context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+            binding.root.strokeColor = 0x55FFFFFF
+            binding.root.setCardBackgroundColor(0x66273447)
+        } else if (amoled && color == Color.DEFAULT) {
             binding.root.strokeColor = 0
             binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.NotasSurface))
         } else if (color == Color.DEFAULT) {

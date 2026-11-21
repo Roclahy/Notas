@@ -251,4 +251,5 @@
     <string name="sync_note_pending">Nota pendiente de copia cifrada</string>
     <string name="sync_queued">Copia cifrada solicitada. Consulta su estado en Ajustes.</string>
     <string name="sync_not_configured">Activa la copia cifrada en Google Drive desde Ajustes</string>
+    <string name="liquid_glass">Liquid Glass</string>
 </resources>

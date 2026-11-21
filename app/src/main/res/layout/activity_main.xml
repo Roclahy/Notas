@@ -42,7 +42,7 @@
                 android:layout_height="42dp"
                 android:layout_gravity="end|center_vertical"
                 android:layout_marginEnd="54dp"
-                android:background="@drawable/notas_info_pill"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/sync_pending"
                 android:padding="10dp"
                 android:scaleType="fitCenter"

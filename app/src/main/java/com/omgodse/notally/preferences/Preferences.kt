@@ -111,6 +111,8 @@ class Preferences private constructor(app: Application) {
 
     fun isAmoledTheme(): Boolean = getListPref(Theme) == Theme.amoled
 
+    fun isGlassTheme(): Boolean = getListPref(Theme) == Theme.glass
+
     fun showDateCreated(): Boolean {
         return dateFormat.value != DateFormat.none
     }

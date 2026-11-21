@@ -437,6 +437,17 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             binding.Toolbar.backgroundTintList = ColorStateList.valueOf(colorInt)
             binding.Search.backgroundTintList = ColorStateList.valueOf(colorInt)
             binding.ToolbarContainer.setBackgroundColor(colorInt)
+            // Píldoras translúcidas que acompañan el color de cada nota.
+            val pillLight = androidx.core.graphics.ColorUtils.calculateLuminance(colorInt) < 0.48
+            val foreground = if (pillLight) Color.WHITE else 0xFF303034.toInt()
+            val pill = if (pillLight) 0x3DFFFFFF else 0x30000000
+            listOf(binding.DateCreated, binding.CharacterCount).forEach { view ->
+                view.background = GradientDrawable().apply {
+                    setColor(pill)
+                    cornerRadius = 999f * resources.displayMetrics.density
+                }
+                view.setTextColor(foreground)
+            }
         })
     }
 
@@ -745,7 +756,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         val sync = ImageButton(this).apply {
             layoutParams = android.view.ViewGroup.LayoutParams((44 * dp).toInt(), (42 * dp).toInt())
             background = androidx.appcompat.content.res.AppCompatResources.getDrawable(
-                this@NotallyActivity, R.drawable.notas_info_pill)
+                this@NotallyActivity, android.R.drawable.list_selector_background)
             setPadding((10 * dp).toInt(), (10 * dp).toInt(), (10 * dp).toInt(), (10 * dp).toInt())
             scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
             setOnClickListener { forceCurrentNoteSync() }
