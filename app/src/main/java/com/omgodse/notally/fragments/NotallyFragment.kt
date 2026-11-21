@@ -11,7 +11,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import com.omgodse.notally.activities.MakeList
 import com.omgodse.notally.activities.TakeNote
 import com.omgodse.notally.databinding.FragmentNotesBinding
@@ -110,6 +110,9 @@ abstract class NotallyFragment : Fragment(), ItemListener {
         })
         binding?.RecyclerView?.adapter = adapter
         binding?.RecyclerView?.setHasFixedSize(true)
+        // Sin animaciones predictivas de reordenamiento: evita que la primera
+        // tarjeta salte desde la columna derecha a la izquierda.
+        binding?.RecyclerView?.itemAnimator = null
     }
 
     private fun setupObserver() {
@@ -119,10 +122,14 @@ abstract class NotallyFragment : Fragment(), ItemListener {
         // pendiente y fuerza un bind completo solo de la tarjeta afectada.
         PinSecurity.noteChanges.observe(viewLifecycleOwner) { changedId ->
             val notesAdapter = adapter ?: return@observe
-            val position = notesAdapter.currentList.indexOfFirst {
-                it is BaseNote && it.id == changedId
+            if (changedId == -1L) {
+                notesAdapter.notifyDataSetChanged()
+            } else {
+                val position = notesAdapter.currentList.indexOfFirst {
+                    it is BaseNote && it.id == changedId
+                }
+                if (position >= 0) notesAdapter.notifyItemChanged(position)
             }
-            if (position >= 0) notesAdapter.notifyItemChanged(position)
         }
 
         getObservable().observe(viewLifecycleOwner) { list ->
@@ -143,7 +150,14 @@ abstract class NotallyFragment : Fragment(), ItemListener {
 
     private fun setupRecyclerView() {
         binding?.RecyclerView?.layoutManager = if (model.preferences.view.value == ViewPref.grid) {
-            StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
+            GridLayoutManager(requireContext(), 2).apply {
+                // Orden determinista: primera nota siempre en columna izquierda.
+                // Las cabeceras (Fijadas/Otras) ocupan la fila entera.
+                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int =
+                        if (adapter?.getItemViewType(position) == 0) 2 else 1
+                }
+            }
         } else LinearLayoutManager(requireContext())
     }
 
