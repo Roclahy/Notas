@@ -208,18 +208,25 @@ class BaseNoteVH(
 
         val amoled = Preferences.getInstance(context.applicationContext as Application).isAmoledTheme()
         val glass = LiquidGlass.enabled(context)
-        if (glass && color == Color.DEFAULT) {
-            LiquidGlass.styleCard(binding.root, context)
+        if (glass) {
+            LiquidGlass.styleCard(binding.root, context,
+                if (color == Color.DEFAULT) null else Operations.extractColor(color, context))
         } else if (amoled && color == Color.DEFAULT) {
+            binding.root.strokeWidth = 0
+            binding.root.cardElevation = 0f
             binding.root.strokeColor = 0
             binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.NotasSurface))
         } else if (color == Color.DEFAULT) {
+            binding.root.strokeWidth = 0
+            binding.root.cardElevation = 0f
             binding.root.strokeColor = 0
             val attribute = android.util.TypedValue()
             context.theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, attribute, true)
             val surfaceColor = if (attribute.resourceId != 0) ContextCompat.getColor(context, attribute.resourceId) else attribute.data
             binding.root.setCardBackgroundColor(surfaceColor)
         } else {
+            binding.root.strokeWidth = 0
+            binding.root.cardElevation = 0f
             binding.root.strokeColor = 0
             binding.root.setCardBackgroundColor(Operations.extractColor(color, context))
         }

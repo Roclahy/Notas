@@ -19,6 +19,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.View
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityManager
 import android.view.animation.DecelerateInterpolator
 import androidx.core.graphics.ColorUtils
 import com.google.android.material.card.MaterialCardView
@@ -59,10 +60,20 @@ object LiquidGlass {
     private fun palette(context: Context, role: Role, backdrop: Int?): Palette {
         val isNight = night(context)
         val isAmoled = amoled(context)
+        val highContrast = (context.getSystemService(Context.ACCESSIBILITY_SERVICE)
+            as? AccessibilityManager)?.isHighTextContrastEnabled == true
         val onDark = backdrop?.let {
             ColorUtils.calculateLuminance(it) < 0.48
         } ?: isNight
         val strong = role == Role.NAVIGATION || role == Role.SHEET
+        // Cuando Android aumenta el contraste, dejamos las superficies
+        // prácticamente opacas y reducimos la refracción decorativa.
+        if (highContrast && role != Role.ACCENT) {
+            return if (onDark) Palette(0xFA30353E.toInt(), 0xF9272B33.toInt(),
+                0xFA1B1D25.toInt(), 0xADFFFFFF.toInt(), 0x20FFFFFF, 0x0FFFFFFF)
+            else Palette(0xFAFFFFFF.toInt(), 0xF9F8F8FA.toInt(),
+                0xFAE9EBF0.toInt(), 0xCCFFFFFF.toInt(), 0x25FFFFFF, 0x1316242B)
+        }
         if (role == Role.ACCENT) {
             return Palette(0xFFFCE2A6.toInt(), 0xF7F1C45B.toInt(),
                 0xF2C99D37.toInt(), 0xE6FFFFFF.toInt(),
@@ -91,10 +102,15 @@ object LiquidGlass {
      * CardView requiere su propio MaterialShapeDrawable. Aplicar aquí color y
      * borde translúcidos conserva clip de fotos, selección y esquinas propias.
      */
-    fun styleCard(card: MaterialCardView, context: Context) {
-        val p = palette(context, Role.CARD, null)
-        card.setCardBackgroundColor(p.middle)
-        card.strokeColor = p.rim
+    fun styleCard(card: MaterialCardView, context: Context, color: Int? = null) {
+        val p = palette(context, Role.CARD, color)
+        // Las notas con color propio conservan ese color. El cristal se
+        // manifiesta en su borde iluminado y separación con la superficie.
+        card.setCardBackgroundColor(color ?: p.middle)
+        card.strokeColor = if (color == null) p.rim else {
+            if (ColorUtils.calculateLuminance(color) > 0.48) 0x85FFFFFF.toInt()
+            else 0x66FFFFFF
+        }
         card.strokeWidth = dp(context, 1.0f).toInt().coerceAtLeast(1)
         card.cardElevation = dp(context, 2f)
     }

@@ -311,7 +311,11 @@ class Settings : Fragment() {
         }
 
         binding.GlassSwitch.isChecked = model.preferences.isGlassTheme()
-        binding.GlassSwitch.thumbTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        binding.GlassSwitch.thumbTintList = ColorStateList(states, intArrayOf(
+            0xFFF1C45B.toInt(), 0xFF9B9BA1.toInt()))
+        binding.GlassSwitch.trackTintList = ColorStateList(states, intArrayOf(
+            0x77F1C45B, 0x55898994))
         binding.GlassSwitch.setOnCheckedChangeListener { _, checked ->
             if (checked != model.preferences.isGlassTheme()) {
                 model.preferences.setLiquidGlass(checked)

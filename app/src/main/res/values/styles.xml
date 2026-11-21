@@ -43,24 +43,6 @@
         <item name="alternateFabBackground">@color/NotasGold</item>
     </style>
 
-    <!-- Cristal translúcido, con superficies diferenciadas y acento dorado. -->
-    <style name="AppThemeGlass" parent="Base.AppTheme">
-        <item name="colorPrimary">@color/NotasGold</item>
-        <item name="colorOnPrimary">@color/Black</item>
-        <item name="colorSecondary">@color/NotasGold</item>
-        <item name="colorOnSecondary">@color/Black</item>
-        <item name="colorSurface">@color/NotasGlassSurface</item>
-        <item name="colorOnSurface">@color/NotasWhite</item>
-        <item name="android:colorBackground">@color/NotasGlassBackground</item>
-        <item name="android:windowBackground">@drawable/notas_glass_background</item>
-        <item name="android:statusBarColor">@color/Transparent</item>
-        <item name="android:navigationBarColor">@color/Transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
-        <item name="alternateFabTint">@color/Black</item>
-        <item name="alternateFabBackground">@color/NotasGold</item>
-    </style>
-
     <!-- Tema AMOLED seleccionado explícitamente, independiente del oscuro convencional. -->
     <style name="AppThemeAmoled" parent="Base.AppTheme">
         <item name="colorPrimary">@color/NotasGold</item>
