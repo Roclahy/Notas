@@ -9,7 +9,6 @@
         <item>@string/dark</item>
         <item>@string/light</item>
         <item>@string/amoled</item>
-        <item>@string/liquid_glass</item>
         <item>@string/follow_system</item>
     </string-array>
 

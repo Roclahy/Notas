@@ -291,6 +291,17 @@ class Settings : Fragment() {
             binding.Theme.setup(Theme, value)
         }
 
+        binding.GlassSwitch.isChecked = model.preferences.isGlassTheme()
+        binding.GlassSwitch.setOnCheckedChangeListener { _, checked ->
+            if (checked != model.preferences.isGlassTheme()) {
+                model.preferences.setLiquidGlass(checked)
+                requireActivity().recreate()
+            }
+        }
+        binding.GlassSetting.setOnClickListener {
+            binding.GlassSwitch.isChecked = !binding.GlassSwitch.isChecked
+        }
+
         model.preferences.dateFormat.observe(viewLifecycleOwner) { value ->
             binding.DateFormat.setup(DateFormat, value)
         }

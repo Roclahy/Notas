@@ -268,4 +268,6 @@
     <string name="google_drive_restore">Restaurar desde Google Drive</string>
     <string name="google_drive_no_backups">No hay copias cifradas disponibles en Drive</string>
     <string name="google_drive_restore_failed">No se pudo descargar o descifrar la copia de Drive</string>
+    <string name="liquid_glass_description">Cristal adaptativo sobre Claro, Oscuro o AMOLED</string>
+    <string name="liquid_glass_accessibility">Activar efecto Liquid Glass</string>
 </resources>

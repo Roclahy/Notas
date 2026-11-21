@@ -281,4 +281,6 @@
     <string name="google_drive_restore">Restore from Google Drive</string>
     <string name="google_drive_no_backups">No encrypted backups found in Drive</string>
     <string name="google_drive_restore_failed">Could not download or decrypt Drive backup</string>
+    <string name="liquid_glass_description">Adaptive glass over Light, Dark or AMOLED</string>
+    <string name="liquid_glass_accessibility">Enable Liquid Glass effect</string>
 </resources>

@@ -37,14 +37,14 @@ object Theme : ListInfo {
     const val dark = "dark"
     const val light = "light"
     const val amoled = "amoled"
-    const val glass = "glass"
+    const val glass = "glass" // Valor heredado, migrado a tema oscuro + efecto
     const val followSystem = "followSystem"
 
     override val title = R.string.theme
     override val key = "theme"
     override val defaultValue = followSystem
 
-    override fun getEntryValues() = arrayOf(dark, light, amoled, glass, followSystem)
+    override fun getEntryValues() = arrayOf(dark, light, amoled, followSystem)
 
     override fun getEntries(context: Context): Array<String> {
         return context.resources.getStringArray(R.array.theme)

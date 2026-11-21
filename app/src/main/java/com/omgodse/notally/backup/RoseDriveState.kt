@@ -22,7 +22,7 @@ object RoseDriveState {
     val trackedSettings = setOf(
         "theme", "view", "dateFormat", "textSize",
         "maxItemsToDisplayInList.v1", "maxLinesToDisplayInNote.v1",
-        "maxLinesToDisplayInTitle"
+        "maxLinesToDisplayInTitle", "liquidGlassEnabled"
     )
     val revision = MutableLiveData(0L)
 

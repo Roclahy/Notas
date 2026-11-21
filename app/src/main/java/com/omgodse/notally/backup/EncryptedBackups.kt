@@ -43,7 +43,7 @@ object EncryptedBackups {
     private val settingKeys = setOf(
         "theme", "view", "dateFormat", "textSize",
         "maxItemsToDisplayInList.v1", "maxLinesToDisplayInNote.v1",
-        "maxLinesToDisplayInTitle"
+        "maxLinesToDisplayInTitle", "liquidGlassEnabled"
     )
 
     fun isEncrypted(app: Application, uri: Uri): Boolean {
@@ -184,6 +184,8 @@ object EncryptedBackups {
                 if (key in setOf("maxItemsToDisplayInList.v1",
                     "maxLinesToDisplayInNote.v1", "maxLinesToDisplayInTitle")) {
                     value.toIntOrNull()?.takeIf { it in 1..100 }?.let { edit.putInt(key,it) }
+                } else if (key == "liquidGlassEnabled") {
+                    if (value == "true" || value == "false") edit.putBoolean(key, value.toBoolean())
                 } else {
                     if (value.length <= 40) edit.putString(key, value)
                 }
