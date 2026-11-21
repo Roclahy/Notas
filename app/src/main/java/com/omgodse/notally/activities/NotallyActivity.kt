@@ -1083,7 +1083,12 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                 action(R.string.delete, R.drawable.delete) { delete() }
             }
         }
-        dialog.setContentView(container)
+        // Las acciones aumentaron con los backlinks; mantenerlas desplazables
+        // en pantallas pequeñas sin recortar las últimas opciones.
+        dialog.setContentView(android.widget.ScrollView(this).apply {
+            isFillViewport = false
+            addView(container)
+        })
         dialog.setOnShowListener {
             dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.apply {
                 backgroundTintList = null

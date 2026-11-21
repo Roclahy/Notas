@@ -162,6 +162,15 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                             // Guardar la nota original antes de abrir otra.
                             model.saveNote()
                             if (internal.first == "note") {
+                                val existing = withContext(Dispatchers.IO) {
+                                    NotallyDatabase.getDatabase(application).getBaseNoteDao()
+                                        .get(internal.second)
+                                }
+                                if (existing == null || existing.folder != Folder.NOTES) {
+                                    Toast.makeText(this@TakeNote, R.string.link_target_missing,
+                                        Toast.LENGTH_LONG).show()
+                                    return@launch
+                                }
                                 startActivity(Intent(this@TakeNote, TakeNote::class.java)
                                     .putExtra(Constants.SelectedBaseNote, internal.second))
                             } else {
@@ -338,7 +347,9 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                 val raw = input.text?.toString()?.trim().orEmpty()
                 val target = getURLFrom(raw)
                 val uri = Uri.parse(target)
-                if (uri.scheme !in setOf("https", "http", "mailto", "tel")) {
+                if (uri.scheme !in setOf("https", "http", "mailto", "tel") ||
+                    (uri.scheme in setOf("https", "http") && uri.host.isNullOrBlank()) ||
+                    (uri.scheme in setOf("mailto", "tel") && uri.schemeSpecificPart.isNullOrBlank())) {
                     input.error = getString(R.string.invalid_link)
                 } else {
                     installLink(start, end, selected.ifBlank { target }, target)
@@ -401,7 +412,7 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             return when {
                 text.matches(Patterns.PHONE.toRegex()) -> "tel:$text"
                 text.matches(Patterns.EMAIL_ADDRESS.toRegex()) -> "mailto:$text"
-                text.matches(Patterns.DOMAIN_NAME.toRegex()) -> "http://$text"
+                text.matches(Patterns.DOMAIN_NAME.toRegex()) -> "https://$text"
                 else -> text
             }
         }
