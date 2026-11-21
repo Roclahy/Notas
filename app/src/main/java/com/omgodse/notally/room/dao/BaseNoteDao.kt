@@ -67,7 +67,10 @@ interface BaseNoteDao {
         ORDER BY pinned DESC, timestamp DESC""")
     fun getFrom(folder: Folder): LiveData<List<BaseNote>>
 
-    @Query("SELECT * FROM BaseNote WHERE folder = 'NOTES' ORDER BY pinned DESC, timestamp DESC")
+    @Query("""SELECT * FROM BaseNote WHERE folder = 'NOTES'
+        AND (notebookId = 0 OR notebookId NOT IN
+             (SELECT id FROM NotebookFolder WHERE passwordHash != ''))
+        ORDER BY pinned DESC, timestamp DESC""")
     suspend fun getAllNotes(): List<BaseNote>
 
     @Query("SELECT * FROM BaseNote")
