@@ -30,6 +30,12 @@ class NotallyApplication : Application() {
         java.io.File(cacheDir,"encrypted_restore").listFiles()?.forEach { it.delete() }
         // Los temporales legibles de la sesión anterior nunca se conservan.
         SecureMedia.clearReadableCache(this)
+        // Restos de una exportación portable previa interrumpida.
+        cacheDir.listFiles()?.filter {
+            (it.name.startsWith("notas_portable_") && it.name.endsWith(".db")) ||
+                (it.name.startsWith("notas_backup_") && it.name.endsWith(".rnotas")) ||
+                (it.name.startsWith("drive_recovery_") && it.name.endsWith(".rnotas"))
+        }?.forEach { it.delete() }
         CoroutineScope(Dispatchers.IO).launch {
             // Migración idempotente: solo borrar el original externo cuando
             // la versión interna cifrada esté escrita y validada.

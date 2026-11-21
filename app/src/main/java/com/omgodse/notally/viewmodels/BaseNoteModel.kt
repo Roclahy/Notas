@@ -211,52 +211,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
     }
 
 
-    fun exportBackup(uri: Uri) {
-        viewModelScope.launch {
-            exportingBackup.value = Progress(true, 0, 0, true)
-
-            withContext(Dispatchers.IO) {
-                val outputStream = requireNotNull(app.contentResolver.openOutputStream(uri))
-                (outputStream as FileOutputStream).channel.truncate(0)
-
-                val zipStream = ZipOutputStream(outputStream)
-
-                database.checkpoint()
-                Export.backupDatabase(app, zipStream)
-
-                delay(1000)
-
-                val images = baseNoteDao.getAllImages().flatMap { string -> Converters.jsonToImages(string) }
-                val audios = baseNoteDao.getAllAudios().flatMap { string -> Converters.jsonToAudios(string) }
-                val total = images.size + audios.size
-
-                images.forEachIndexed { index, image ->
-                    try {
-                        Export.backupFile(zipStream, mediaRoot, "Images", image.name)
-                    } catch (exception: Exception) {
-                        Operations.log(app, exception)
-                    } finally {
-                        exportingBackup.postValue(Progress(true, index + 1, total, false))
-                    }
-                }
-                audios.forEachIndexed { index, audio ->
-                    try {
-                        Export.backupFile(zipStream, audioRoot, "Audios", audio.name)
-                    } catch (exception: Exception) {
-                        Operations.log(app, exception)
-                    } finally {
-                        exportingBackup.postValue(Progress(true, images.size + index + 1, total, false))
-                    }
-                }
-
-                zipStream.close()
-            }
-
-            exportingBackup.value = Progress(false, 0, 0, false)
-            Toast.makeText(app, R.string.saved_to_device, Toast.LENGTH_LONG).show()
-        }
-    }
-
+    // La exportación local histórica se eliminó. Los respaldos nuevos
+    // se cifran y se suben únicamente desde RoseDriveWorker.
 
     fun importBackup(uri: Uri) {
         when (app.contentResolver.getType(uri)) {

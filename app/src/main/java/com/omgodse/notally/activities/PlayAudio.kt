@@ -110,6 +110,7 @@ class PlayAudio : NotasBaseActivity() {
             val intent = Intent(Intent.ACTION_SEND)
             intent.type = "audio/mp4"
             intent.putExtra(Intent.EXTRA_STREAM, uri)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
             val chooser = Intent.createChooser(intent, null)
             startActivity(chooser)

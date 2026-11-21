@@ -91,7 +91,7 @@ object SecureMedia {
             if (!plaintext.exists()) incoming.renameTo(plaintext)
             throw error
         } finally {
-            if (plaintext.exists()) incoming.delete()
+            if (isEncryptedFile(plaintext)) incoming.delete()
         }
     }
 
@@ -164,12 +164,27 @@ object SecureMedia {
         }
     }
 
-    private fun isEncryptedFile(file: File): Boolean =
-        file.isFile && file.length() > 32 &&
-            file.inputStream().use { stream ->
+    /** Comprobar autenticidad GCM completa antes de eliminar un original. */
+    private fun isEncryptedFile(file: File): Boolean {
+        if (!file.isFile || file.length() <= 40) return false
+        return try {
+            FileInputStream(file).use { input ->
                 val header = ByteArray(magic.size)
-                stream.read(header) == header.size && header.contentEquals(magic)
+                if (input.read(header) != header.size || !header.contentEquals(magic))
+                    return false
+                val iv = ByteArray(12)
+                if (input.read(iv) != iv.size) return false
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, iv))
+                cipher.updateAAD(magic)
+                CipherInputStream(input, cipher).use { decoded ->
+                    val sink = ByteArray(64 * 1024)
+                    while (decoded.read(sink) != -1) Unit
+                }
             }
+            true
+        } catch (_: Exception) { false }
+    }
 
     fun clearReadableCache(app: Application) {
         File(app.cacheDir, "secure_view").deleteRecursively()
@@ -185,12 +200,13 @@ object SecureMedia {
                     val dest = File(directory, file.name.removeSuffix(".plain"))
                     try {
                         if (!dest.exists()) {
-                            if (file.renameTo(dest)) encryptInPlace(app, dest)
-                        } else if (dest.isFile) {
-                            file.delete()
+                            file.inputStream().use { input ->
+                                encryptFromStream(app, input, dest)
+                            }
                         }
+                        if (isEncryptedFile(dest)) file.delete()
                     } catch (_: Exception) {
-                        // Mantener plaintext temporal para siguiente recuperación.
+                        // Mantener el original plaintext hasta validar AES-GCM.
                     }
                 }
             }
@@ -210,7 +226,7 @@ object SecureMedia {
                             old.inputStream().use { encryptFromStream(app, it, destination) }
                         } catch (_: Exception) { return@forEach }
                     }
-                    if (destination.exists() && isEncryptedFile(destination)) old.delete()
+                    if (isEncryptedFile(destination)) old.delete()
                 }
         }
     }
