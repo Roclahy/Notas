@@ -15,7 +15,7 @@
     <string name="archive">Archivar</string>
     <string name="unarchive">Desarchivar</string>
     <string name="delete_all">Borrar todo</string>
-    <string name="change_color">Change color</string>
+    <string name="change_color">Cambiar color</string>
     <string name="delete_forever">Eliminar para siempre</string>
 
     <!-- Chooser dialog hints -->
@@ -35,9 +35,9 @@
     <string name="take_note">Tomar nota</string>
     <string name="add_label">Añadir etiqueta</string>
     <string name="export">Exportar</string>
-    <string name="save_to_device">Guardar a dispositivo</string>
+    <string name="save_to_device">Guardar en el dispositivo</string>
     <string name="edit_label">Editar etiqueta</string>
-    <string name="label_exists">Etiqueta existe</string>
+    <string name="label_exists">La etiqueta ya existe</string>
     <string name="delete_label">¿Eliminar etiqueta?</string>
     <string name="create_new">No hay etiquetas. ¿Crear una?</string>
     <string name="delete_all_notes">¿Borrar todas las notas?</string>
@@ -50,8 +50,8 @@
     <string name="date">Fecha</string>
     <string name="title">Título</string>
     <string name="add_item">Añadir elemento</string>
-    <string name="drag_handle">Arrastra la asa</string>
-    <string name="bold">Negritas</string>
+    <string name="drag_handle">Arrastrar para reordenar</string>
+    <string name="bold">Negrita</string>
     <string name="link">Enlace</string>
     <string name="italic">Cursiva</string>
     <string name="strikethrough">Tachado</string>
@@ -60,16 +60,16 @@
 
     <!-- Miscellaneous -->
     <string name="saved_to_device">Guardada en dispositivo</string>
-    <string name="saved_to_notally">Guardada en Notally</string>
-    <string name="empty_note">Vaciar nota</string>
-    <string name="empty_list">Vaciar lista</string>
+    <string name="saved_to_notally">Guardada en Notas</string>
+    <string name="empty_note">Nota vacía</string>
+    <string name="empty_list">Lista vacía</string>
     <string name="cant_open_link">No se puede abrir el enlace</string>
     <string name="something_went_wrong">Algo salió mal. Inténtalo de nuevo.</string>
 
     <!-- Messages -->
     <string name="invalid_backup">Copia de seguridad inválida</string>
     <string name="imported_backup">Copia de seguridad importada</string>
-    <string name="install_an_email">Instale una aplicación de correo electrónico para enviar comentarios</string>
+    <string name="install_an_email">Instala una aplicación de correo para enviar comentarios</string>
     <string name="install_a_browser">Instala un navegador para abrir este enlace</string>
 
     <!-- Settings Page -->
@@ -114,4 +114,66 @@
     <string name="libraries">Bibliotecas</string>
     <string name="rate">Calificar esta app</string>
     <string name="send_feedback">Enviar comentarios</string>
+
+    <!-- Traducciones completadas para Notas -->
+    <string name="filter">Filtrar</string>
+    <string name="add_images">Añadir imágenes</string>
+    <string name="record_audio">Grabar audio</string>
+    <string name="set_reminder">Establecer recordatorio</string>
+    <string name="make_a_copy">Crear una copia</string>
+    <string name="previous">Anterior</string>
+    <string name="next">Siguiente</string>
+    <string name="continue_">Continuar</string>
+    <string name="open_link">Abrir enlace</string>
+    <string name="view_file">Ver archivo</string>
+    <string name="delete_selected_notes">¿Eliminar las notas seleccionadas?</string>
+    <string name="audio_recordings">Grabaciones de audio</string>
+    <string name="select_labels">Seleccionar etiquetas</string>
+    <string name="cant_find_note">No se encuentra la nota. Es posible que se haya eliminado</string>
+    <string name="max_lines_to_display_title">Máximo de líneas del título</string>
+    <string name="exporting_backup">Exportando copia de seguridad</string>
+    <string name="importing_backup">Importando copia de seguridad</string>
+    <string name="calculating">Calculando…</string>
+    <string name="single_note_or_list">Nota o lista individual</string>
+    <string name="select_note">Seleccionar nota</string>
+    <string name="adding_images">Añadiendo imágenes</string>
+    <string name="deleting_images">Eliminando imágenes</string>
+    <string name="invalid_image">Imagen no válida</string>
+    <string name="error_while_renaming_image">Error al cambiar el nombre de la imagen</string>
+    <string name="image_format_not_supported">Formato de imagen no compatible</string>
+    <string name="delete_image_forever">¿Eliminar la imagen definitivamente?</string>
+    <string name="cant_load_image">No se puede cargar la imagen. Es posible que se haya movido o eliminado</string>
+    <string name="unknown_name">Nombre desconocido</string>
+    <string name="unknown_error">Error desconocido</string>
+    <string name="insert_an_sd_card_images">Inserta una tarjeta SD para añadir imágenes</string>
+    <string name="play">Reproducir</string>
+    <string name="stop">Detener</string>
+    <string name="start">Iniciar</string>
+    <string name="pause">Pausar</string>
+    <string name="resume">Reanudar</string>
+    <string name="paused">En pausa</string>
+    <string name="recording">Grabando…</string>
+    <string name="ready_to_record">Listo para grabar</string>
+    <string name="discard">Descartar</string>
+    <string name="save_recording">¿Guardar la grabación?</string>
+    <string name="delete_audio_recording_forever">¿Eliminar definitivamente la grabación?</string>
+    <string name="tap_for_more_options">Toca para ver más opciones</string>
+    <string name="to_record_audio">Para grabar audio, permite que Notas acceda al micrófono. Ve a Ajustes > Permisos y activa el micrófono.</string>
+    <string name="please_grant_notally_audio">Permite que Notas grabe audio. Las grabaciones nunca salen de tu dispositivo.</string>
+    <string name="insert_an_sd_card_audio">Inserta una tarjeta SD para grabar audio</string>
+    <string name="something_went_wrong_audio">Se produjo un error. Es posible que la grabación se haya movido o eliminado.\n\nError: (%1$d, %2$d)</string>
+    <string name="time">Hora</string>
+    <string name="select_frequency">Seleccionar frecuencia</string>
+    <string name="does_not_repeat">No se repite</string>
+    <string name="daily">Diariamente</string>
+    <string name="monthly">Mensualmente</string>
+    <string name="repeats_daily">%1$s, se repite diariamente</string>
+    <string name="repeats_monthly">%1$s, se repite mensualmente</string>
+    <string name="please_grant_notally_notification">Permite que Notas envíe notificaciones</string>
+    <string name="please_grant_notally_alarm">Permite que Notas programe alarmas</string>
+
+    <plurals name="cant_add_images">
+        <item quantity="one">No se puede añadir %d imagen</item>
+        <item quantity="other">No se pueden añadir %d imágenes</item>
+    </plurals>
 </resources>

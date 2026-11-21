@@ -73,20 +73,18 @@ class Settings : Fragment() {
         setupProgressDialog(R.string.importing_backup, model.importingBackup)
 
         binding.GitHub.setOnClickListener {
-            openLink("https://github.com/OmGodse/Notally")
+            openLink("https://github.com/Roclahy/Notas")
         }
 
         binding.Libraries.setOnClickListener {
             displayLibraries()
         }
 
-        binding.Rate.setOnClickListener {
-            openLink("https://play.google.com/store/apps/details?id=com.omgodse.notally")
-        }
+        // Hasta que Notas tenga ficha propia, no enviamos a Play Store de Notally.
+        binding.Rate.visibility = View.GONE
 
-        binding.SendFeedback.setOnClickListener {
-            sendEmailWithLog()
-        }
+        // Evita dirigir comentarios del fork al correo del autor original.
+        binding.SendFeedback.visibility = View.GONE
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Notally</string>
+    <string name="app_name" translatable="false">Notas</string>
 
     <!-- Fragment Titles -->
     <string name="notes">Notes</string>
@@ -75,7 +75,7 @@
 
     <!-- Miscellaneous -->
     <string name="saved_to_device">Saved to device</string>
-    <string name="saved_to_notally">Saved to Notally</string>
+    <string name="saved_to_notally">Saved to Notes</string>
     <string name="empty_note">Empty note</string>
     <string name="empty_list">Empty list</string>
     <string name="select_labels">Select labels</string>
