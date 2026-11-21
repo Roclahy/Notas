@@ -194,15 +194,8 @@ class MainActivity : NotasBaseActivity() {
             }
             folderGestureTriggered
         }
-        // Accesibilidad: la misma gestión se abre mediante pulsación larga estándar.
-        if (button === binding.TakeNote) {
-            button.setOnLongClickListener {
-                longPressHandler.removeCallbacks(openFolders)
-                folderGestureTriggered = true
-                showNotebookFolders()
-                true
-            }
-        }
+        // Alternativa accesible desde el menú de secciones; el gesto
+        // táctil usa exactamente 2 segundos (no el long-click de ~500 ms).
     }
 
     private fun selectNotebook(id: Long, title: String, protected: Boolean) {

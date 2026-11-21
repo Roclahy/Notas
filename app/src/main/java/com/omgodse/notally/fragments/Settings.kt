@@ -215,14 +215,7 @@ class Settings : Fragment() {
         refreshDriveLabel = { updateDriveRow(binding) }
         updateDriveRow(binding)
 
-        binding.ImportBackup.setOnClickListener {
-            importBackup()
-        }
-
-        binding.ExportBackup.setOnClickListener {
-            exportBackup()
-        }
-
+        // No hay exportación ni respaldos locales: Drive cifrado es el destino.
         setupProgressDialog(R.string.exporting_backup, model.exportingBackup)
         setupProgressDialog(R.string.importing_backup, model.importingBackup)
 

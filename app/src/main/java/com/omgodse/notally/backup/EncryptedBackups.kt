@@ -36,7 +36,11 @@ object EncryptedBackups {
     private const val KDF_SHA1 = 2
     private const val iterations = 250_000
     private val random = SecureRandom()
-    private val settingKeys = setOf("theme", "view", "dateFormat", "textSize", "maxItems", "maxLines", "maxTitle")
+    private val settingKeys = setOf(
+        "theme", "view", "dateFormat", "textSize",
+        "maxItemsToDisplayInList.v1", "maxLinesToDisplayInNote.v1",
+        "maxLinesToDisplayInTitle"
+    )
 
     fun isEncrypted(app: Application, uri: Uri): Boolean {
         val prefix = ByteArray(magic.size)
@@ -144,7 +148,8 @@ object EncryptedBackups {
             val edit = prefs.edit()
             for (key in settingKeys) {
                 val value = props.getProperty(key) ?: continue
-                if (key in setOf("maxItems","maxLines","maxTitle")) {
+                if (key in setOf("maxItemsToDisplayInList.v1",
+                    "maxLinesToDisplayInNote.v1", "maxLinesToDisplayInTitle")) {
                     value.toIntOrNull()?.takeIf { it in 1..100 }?.let { edit.putInt(key,it) }
                 } else {
                     if (value.length <= 40) edit.putString(key, value)

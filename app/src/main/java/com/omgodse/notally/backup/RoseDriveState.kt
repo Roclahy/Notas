@@ -18,7 +18,11 @@ object RoseDriveState {
     private const val PREFS = "rose_google_drive"
     private const val BACKED_UP = "uploaded_note_hashes"
     private const val BACKED_UP_SETTINGS = "uploaded_settings_hash"
-    val trackedSettings = setOf("theme", "view", "dateFormat", "textSize", "maxItems", "maxLines", "maxTitle")
+    val trackedSettings = setOf(
+        "theme", "view", "dateFormat", "textSize",
+        "maxItemsToDisplayInList.v1", "maxLinesToDisplayInNote.v1",
+        "maxLinesToDisplayInTitle"
+    )
     val revision = MutableLiveData(0L)
 
     private fun prefs(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -47,9 +51,14 @@ object RoseDriveState {
 
     fun settingsFingerprint(c: Context): String {
         val values = PreferenceManager.getDefaultSharedPreferences(c).all
-        val canonical = trackedSettings.sorted().joinToString("\\n") { key ->
+        val preferenceText = trackedSettings.sorted().joinToString("\\n") { key ->
             key + "=" + (values[key]?.toString() ?: "")
         }
+        val foldersText = com.omgodse.notally.room.NotallyDatabase
+            .getDatabase(c.applicationContext as android.app.Application)
+            .getNotebookFolderDao().listSnapshot()
+            .joinToString("\\n") { "${it.id}|${it.name}|${it.passwordHash}|${it.createdAt}" }
+        val canonical = preferenceText + "\\nfolders=" + foldersText
         return MessageDigest.getInstance("SHA-256")
             .digest(canonical.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }

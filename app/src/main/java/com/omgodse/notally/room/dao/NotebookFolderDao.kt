@@ -17,6 +17,9 @@ interface NotebookFolderDao {
     @Insert
     suspend fun insert(folder: NotebookFolder): Long
 
+    @Query("SELECT * FROM NotebookFolder ORDER BY id")
+    fun listSnapshot(): List<NotebookFolder>
+
     @Query("SELECT * FROM NotebookFolder WHERE id = :id LIMIT 1")
     suspend fun get(id: Long): NotebookFolder?
 

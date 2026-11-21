@@ -308,6 +308,34 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 val labels = convertCursorToList(labelCursor) { cursor -> convertCursorToLabel(cursor) }
                 val baseNotes = convertCursorToList(baseNoteCursor) { cursor -> convertCursorToBaseNote(cursor) }
 
+                // Preservar relaciones de las carpetas aunque haya IDs ocupados
+                // por carpetas existentes en este dispositivo.
+                val notebooks = ArrayList<com.omgodse.notally.room.NotebookFolder>()
+                val available = database.rawQuery(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='NotebookFolder'",
+                    null).use { it.moveToFirst() }
+                if (available) {
+                    database.query("NotebookFolder", null, null, null, null, null, null).use { rows ->
+                        while (rows.moveToNext()) {
+                            notebooks.add(com.omgodse.notally.room.NotebookFolder(
+                                id = rows.getLong(rows.getColumnIndexOrThrow("id")),
+                                name = rows.getString(rows.getColumnIndexOrThrow("name")),
+                                passwordHash = rows.getString(rows.getColumnIndexOrThrow("passwordHash")),
+                                createdAt = rows.getLong(rows.getColumnIndexOrThrow("createdAt"))
+                            ))
+                        }
+                    }
+                }
+                val remap = HashMap<Long, Long>()
+                for (folder in notebooks) {
+                    val newId = this@BaseNoteModel.database.getNotebookFolderDao()
+                        .insert(folder.copy(id = 0L))
+                    remap[folder.id] = newId
+                }
+                val resolvedNotes = baseNotes.map { note ->
+                    note.copy(notebookId = remap[note.notebookId] ?: 0L)
+                }
+
                 delay(1000)
 
                 val total = baseNotes.fold(0) { acc, baseNote -> acc + baseNote.images.size + baseNote.audios.size }
@@ -352,7 +380,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                     }
                 }
 
-                commonDao.importBackup(baseNotes, labels)
+                commonDao.importBackup(resolvedNotes, labels)
                 val reminders = baseNoteDao.getAllReminders()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     if (manager.canScheduleExactAlarms()) {

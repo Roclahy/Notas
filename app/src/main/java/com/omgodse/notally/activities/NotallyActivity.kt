@@ -50,6 +50,11 @@ import com.omgodse.notally.R
 import com.omgodse.notally.backup.RoseDriveState
 import com.omgodse.notally.backup.BackupScheduler
 import com.omgodse.notally.room.NotallyDatabase
+import com.omgodse.notally.security.NotebookPassword
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import android.text.InputType
+import android.widget.EditText
 import android.widget.ImageButton
 import com.omgodse.notally.databinding.ActivityNotallyBinding
 import com.omgodse.notally.databinding.DialogProgressBinding
@@ -799,6 +804,54 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         dialog.show()
     }
 
+    private fun moveToNotebook() {
+        lifecycleScope.launch {
+            val folders = withContext(Dispatchers.IO) {
+                NotallyDatabase.getDatabase(application).getNotebookFolderDao().listOnce()
+            }
+            val labels = listOf(getString(R.string.notebook_unfiled)) + folders.map { it.name }
+            MaterialAlertDialogBuilder(this@NotallyActivity)
+                .setTitle(R.string.notebook_move)
+                .setItems(labels.toTypedArray()) { _, which ->
+                    val folder = folders.getOrNull(which - 1)
+                    if (folder == null || folder.passwordHash.isEmpty()) {
+                        model.notebookId = folder?.id ?: 0L
+                        markNoteEdited()
+                    } else {
+                        val input = EditText(this@NotallyActivity).apply {
+                            inputType = InputType.TYPE_CLASS_TEXT or
+                                InputType.TYPE_TEXT_VARIATION_PASSWORD
+                        }
+                        val dialog = MaterialAlertDialogBuilder(this@NotallyActivity)
+                            .setTitle(folder.name)
+                            .setView(input)
+                            .setNegativeButton(R.string.cancel, null)
+                            .setPositiveButton(R.string.continue_, null).create()
+                        dialog.setOnShowListener {
+                            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE)
+                                .setOnClickListener {
+                                    val secret = input.text.toString().toCharArray()
+                                    lifecycleScope.launch {
+                                        val verified = withContext(Dispatchers.Default) {
+                                            try { NotebookPassword.verify(secret, folder.passwordHash) }
+                                            finally { secret.fill('\\u0000') }
+                                        }
+                                        if (verified) {
+                                            model.notebookId = folder.id
+                                            markNoteEdited()
+                                            dialog.dismiss()
+                                        } else {
+                                            input.error = getString(R.string.notebook_wrong_password)
+                                        }
+                                    }
+                                }
+                        }
+                        dialog.show()
+                    }
+                }.show()
+        }
+    }
+
     private fun showActionsSheet() {
         val dialog = BottomSheetDialog(this)
         val sheetSurface = com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface, 0xFFF5F5F7.toInt())
@@ -854,6 +907,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             startActivityForResult(Intent(this, DrawingActivity::class.java), REQUEST_ADD_IMAGES)
         }
         action(R.string.change_color, R.drawable.change_color) { showNoteColorPicker() }
+        action(R.string.notebook_move, R.drawable.notas_nav_folder) { moveToNotebook() }
         if (PinSecurity.noteLocked(this, model.id)) {
             action(R.string.remove_note_pin, R.drawable.notas_lock) {
                 PinDialogs.check(this, PinSecurity.noteKey(model.id), onVerified = {

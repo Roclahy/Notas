@@ -59,6 +59,14 @@ class NotallyApplication : Application() {
         PreferenceManager.getDefaultSharedPreferences(this)
             .registerOnSharedPreferenceChangeListener(prefListener)
 
+        // Los cambios en carpetas (incluyendo el hash de su contraseña)
+        // deben respaldarse aunque no se edite ninguna nota.
+        NotallyDatabase.getDatabase(this).getNotebookFolderDao().getAll()
+            .observeForever {
+                RoseDriveState.invalidate()
+                if (RoseDriveState.enabled(this)) BackupScheduler.changed(this)
+            }
+
         // Centraliza cambios de notas, tareas, fijados, eliminaciones y medios.
         // El estado solo pasa a sincronizado después de que Drive acepte
         // una copia cifrada completa, no al ejecutar esta observación.
