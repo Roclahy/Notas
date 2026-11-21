@@ -43,8 +43,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.omgodse.notally.MenuDialog
 import com.omgodse.notally.Progress
 import com.omgodse.notally.R
-import com.omgodse.notally.view.LiquidGlass
-import android.content.res.ColorStateList
 import com.omgodse.notally.databinding.DialogProgressBinding
 import com.omgodse.notally.databinding.FragmentSettingsBinding
 import com.omgodse.notally.databinding.PreferenceBinding
@@ -297,22 +295,6 @@ class Settings : Fragment() {
             binding.Theme.setup(Theme, value)
         }
 
-        binding.GlassSwitch.isChecked = model.preferences.isGlassTheme()
-        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
-        binding.GlassSwitch.thumbTintList = ColorStateList(states, intArrayOf(
-            0xFFF1C45B.toInt(), 0xFF9B9BA1.toInt()))
-        binding.GlassSwitch.trackTintList = ColorStateList(states, intArrayOf(
-            0x77F1C45B, 0x55898994))
-        binding.GlassSwitch.setOnCheckedChangeListener { _, checked ->
-            if (checked != model.preferences.isGlassTheme()) {
-                model.preferences.setLiquidGlass(checked)
-                requireActivity().recreate()
-            }
-        }
-        binding.GlassSetting.setOnClickListener {
-            binding.GlassSwitch.isChecked = !binding.GlassSwitch.isChecked
-        }
-
         model.preferences.dateFormat.observe(viewLifecycleOwner) { value ->
             binding.DateFormat.setup(DateFormat, value)
         }
@@ -356,8 +338,9 @@ class Settings : Fragment() {
             }
         }
 
-        binding.Creator.setOnClickListener {
-            openLink("https://roclahy.me")
+        // La autoría es texto informativo; el canal abre Telegram.
+        binding.TelegramChannel.setOnClickListener {
+            openLink("https://t.me/notas_app")
         }
 
         binding.Version.text = "${requireContext().getString(R.string.version_label)} ${com.omgodse.notally.BuildConfig.VERSION_NAME}"

@@ -48,7 +48,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.MaterialFade
 import com.omgodse.notally.MenuDialog
 import com.omgodse.notally.R
-import com.omgodse.notally.view.LiquidGlass
 import com.omgodse.notally.security.NoteWallpaperStore
 import com.omgodse.notally.backup.RoseDriveState
 import com.omgodse.notally.backup.BackupScheduler
@@ -115,12 +114,10 @@ class MainActivity : NotasBaseActivity() {
         setupNavigation()
         setupSearch()
         setupSyncStatus()
-        setupGlassChrome()
         binding.OpenFolders.setOnClickListener { showNotebookFolders() }
         binding.CreateFolder.setOnClickListener { createNotebookDialog() }
     }
 
-    /** Glass es una capa sobre Claro, Oscuro y AMOLED; nunca cambia el fondo. */
     private fun setupGlassChrome() {
         if (!LiquidGlass.enabled(this)) return
         // AGSL refracts only the visible notes underneath the floating bar.
@@ -192,12 +189,10 @@ class MainActivity : NotasBaseActivity() {
         button.setOnTouchListener { target, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    if (LiquidGlass.enabled(this)) LiquidGlass.animatePress(target, true)
-                    else target.animate().scaleX(0.94f).scaleY(0.94f).setDuration(90L).start()
+                    target.animate().scaleX(0.97f).scaleY(0.97f).setDuration(105L).start()
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (LiquidGlass.enabled(this)) LiquidGlass.animatePress(target, false)
-                    else target.animate().scaleX(1f).scaleY(1f).setDuration(135L).start()
+                    target.animate().scaleX(1f).scaleY(1f).setDuration(165L).start()
                     if (event.actionMasked == MotionEvent.ACTION_UP) {
                         target.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
@@ -230,9 +225,7 @@ class MainActivity : NotasBaseActivity() {
             val container = LinearLayout(this@MainActivity).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(px(20), px(22), px(20), px(32))
-                background = if (LiquidGlass.enabled(this@MainActivity)) {
-                    LiquidGlass.surface(this@MainActivity, LiquidGlass.Role.SHEET)
-                } else GradientDrawable().apply {
+                background = GradientDrawable().apply {
                     setColor(com.google.android.material.color.MaterialColors.getColor(
                         this@MainActivity, com.google.android.material.R.attr.colorSurface,
                         0xFF242429.toInt()))
@@ -317,7 +310,6 @@ class MainActivity : NotasBaseActivity() {
             dialog.setOnShowListener {
                 dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
                     ?.setBackgroundColor(AndroidColor.TRANSPARENT)
-                LiquidGlass.styleDialog(dialog, this@MainActivity)
             }
             dialog.show()
         }
@@ -783,9 +775,7 @@ class MainActivity : NotasBaseActivity() {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(22), dp(18), dp(30))
-            background = if (LiquidGlass.enabled(this@MainActivity)) {
-                LiquidGlass.surface(this@MainActivity, LiquidGlass.Role.SHEET)
-            } else GradientDrawable().apply {
+            background = GradientDrawable().apply {
                 setColor(surface)
                 cornerRadii = floatArrayOf(dp(28).toFloat(),dp(28).toFloat(),dp(28).toFloat(),dp(28).toFloat(),0f,0f,0f,0f)
             }
@@ -841,9 +831,7 @@ class MainActivity : NotasBaseActivity() {
                 background = android.graphics.drawable.ColorDrawable(AndroidColor.TRANSPARENT)
                 clipToOutline = false
             }
-            dialog.window?.navigationBarColor =
-                if (LiquidGlass.enabled(this)) AndroidColor.TRANSPARENT else surface
-            LiquidGlass.styleDialog(dialog, this)
+            dialog.window?.navigationBarColor = surface
         }
         dialog.show()
     }

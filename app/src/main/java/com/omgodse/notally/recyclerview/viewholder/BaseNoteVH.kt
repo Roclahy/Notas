@@ -21,7 +21,6 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.omgodse.notally.R
-import com.omgodse.notally.view.LiquidGlass
 import com.omgodse.notally.databinding.RecyclerBaseNoteBinding
 import com.omgodse.notally.miscellaneous.Operations
 import com.omgodse.notally.miscellaneous.applySpans
@@ -58,7 +57,9 @@ class BaseNoteVH(
 
     init {
         binding.Title.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getDisplayTitleSize(textSize))
-        binding.Date.setTextSize(TypedValue.COMPLEX_UNIT_SP, bodySize)
+        // Apple Notes: la fecha es metadato, menor que título y extracto.
+        binding.Date.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+        binding.Date.setTextColor(ContextCompat.getColor(binding.root.context, R.color.NotasMuted))
         binding.Note.setTextSize(TypedValue.COMPLEX_UNIT_SP, bodySize)
         binding.Reminder.setTextSize(TypedValue.COMPLEX_UNIT_SP, bodySize)
 
@@ -207,11 +208,7 @@ class BaseNoteVH(
         val context = binding.root.context
 
         val amoled = Preferences.getInstance(context.applicationContext as Application).isAmoledTheme()
-        val glass = LiquidGlass.enabled(context)
-        if (glass) {
-            LiquidGlass.styleCard(binding.root, context,
-                if (color == Color.DEFAULT) null else Operations.extractColor(color, context))
-        } else if (amoled && color == Color.DEFAULT) {
+        if (amoled && color == Color.DEFAULT) {
             binding.root.strokeWidth = 0
             binding.root.cardElevation = 0f
             binding.root.strokeColor = 0
@@ -220,10 +217,16 @@ class BaseNoteVH(
             binding.root.strokeWidth = 0
             binding.root.cardElevation = 0f
             binding.root.strokeColor = 0
-            val attribute = android.util.TypedValue()
-            context.theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, attribute, true)
-            val surfaceColor = if (attribute.resourceId != 0) ContextCompat.getColor(context, attribute.resourceId) else attribute.data
-            binding.root.setCardBackgroundColor(surfaceColor)
+            val night = (context.resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            if (night) {
+                binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.NotasDarkSurface))
+            } else {
+                binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.NotasLightCard))
+                binding.root.strokeWidth = (context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+                binding.root.strokeColor = ContextCompat.getColor(context, R.color.NotasLightCardBorder)
+            }
         } else {
             binding.root.strokeWidth = 0
             binding.root.cardElevation = 0f

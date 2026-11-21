@@ -186,7 +186,7 @@
         <item name="android:paddingTop">16dp</item>
         <item name="android:paddingStart">18dp</item>
         <item name="android:paddingBottom">10dp</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textColor">@color/NotasGold</item>
         <item name="android:textAppearance">?attr/textAppearanceSubtitle2</item>
     </style>
 

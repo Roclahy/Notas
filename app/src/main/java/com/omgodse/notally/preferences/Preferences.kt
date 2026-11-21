@@ -15,21 +15,17 @@ class Preferences private constructor(app: Application) {
     private val preferences = PreferenceManager.getDefaultSharedPreferences(app)
     private val editor = preferences.edit()
 
-    // Compatibilidad: la antigua opción Glass se convierte en una capa
-    // independiente sobre Oscuro, sin perder la selección del usuario.
+    // Eliminar por completo la antigua opción Glass; preservar el tema oscuro.
     init {
-        if (preferences.getString(Theme.key, Theme.defaultValue) == Theme.glass) {
-            check(preferences.edit()
-                .putString(Theme.key, Theme.dark)
-                .putBoolean(GLASS_KEY, true)
-                .commit())
-        }
+        val edit = preferences.edit().remove("liquidGlassEnabled")
+        if (preferences.getString(Theme.key, Theme.defaultValue) == Theme.glass)
+            edit.putString(Theme.key, Theme.dark)
+        edit.apply()
     }
 
     // Main thread (unfortunately)
     val view = BetterLiveData(getListPref(View))
     val theme = BetterLiveData(getListPref(Theme))
-    val liquidGlass = BetterLiveData(preferences.getBoolean(GLASS_KEY, false))
     val dateFormat = BetterLiveData(getListPref(DateFormat))
 
     val textSize = BetterLiveData(getListPref(TextSize))
@@ -110,18 +106,12 @@ class Preferences private constructor(app: Application) {
     }
 
 
-    fun setLiquidGlass(enabled: Boolean) {
-        check(preferences.edit().putBoolean(GLASS_KEY, enabled).commit())
-        liquidGlass.value = enabled
-    }
-
     /** Actualiza los valores vivos después de restaurar preferencias autenticadas. */
     fun reloadAfterBackupRestore() {
         if (getListPref(Theme) == Theme.glass) {
-            check(preferences.edit().putString(Theme.key, Theme.dark)
-                .putBoolean(GLASS_KEY, true).commit())
+            preferences.edit().putString(Theme.key, Theme.dark)
+                .remove("liquidGlassEnabled").apply()
         }
-        liquidGlass.postValue(preferences.getBoolean(GLASS_KEY, false))
         view.postValue(getListPref(View))
         theme.postValue(getListPref(Theme))
         dateFormat.postValue(getListPref(DateFormat))
@@ -133,14 +123,12 @@ class Preferences private constructor(app: Application) {
 
     fun isAmoledTheme(): Boolean = getListPref(Theme) == Theme.amoled
 
-    fun isGlassTheme(): Boolean = preferences.getBoolean(GLASS_KEY, false)
 
     fun showDateCreated(): Boolean {
         return dateFormat.value != DateFormat.none
     }
 
     companion object {
-        const val GLASS_KEY = "liquidGlassEnabled"
 
         @Volatile
         private var instance: Preferences? = null

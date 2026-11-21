@@ -26,6 +26,10 @@
         android:stepSize="1"
         app:thumbRadius="8dp"
         app:thumbColor="@color/NotasGold"
+        app:haloColor="@color/NotasGoldTrack"
+        app:tickColorActive="@color/NotasGoldTrack"
+        app:tickColorInactive="@color/NotasGold"
+        app:trackColorInactive="@color/NotasGoldTrack"
         app:trackColorActive="@color/NotasGold" />
 
 </LinearLayout>
