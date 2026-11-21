@@ -278,4 +278,7 @@
     <string name="wallpaper_custom">Custom background</string>
     <string name="wallpaper_remove">Remove background</string>
     <string name="wallpaper_invalid">Could not load background</string>
+    <string name="google_drive_restore">Restore from Google Drive</string>
+    <string name="google_drive_no_backups">No encrypted backups found in Drive</string>
+    <string name="google_drive_restore_failed">Could not download or decrypt Drive backup</string>
 </resources>

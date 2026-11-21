@@ -265,4 +265,7 @@
     <string name="wallpaper_custom">Fondo personalizado</string>
     <string name="wallpaper_remove">Quitar fondo</string>
     <string name="wallpaper_invalid">No se pudo cargar el fondo</string>
+    <string name="google_drive_restore">Restaurar desde Google Drive</string>
+    <string name="google_drive_no_backups">No hay copias cifradas disponibles en Drive</string>
+    <string name="google_drive_restore_failed">No se pudo descargar o descifrar la copia de Drive</string>
 </resources>

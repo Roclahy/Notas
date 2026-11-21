@@ -132,6 +132,58 @@ internal object RoseDriveApi {
         }
     }
 
+    data class RemoteBackup(val id: String, val name: String, val createdTime: String)
+
+    fun listBackups(token: String): List<RemoteBackup> {
+        val parent = lookupFolder(token) ?: return emptyList()
+        val q = "'$parent' in parents and trashed = false"
+        val url = "$API?spaces=drive&pageSize=100&fields=files(id,name,createdTime)" +
+            "&orderBy=createdTime%20desc&q=" + URLEncoder.encode(q, "UTF-8")
+        val items = getJson(url, token).optJSONArray("files") ?: return emptyList()
+        return buildList {
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val name = item.optString("name")
+                val id = item.optString("id")
+                if (id.isNotBlank() && name.matches(
+                        Regex("Notas-[0-9]{8}-[0-9]{6}\\.rnotas"))) {
+                    add(RemoteBackup(id, name, item.optString("createdTime")))
+                }
+            }
+        }
+    }
+
+    /** Descarga cifrada con límite de tamaño; nunca guarda un ZIP legible. */
+    fun download(token: String, id: String, destination: File) {
+        require(id.matches(Regex("[A-Za-z0-9_-]+")))
+        val url = "$API/" + URLEncoder.encode(id, "UTF-8") + "?alt=media"
+        val connection = connection(url, "GET", token)
+        try {
+            val status = connection.responseCode
+            if (status !in 200..299) throw java.io.IOException("Google Drive HTTP $status")
+            val limit = 500L * 1024L * 1024L
+            require(connection.contentLengthLong <= limit || connection.contentLengthLong < 0)
+            var read = 0L
+            connection.inputStream.use { input ->
+                destination.outputStream().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val amount = input.read(buffer)
+                        if (amount < 0) break
+                        read += amount
+                        if (read > limit) throw java.io.IOException("Backup too large")
+                        output.write(buffer, 0, amount)
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            destination.delete()
+            throw error
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     fun backup(token: String, encryptedFile: File, filename: String) {
         require(filename.matches(Regex("Notas-[0-9]{8}-[0-9]{6}\\.rnotas")))
         val destination = folder(token)

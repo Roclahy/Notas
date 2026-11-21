@@ -21,6 +21,9 @@ import com.omgodse.notally.backup.BackupScheduler
 import com.omgodse.notally.backup.BackupSecrets
 import com.omgodse.notally.backup.EncryptedBackups
 import com.omgodse.notally.backup.RoseDriveState
+import com.omgodse.notally.backup.RoseDriveApi
+import com.google.android.gms.tasks.Tasks
+import java.util.concurrent.TimeUnit
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
@@ -117,12 +120,15 @@ class Settings : Fragment() {
                     .setTitle(R.string.google_drive_backup)
                     .setItems(arrayOf(
                         getString(R.string.google_drive_backup_now),
+                        getString(R.string.google_drive_restore),
                         getString(R.string.google_drive_disconnect)
                     )) { _, choice ->
                         if (choice == 0) {
                             if (BackupScheduler.force(requireActivity().application)) {
                                 Toast.makeText(requireContext(), R.string.sync_queued, Toast.LENGTH_SHORT).show()
                             }
+                        } else if (choice == 1) {
+                            restoreFromGoogleDrive()
                         } else {
                             RoseDriveState.setEnabled(requireContext(), false)
                             BackupScheduler.disable(requireActivity().application)
@@ -132,6 +138,97 @@ class Settings : Fragment() {
                     }.show()
             }
         }
+    }
+
+    private suspend fun driveToken(): String = withContext(Dispatchers.IO) {
+        val request = AuthorizationRequest.builder().setRequestedScopes(
+            listOf(Scope("https://www.googleapis.com/auth/drive.file"))
+        ).build()
+        val response = Tasks.await(
+            Identity.getAuthorizationClient(requireContext()).authorize(request),
+            45L, TimeUnit.SECONDS)
+        if (response.hasResolution() || response.accessToken.isNullOrBlank()) {
+            throw IllegalStateException("Authorization required")
+        }
+        requireNotNull(response.accessToken)
+    }
+
+    private fun restoreFromGoogleDrive() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val backups = withContext(Dispatchers.IO) {
+                    RoseDriveApi.listBackups(driveToken())
+                }
+                if (backups.isEmpty()) {
+                    Toast.makeText(requireContext(), R.string.google_drive_no_backups,
+                        Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                val labels = backups.map { it.name }.toTypedArray()
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.google_drive_restore)
+                    .setItems(labels) { _, selected ->
+                        val item = backups[selected]
+                        requestBackupPassword(confirm = false) { password ->
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                val app = requireActivity().application
+                                var encrypted: File? = null
+                                var decrypted: File? = null
+                                try {
+                                    decrypted = withContext(Dispatchers.IO) {
+                                        val transfer = File.createTempFile(
+                                            "drive_recovery_", ".rnotas", app.cacheDir)
+                                        encrypted = transfer
+                                        RoseDriveApi.download(driveToken(), item.id, transfer)
+                                        transfer.inputStream().use { input ->
+                                            EncryptedBackups.decryptToCache(app, input, password)
+                                        }
+                                    }
+                                    importDecryptedBackup(requireNotNull(decrypted))
+                                } catch (_: Exception) {
+                                    decrypted?.delete()
+                                    Toast.makeText(app, R.string.google_drive_restore_failed,
+                                        Toast.LENGTH_LONG).show()
+                                } finally {
+                                    encrypted?.delete()
+                                    password.fill('\u0000')
+                                }
+                            }
+                        }
+                    }.show()
+            } catch (_: Exception) {
+                Toast.makeText(requireContext(), R.string.google_drive_authorization_needed,
+                    Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun importDecryptedBackup(restored: File) {
+        val app = requireActivity().application
+        var started = false
+        val observer = object : Observer<Progress> {
+            override fun onChanged(progress: Progress) {
+                if (progress.inProgress) started = true
+                else if (started) {
+                    model.importingBackup.removeObserver(this)
+                    if (model.importedBackupSuccessfully.value == true) {
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    EncryptedBackups.restoreSettings(app, restored)
+                                }
+                                Toast.makeText(app, R.string.encrypted_restore_complete,
+                                    Toast.LENGTH_LONG).show()
+                            } finally { restored.delete() }
+                        }
+                    } else restored.delete()
+                }
+            }
+        }
+        model.importingBackup.observe(viewLifecycleOwner, observer)
+        val safeUri = FileProvider.getUriForFile(
+            app, "${app.packageName}.provider", restored)
+        model.importBackup(safeUri)
     }
 
     private fun enableDriveBackups() {
