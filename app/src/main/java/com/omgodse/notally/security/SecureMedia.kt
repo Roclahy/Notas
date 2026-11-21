@@ -153,14 +153,12 @@ object SecureMedia {
                    category: String, name: String) {
         if (root == null) return
         val path = File(root, name)
-        try {
-            openDecrypted(app, path).use { input ->
-                zip.putNextEntry(ZipEntry("$category/$name"))
-                input.copyTo(zip, 64 * 1024)
-                zip.closeEntry()
-            }
-        } catch (missing: java.io.FileNotFoundException) {
-            // Un adjunto eliminado fuera de la app no invalida el respaldo.
+        // No confirmar una copia incompleta: si falta un adjunto referenciado
+        // por una nota, la subida debe fallar y mostrarse el problema.
+        openDecrypted(app, path).use { input ->
+            zip.putNextEntry(ZipEntry("$category/$name"))
+            input.copyTo(zip, 64 * 1024)
+            zip.closeEntry()
         }
     }
 
