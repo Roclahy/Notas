@@ -78,14 +78,6 @@ class Settings : Fragment() {
 
         binding.Version.text = "${requireContext().getString(R.string.version_label)} ${com.omgodse.notally.BuildConfig.VERSION_NAME}"
 
-        binding.GitHub.setOnClickListener {
-            openLink("https://github.com/Roclahy/Notas")
-        }
-
-        binding.Libraries.setOnClickListener {
-            displayLibraries()
-        }
-
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {

@@ -48,6 +48,10 @@ import com.omgodse.notally.R
 import com.omgodse.notally.databinding.ActivityNotallyBinding
 import com.omgodse.notally.databinding.DialogProgressBinding
 import com.omgodse.notally.databinding.DialogReminderBinding
+import com.omgodse.notally.databinding.DialogColorBinding
+import com.omgodse.notally.recyclerview.adapter.ColorAdapter
+import com.omgodse.notally.recyclerview.ItemListener
+import com.omgodse.notally.room.Color as NoteColor
 import com.omgodse.notally.image.ImageError
 import com.omgodse.notally.miscellaneous.Constants
 import com.omgodse.notally.miscellaneous.Operations
@@ -379,7 +383,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     private fun setupColor() {
         model.color.observe(this, Observer { color ->
             // Las notas heredan negro puro en AMOLED, incluso si tenían color previo.
-            val colorInt = if (com.omgodse.notally.preferences.Preferences.getInstance(application).isAmoledTheme()) Color.BLACK else Operations.extractColor(color, this)
+            val isAmoled = com.omgodse.notally.preferences.Preferences.getInstance(application).isAmoledTheme()
+            val colorInt = if (isAmoled && color == NoteColor.DEFAULT) Color.BLACK else Operations.extractColor(color, this)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 window.statusBarColor = colorInt
             }
@@ -668,6 +673,22 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
     }
 
+    private fun showNoteColorPicker() {
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.change_color).create()
+        val colorAdapter = ColorAdapter(object : ItemListener {
+            override fun onClick(position: Int) {
+                dialog.dismiss()
+                model.color.value = NoteColor.entries[position]
+            }
+            override fun onLongClick(position: Int) {}
+        })
+        val palette = DialogColorBinding.inflate(layoutInflater)
+        palette.RecyclerView.adapter = colorAdapter
+        dialog.setView(palette.root)
+        dialog.show()
+    }
+
     private fun showActionsSheet() {
         val dialog = BottomSheetDialog(this)
         val container = LinearLayout(this).apply {
@@ -717,6 +738,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         action(R.string.labels, R.drawable.label) { label() }
         if (model.type == Type.NOTE) action(R.string.search, R.drawable.search) { model.searchEnabled.value = true }
         action(R.string.add_images, R.drawable.add_images) { selectImages() }
+        action(R.string.change_color, R.drawable.change_color) { showNoteColorPicker() }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) action(R.string.record_audio, R.drawable.record_audio) { checkAudioPermission() }
         action(R.string.set_reminder, R.drawable.reminder) { checkNotificationPermission() }
         when (model.folder) {

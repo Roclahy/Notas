@@ -114,7 +114,7 @@ class BaseNoteVH(
 
         // Si no hay título, usa la primera línea del texto como título visual.
         val firstLine = if (baseNote.type == Type.NOTE) baseNote.body.lineSequence().firstOrNull().orEmpty() else ""
-        val displayTitle = baseNote.title.ifBlank { firstLine }
+        val displayTitle = baseNote.title.ifBlank { if (baseNote.type == Type.LIST) binding.root.context.getString(R.string.task_list) else firstLine }
         binding.Title.text = displayTitle
         binding.Title.isVisible = displayTitle.isNotEmpty()
         if (baseNote.type == Type.NOTE && baseNote.title.isBlank() && firstLine.isNotBlank()) {
@@ -139,14 +139,16 @@ class BaseNoteVH(
     }
 
     private fun bindList(items: List<ListItem>) {
-        binding.Note.visibility = View.GONE
+        val remaining = items.count { !it.checked }
+        binding.Note.text = binding.root.context.resources.getQuantityString(R.plurals.task_items_summary, remaining, remaining)
+        binding.Note.visibility = if (items.isNotEmpty()) View.VISIBLE else View.GONE
 
         if (items.isEmpty()) {
             binding.LinearLayout.visibility = View.GONE
         } else {
             binding.LinearLayout.visibility = View.VISIBLE
 
-            val filteredList = items.take(maxItems)
+            val filteredList = items.take(minOf(maxItems, 4))
             binding.LinearLayout.children.forEachIndexed { index, view ->
                 if (view.id != R.id.ItemsRemaining) {
                     if (index < filteredList.size) {
@@ -173,7 +175,7 @@ class BaseNoteVH(
             val date = Date(timestamp)
             when (dateFormat) {
                 DateFormat.relative -> binding.Date.text = prettyTime.format(date)
-                DateFormat.absolute -> binding.Date.text = fullFormat.format(date)
+                DateFormat.absolute -> binding.Date.text = java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(date)
             }
         } else binding.Date.visibility = View.GONE
     }
@@ -182,7 +184,7 @@ class BaseNoteVH(
         val context = binding.root.context
 
         val amoled = Preferences.getInstance(context.applicationContext as Application).isAmoledTheme()
-        if (amoled) {
+        if (amoled && color == Color.DEFAULT) {
             binding.root.strokeColor = 0
             binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.NotasSurface))
         } else if (color == Color.DEFAULT) {

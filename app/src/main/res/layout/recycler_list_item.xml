@@ -29,8 +29,10 @@
 
         <CheckBox
             android:id="@+id/CheckBox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:button="@drawable/notas_round_checkbox"
+            android:buttonTint="@null"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
             android:minWidth="0dp"
@@ -48,6 +50,8 @@
             android:imeOptions="actionNext"
             android:inputType="textMultiLine"
             android:padding="8dp"
+            android:minHeight="48dp"
+            android:layout_width="match_parent"
             android:textAppearance="?attr/textAppearanceBody1" />
 
         <ImageButton

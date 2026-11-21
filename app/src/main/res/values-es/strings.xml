@@ -186,4 +186,7 @@
         <item quantity="one">%d carácter</item>
         <item quantity="other">%d caracteres</item>
     </plurals>
+    <string name="explore_sections">Explorar secciones</string>
+    <string name="task_list">Lista de tareas</string>
+    <plurals name="task_items_summary"><item quantity="one">%d tarea pendiente</item><item quantity="other">%d tareas pendientes</item></plurals>
 </resources>

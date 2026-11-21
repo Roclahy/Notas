@@ -383,6 +383,8 @@ class MainActivity : NotasBaseActivity() {
         configuration = AppBarConfiguration(topLevelDestinations, binding.DrawerLayout)
         setupActionBarWithNavController(navController, configuration)
         binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+        binding.Toolbar.setNavigationIcon(R.drawable.notas_nav_folder)
+        binding.Toolbar.setNavigationContentDescription(R.string.explore_sections)
         binding.Toolbar.setNavigationOnClickListener {
             val top = setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)
             if (navController.currentDestination?.id in top) showNavigationSheet()
@@ -412,6 +414,9 @@ class MainActivity : NotasBaseActivity() {
     }
 
     private fun handleDestinationChange(destination: NavDestination) {
+        if (destination.id in setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)) {
+            binding.Toolbar.setNavigationIcon(R.drawable.notas_nav_folder)
+        }
         binding.BottomPill.visibility =
             if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
 

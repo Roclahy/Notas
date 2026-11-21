@@ -197,4 +197,7 @@
         <item quantity="one">%d character</item>
         <item quantity="other">%d characters</item>
     </plurals>
+    <string name="explore_sections">Explore sections</string>
+    <string name="task_list">Task list</string>
+    <plurals name="task_items_summary"><item quantity="one">%d task remaining</item><item quantity="other">%d tasks remaining</item></plurals>
 </resources>
