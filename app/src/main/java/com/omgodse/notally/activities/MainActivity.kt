@@ -116,6 +116,28 @@ class MainActivity : NotasBaseActivity() {
         setupSyncStatus()
         binding.OpenFolders.setOnClickListener { showNotebookFolders() }
         binding.CreateFolder.setOnClickListener { createNotebookDialog() }
+        intent.getLongExtra(EXTRA_LINKED_FOLDER, -1L)
+            .takeIf { it > 0L }?.let(::openLinkedFolder)
+    }
+
+    /** Solo se navega a una carpeta protegida tras verificar su contraseña. */
+    private fun openLinkedFolder(folderId: Long) {
+        lifecycleScope.launch {
+            val folder = withContext(Dispatchers.IO) {
+                com.omgodse.notally.room.NotallyDatabase.getDatabase(application)
+                    .getNotebookFolderDao().getNow(folderId)
+            }
+            if (folder == null) {
+                Toast.makeText(this@MainActivity, R.string.link_target_missing,
+                    Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            if (folder.passwordHash.isBlank()) {
+                selectNotebook(folder.id, folder.name, false)
+            } else requestNotebookPassword(folder) {
+                selectNotebook(folder.id, folder.name, true)
+            }
+        }
     }
 
     private fun setupSyncStatus() {
@@ -848,6 +870,7 @@ class MainActivity : NotasBaseActivity() {
     }
 
     companion object {
+        const val EXTRA_LINKED_FOLDER = "rose.link.open_folder"
         private const val REQUEST_EXPORT_FILE = 10
     }
 }
