@@ -1,15 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path android:fillColor="#000000" android:pathData="M0,0h108v108h-108z" />
-    <path android:fillColor="#00FFFFFF" android:strokeColor="#FFFFFF"
-        android:strokeWidth="5" android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M34,76 L39,61 L66,34 Q69,31 72,34 L77,39 Q80,42 77,45 L50,72 Z" />
-    <path android:fillColor="#00FFFFFF" android:strokeColor="#FFFFFF"
-        android:strokeWidth="4" android:strokeLineCap="round"
-        android:pathData="M60,40 L71,51 M39,61 L50,72" />
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/Black"/>
+    <item android:drawable="@drawable/rose_logo"/>
+</layer-list>

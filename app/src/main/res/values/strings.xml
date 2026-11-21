@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Notas</string>
+    <string name="app_name" translatable="false">Rose</string>
 
     <!-- Fragment Titles -->
     <string name="notes">Notes</string>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The Android 12 system splash uses Rose on black before the native reveal. -->
+    <style name="MainActivity" parent="AppTheme">
+        <item name="android:statusBarColor">@color/Black</item>
+        <item name="android:windowSplashScreenBackground">@color/Black</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/rose_logo</item>
+    </style>
+</resources>

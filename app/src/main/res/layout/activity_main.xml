@@ -17,15 +17,17 @@
             android:layout_height="70dp"
             android:background="?android:attr/colorBackground"
             android:elevation="0dp"
-            app:contentInsetEnd="18dp">
+            app:contentInsetEnd="18dp"
+            app:contentInsetStart="0dp">
 
             <TextView
                 android:id="@+id/SectionTitle"
+                android:layout_marginStart="20dp"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_gravity="start|center_vertical"
                 android:gravity="center_vertical"
-                android:paddingStart="23dp"
+                android:paddingStart="0dp"
                 android:paddingEnd="20dp"
                 android:text="@string/notes"
                 android:fontFamily="@font/notas_sans"

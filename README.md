@@ -1,6 +1,6 @@
-# Notas
+# Rose
 
-Aplicación de notas para Android desarrollada por **Rosanna Moreno** ([roclahy.me](https://roclahy.me)).
+Rose es una aplicación de notas para Android desarrollada por **Rosanna Moreno** ([roclahy.me](https://roclahy.me)).
 
 Proyecto de código abierto inspirado en la sencillez de las interfaces de Apple, sin afiliación a Apple.
 
@@ -36,3 +36,7 @@ El almacenamiento en Google Drive es opcional a través del selector de archivos
 Incluye base de notas y tareas, imágenes y grabaciones adjuntas, y preferencias de visualización. Los PIN, contraseña de copia y destinos de nube **no** se exportan. Las copias no cifradas que ya existieran no se transforman automáticamente; no deben conservarse en un almacenamiento compartido si contienen datos sensibles.
 
 La opción de PIN protege la interfaz; no cifra el contenido de la base de datos local. Las copias cifradas sí reciben cifrado autenticado con contraseña. Android Auto Backup del sistema queda deshabilitado.
+
+## Identidad Rose
+
+Icono de rosa blanca sobre negro basado en la ilustración aportada por la propietaria. Entrada animada nativa de 950 ms en negro puro, sin dependencias de animación ni recursos GIF en el APK.
