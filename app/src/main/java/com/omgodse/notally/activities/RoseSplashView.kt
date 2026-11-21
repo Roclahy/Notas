@@ -50,7 +50,7 @@ internal class RoseSplashView(activity: Activity) : View(activity) {
         val smooth = reveal * reveal * (3f - 2f * reveal)
         canvas.save()
         // Del tallo hacia los pétalos, sin rebotes ni efecto de latido.
-        canvas.clipRect(left, top + (side * (1f - smooth)), left + side, top + side)
+        canvas.clipRect(left.toFloat(), top + (side * (1f - smooth)), left + side, top + side)
         logo.draw(canvas)
         canvas.restore()
         val wordAlpha = ((progress - 0.65f) / 0.25f).coerceIn(0f, 1f)
