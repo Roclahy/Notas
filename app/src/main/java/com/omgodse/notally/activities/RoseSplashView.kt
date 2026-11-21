@@ -55,7 +55,7 @@ internal class RoseSplashView(activity: Activity) : View(activity) {
         canvas.restore()
         val wordAlpha = ((progress - 0.65f) / 0.25f).coerceIn(0f, 1f)
         paint.alpha = (255 * wordAlpha).toInt()
-        canvas.drawText(context.getString(R.string.app_name), centerX, top + side + 24f * resources.displayMetrics.density, paint)
+        canvas.drawText(context.getString(R.string.internal_app_name), centerX, top + side + 24f * resources.displayMetrics.density, paint)
     }
 
     private fun animateEntrance() {

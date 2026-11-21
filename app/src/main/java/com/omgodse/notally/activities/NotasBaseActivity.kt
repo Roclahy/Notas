@@ -45,7 +45,7 @@ open class NotasBaseActivity : AppCompatActivity() {
             }
             overlay.addView(lock, LinearLayout.LayoutParams(dp(64),dp(64)))
             val name = TextView(this).apply {
-                text = getString(R.string.app_name)
+                text = getString(R.string.internal_app_name)
                 gravity = Gravity.CENTER
                 textSize = 32f
                 setTextColor(com.google.android.material.color.MaterialColors.getColor(this@NotasBaseActivity, com.google.android.material.R.attr.colorOnSurface, Color.WHITE))

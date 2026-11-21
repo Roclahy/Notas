@@ -419,7 +419,7 @@ class MainActivity : NotasBaseActivity() {
         val top = destination.id in setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)
         binding.Toolbar.navigationIcon = if (top) null else androidx.appcompat.content.res.AppCompatResources.getDrawable(this, R.drawable.previous)
         binding.Toolbar.title = ""
-        binding.SectionTitle.text = if (destination.id == R.id.Notes) getString(R.string.app_name) else (destination.label ?: getString(R.string.notes))
+        binding.SectionTitle.text = if (destination.id == R.id.Notes) getString(R.string.internal_app_name) else (destination.label ?: getString(R.string.notes))
         binding.SectionTitle.visibility = if (destination.id == R.id.Search) View.GONE else View.VISIBLE
         binding.BottomPill.visibility =
             if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
