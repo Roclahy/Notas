@@ -13,6 +13,7 @@ import com.omgodse.notally.recyclerview.viewholder.HeaderVH
 import com.omgodse.notally.room.BaseNote
 import com.omgodse.notally.room.Header
 import com.omgodse.notally.room.Item
+import com.omgodse.notally.preferences.View as ViewPref
 import org.ocpsoft.prettytime.PrettyTime
 import java.io.File
 import java.text.DateFormat
@@ -27,7 +28,8 @@ class BaseNoteAdapter(
     private val fullFormat: DateFormat,
     private val shortFormat: DateFormat,
     private val mediaRoot: File?,
-    private val listener: ItemListener
+    private val listener: ItemListener,
+    private val viewMode: String = ViewPref.list
 ) : ListAdapter<Item, RecyclerView.ViewHolder>(DiffCallback) {
 
     private val prettyTime = PrettyTime()
@@ -42,7 +44,12 @@ class BaseNoteAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = getItem(position)) {
             is Header -> (holder as HeaderVH).bind(item)
-            is BaseNote -> (holder as BaseNoteVH).bind(item, mediaRoot, selectedIds.contains(item.id))
+            is BaseNote -> {
+                val prevNote = position > 0 && getItem(position - 1) is BaseNote
+                val nextNote = position < itemCount - 1 && getItem(position + 1) is BaseNote
+                (holder as BaseNoteVH).applyGroupShape(viewMode == ViewPref.grid, prevNote, nextNote)
+                holder.bind(item, mediaRoot, selectedIds.contains(item.id))
+            }
         }
     }
 

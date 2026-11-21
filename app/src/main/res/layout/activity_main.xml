@@ -14,8 +14,10 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/Toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:contentInsetEnd="16dp">
+            android:layout_height="70dp"
+            android:background="?android:attr/colorBackground"
+            android:elevation="0dp"
+            app:contentInsetEnd="18dp">
 
             <EditText
                 android:id="@+id/EnterSearchKeyword"
@@ -35,6 +37,7 @@
             android:id="@+id/ActionMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?android:attr/colorBackground"
             android:layout_below="@id/Toolbar"
             app:navigationIcon="?attr/homeAsUpIndicator" />
 

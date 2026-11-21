@@ -2,6 +2,13 @@ package com.omgodse.notally.activities
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.ImageView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import android.net.Uri
 import android.os.Bundle
 import android.print.PostPDFGenerator
@@ -141,7 +148,7 @@ class MainActivity : NotasBaseActivity() {
             } else {
                 binding.Toolbar.visibility = View.VISIBLE
                 binding.ActionMode.visibility = View.GONE
-                binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNDEFINED)
+                binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
                 binding.BottomPill.visibility = if (navController.currentDestination?.id == R.id.Notes) View.VISIBLE else View.GONE
             }
         }
@@ -375,6 +382,12 @@ class MainActivity : NotasBaseActivity() {
         val topLevelDestinations = setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)
         configuration = AppBarConfiguration(topLevelDestinations, binding.DrawerLayout)
         setupActionBarWithNavController(navController, configuration)
+        binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+        binding.Toolbar.setNavigationOnClickListener {
+            val top = setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)
+            if (navController.currentDestination?.id in top) showNavigationSheet()
+            else onSupportNavigateUp()
+        }
 
         var fragmentIdToLoad: Int? = null
         binding.NavigationView.onItemClickListener = { id ->
@@ -411,6 +424,67 @@ class MainActivity : NotasBaseActivity() {
             binding.EnterSearchKeyword.visibility = View.GONE
             inputManager.hideSoftInputFromWindow(binding.EnterSearchKeyword.windowToken, 0)
         }
+    }
+
+    private fun showNavigationSheet() {
+        val dialog = BottomSheetDialog(this)
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(22), dp(18), dp(30))
+            background = GradientDrawable().apply {
+                setColor(if (model.preferences.isAmoledTheme()) 0xFF1C1C1E.toInt() else 0xFF303034.toInt())
+                cornerRadii = floatArrayOf(dp(28).toFloat(),dp(28).toFloat(),dp(28).toFloat(),dp(28).toFloat(),0f,0f,0f,0f)
+            }
+        }
+        val header = TextView(this).apply {
+            text = getString(R.string.notes)
+            setTextColor(0xFFF5F5F7.toInt())
+            textSize = 23f
+            typeface = androidx.core.content.res.ResourcesCompat.getFont(this@MainActivity, R.font.notas_sans)
+            setPadding(dp(9),0,0,dp(16))
+        }
+        container.addView(header)
+        val items = listOf(
+            Triple(R.string.notes,R.drawable.home,R.id.Notes),
+            Triple(R.string.labels,R.drawable.label,R.id.Labels),
+            Triple(R.string.archived,R.drawable.archive,R.id.Archived),
+            Triple(R.string.deleted,R.drawable.delete,R.id.Deleted),
+            Triple(R.string.settings,R.drawable.settings,R.id.Settings)
+        )
+        for ((textRes, drawableRes, destinationId) in items) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                minimumHeight = dp(56)
+                background = android.graphics.drawable.RippleDrawable(
+                    ColorStateList.valueOf(0x30F1C45B), null, null
+                )
+            }
+            val icon = ImageView(this).apply {
+                setImageResource(drawableRes)
+                imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+            }
+            row.addView(icon, LinearLayout.LayoutParams(dp(23),dp(23)).apply {
+                marginStart = dp(12); marginEnd = dp(17)
+            })
+            val label = TextView(this).apply {
+                setText(textRes)
+                setTextColor(0xFFF5F5F7.toInt())
+                textSize = 16f
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@MainActivity, R.font.notas_sans)
+            }
+            row.addView(label)
+            row.setOnClickListener {
+                dialog.dismiss()
+                if (navController.currentDestination?.id != destinationId) navigateWithAnimation(destinationId)
+            }
+            container.addView(row)
+        }
+        dialog.setContentView(container)
+        dialog.show()
+        dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private fun navigateWithAnimation(id: Int) {

@@ -1,6 +1,9 @@
 package com.omgodse.notally.recyclerview.viewholder
 
 import android.graphics.drawable.Drawable
+import android.app.Application
+import android.view.ViewGroup
+import com.omgodse.notally.preferences.Preferences
 import android.util.TypedValue
 import android.view.View
 import android.widget.TextView
@@ -73,6 +76,25 @@ class BaseNoteVH(
         }
     }
 
+    fun applyGroupShape(isGrid: Boolean, hasPrevious: Boolean, hasNext: Boolean) {
+        val scale = binding.root.resources.displayMetrics.density
+        val round = 18f * scale
+        val joined = 4f * scale
+        val top = if (isGrid || !hasPrevious) round else joined
+        val bottom = if (isGrid || !hasNext) round else joined
+        binding.root.shapeAppearanceModel = binding.root.shapeAppearanceModel.toBuilder()
+            .setTopLeftCornerSize(top)
+            .setTopRightCornerSize(top)
+            .setBottomLeftCornerSize(bottom)
+            .setBottomRightCornerSize(bottom)
+            .build()
+        val params = binding.root.layoutParams as? ViewGroup.MarginLayoutParams
+        if (params != null) {
+            params.bottomMargin = ((if (isGrid || !hasNext) 14f else 2f) * scale).toInt()
+            binding.root.layoutParams = params
+        }
+    }
+
     fun updateCheck(checked: Boolean) {
         binding.root.isChecked = checked
     }
@@ -90,8 +112,16 @@ class BaseNoteVH(
         setImages(baseNote.images, mediaRoot)
         setReminder(baseNote.reminder)
 
-        binding.Title.text = baseNote.title
-        binding.Title.isVisible = baseNote.title.isNotEmpty()
+        // Si no hay título, usa la primera línea del texto como título visual.
+        val firstLine = if (baseNote.type == Type.NOTE) baseNote.body.lineSequence().firstOrNull().orEmpty() else ""
+        val displayTitle = baseNote.title.ifBlank { firstLine }
+        binding.Title.text = displayTitle
+        binding.Title.isVisible = displayTitle.isNotEmpty()
+        if (baseNote.type == Type.NOTE && baseNote.title.isBlank() && firstLine.isNotBlank()) {
+            val remainder = baseNote.body.removePrefix(firstLine).trimStart('\n')
+            binding.Note.text = remainder
+            binding.Note.isVisible = remainder.isNotEmpty()
+        }
 
         Operations.bindLabels(binding.LabelGroup, baseNote.labels, bodySize)
 
@@ -151,14 +181,19 @@ class BaseNoteVH(
     private fun setColor(color: Color) {
         val context = binding.root.context
 
-        if (color == Color.DEFAULT) {
-            val stroke = ContextCompat.getColorStateList(context, R.color.chip_stroke)
-            binding.root.setStrokeColor(stroke)
-            binding.root.setCardBackgroundColor(0)
+        val amoled = Preferences.getInstance(context.applicationContext as Application).isAmoledTheme()
+        if (amoled) {
+            binding.root.strokeColor = 0
+            binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.NotasSurface))
+        } else if (color == Color.DEFAULT) {
+            binding.root.strokeColor = 0
+            val attribute = android.util.TypedValue()
+            context.theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, attribute, true)
+            val surfaceColor = if (attribute.resourceId != 0) ContextCompat.getColor(context, attribute.resourceId) else attribute.data
+            binding.root.setCardBackgroundColor(surfaceColor)
         } else {
             binding.root.strokeColor = 0
-            val colorInt = Operations.extractColor(color, context)
-            binding.root.setCardBackgroundColor(colorInt)
+            binding.root.setCardBackgroundColor(Operations.extractColor(color, context))
         }
     }
 
