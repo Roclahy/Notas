@@ -8,6 +8,17 @@ import android.graphics.drawable.GradientDrawable
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ImageView
+import android.widget.EditText
+import android.view.Gravity
+import android.view.ViewGroup
+import android.text.InputType
+import android.os.Handler
+import android.os.Looper
+import com.omgodse.notally.security.NotebookPassword
+import com.omgodse.notally.room.NotebookFolder
+import com.omgodse.notally.miscellaneous.Constants
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import android.net.Uri
 import android.os.Bundle
@@ -63,11 +74,24 @@ class MainActivity : NotasBaseActivity() {
     private lateinit var configuration: AppBarConfiguration
 
     private val model: BaseNoteModel by viewModels()
+    private val longPressHandler = Handler(Looper.getMainLooper())
+    private var selectedProtectedNotebook = false
 
     override fun onBackPressed() {
         if (model.actionMode.enabled.value) {
             model.actionMode.close(true)
+        } else if (navController.currentDestination?.id == R.id.Notes &&
+            model.selectedNotebookId.value != -1L) {
+            selectNotebook(-1L, getString(R.string.notebook_all), false)
         } else super.onBackPressed()
+    }
+
+    override fun onStop() {
+        // No conservar acceso a carpetas protegidas después de salir de Inicio.
+        if (selectedProtectedNotebook) {
+            selectNotebook(-1L, getString(R.string.notebook_all), false)
+        }
+        super.onStop()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -123,10 +147,16 @@ class MainActivity : NotasBaseActivity() {
 
     private fun setupBottomPill() {
         binding.TakeNote.setOnClickListener {
-            startActivity(Intent(this, TakeNote::class.java))
+            startActivity(Intent(this, TakeNote::class.java).apply {
+                putExtra(Constants.SelectedNotebookId,
+                    model.selectedNotebookId.value?.takeIf { id -> id > 0 } ?: 0L)
+            })
         }
         binding.MakeList.setOnClickListener {
-            startActivity(Intent(this, MakeList::class.java))
+            startActivity(Intent(this, MakeList::class.java).apply {
+                putExtra(Constants.SelectedNotebookId,
+                    model.selectedNotebookId.value?.takeIf { id -> id > 0 } ?: 0L)
+            })
         }
         binding.BottomSearch.setOnClickListener {
             if (navController.currentDestination?.id == R.id.Notes) {
@@ -138,20 +168,219 @@ class MainActivity : NotasBaseActivity() {
     }
 
     private fun installPillPressAnimation(button: View) {
+        var folderGestureTriggered = false
+        val openFolders = Runnable {
+            folderGestureTriggered = true
+            button.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            showNotebookFolders()
+        }
         button.setOnTouchListener { target, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    folderGestureTriggered = false
+                    if (target === binding.TakeNote) {
+                        longPressHandler.postDelayed(openFolders, 2_000L)
+                    }
                     target.animate().scaleX(0.94f).scaleY(0.94f).setDuration(90L).start()
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    longPressHandler.removeCallbacks(openFolders)
                     target.animate().scaleX(1f).scaleY(1f).setDuration(135L).start()
-                    if (event.actionMasked == MotionEvent.ACTION_UP) {
+                    if (event.actionMasked == MotionEvent.ACTION_UP &&
+                        !folderGestureTriggered) {
                         target.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     }
                 }
             }
-            false // Conserva accesibilidad y eventos normales de clic.
+            folderGestureTriggered
         }
+        // Accesibilidad: la misma gestión se abre mediante pulsación larga estándar.
+        if (button === binding.TakeNote) {
+            button.setOnLongClickListener {
+                longPressHandler.removeCallbacks(openFolders)
+                folderGestureTriggered = true
+                showNotebookFolders()
+                true
+            }
+        }
+    }
+
+    private fun selectNotebook(id: Long, title: String, protected: Boolean) {
+        model.setActiveNotebook(id)
+        selectedProtectedNotebook = protected
+        if (navController.currentDestination?.id != R.id.Notes) {
+            navController.navigate(R.id.Notes)
+        }
+        binding.SectionTitle.text = if (id == -1L) {
+            getString(R.string.internal_app_name)
+        } else title
+    }
+
+    /** Selector Apple Notes con carpetas protegidas y acceso principal sin carpetas. */
+    private fun showNotebookFolders() {
+        lifecycleScope.launch {
+            val folders = model.getNotebookFolders()
+            if (isFinishing || isDestroyed) return@launch
+            val dialog = BottomSheetDialog(this@MainActivity)
+            val dp = resources.displayMetrics.density
+            fun px(v: Int) = (dp * v).toInt()
+            val container = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(px(20), px(22), px(20), px(32))
+                background = GradientDrawable().apply {
+                    setColor(com.google.android.material.color.MaterialColors.getColor(
+                        this@MainActivity, com.google.android.material.R.attr.colorSurface,
+                        0xFF242429.toInt()))
+                    cornerRadius = px(28).toFloat()
+                }
+            }
+            val heading = TextView(this@MainActivity).apply {
+                setText(R.string.notebook_folders)
+                textSize = 25f
+                setTextColor(com.google.android.material.color.MaterialColors.getColor(
+                    this@MainActivity, com.google.android.material.R.attr.colorOnSurface,
+                    0xFFFFFFFF.toInt()))
+                setPadding(px(10), 0, 0, px(18))
+            }
+            container.addView(heading)
+            fun row(name: String, detail: String, protected: Boolean, action: () -> Unit) {
+                val item = LinearLayout(this@MainActivity).apply {
+                    gravity = Gravity.CENTER_VERTICAL
+                    orientation = LinearLayout.HORIZONTAL
+                    minimumHeight = px(62)
+                    setPadding(px(14), px(8), px(12), px(8))
+                    background = android.graphics.drawable.RippleDrawable(
+                        ColorStateList.valueOf(0x33F1C45B), null, null)
+                }
+                val folderIcon = ImageView(this@MainActivity).apply {
+                    setImageResource(if (protected) R.drawable.notas_lock else R.drawable.notas_nav_folder)
+                    imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+                }
+                item.addView(folderIcon, LinearLayout.LayoutParams(px(27), px(27)).apply {
+                    marginEnd = px(16)
+                })
+                val text = TextView(this@MainActivity).apply {
+                    text = name + if (detail.isNotBlank()) "  ·  $detail" else ""
+                    textSize = 16f
+                    setTextColor(com.google.android.material.color.MaterialColors.getColor(
+                        this@MainActivity, com.google.android.material.R.attr.colorOnSurface,
+                        0xFFFFFFFF.toInt()))
+                }
+                item.addView(text, LinearLayout.LayoutParams(0, -2, 1f))
+                item.setOnClickListener { dialog.dismiss(); action() }
+                container.addView(item)
+            }
+            row(getString(R.string.notebook_all), "", false) {
+                selectNotebook(-1L, getString(R.string.notebook_all), false)
+            }
+            row(getString(R.string.notebook_unfiled), "", false) {
+                selectNotebook(0L, getString(R.string.notebook_unfiled), false)
+            }
+            folders.forEach { folder ->
+                row(folder.name, "", folder.passwordHash.isNotEmpty()) {
+                    if (folder.passwordHash.isEmpty()) {
+                        selectNotebook(folder.id, folder.name, false)
+                    } else requestNotebookPassword(folder) {
+                        selectNotebook(folder.id, folder.name, true)
+                    }
+                }
+            }
+            row(getString(R.string.notebook_new), "+", false) { createNotebookDialog() }
+            dialog.setContentView(container)
+            dialog.show()
+        }
+    }
+
+    private fun createNotebookDialog() {
+        val input = EditText(this).apply {
+            hint = getString(R.string.notebook_name)
+            isSingleLine = true
+            setPadding(32, 16, 32, 16)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.notebook_new)
+            .setView(input)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.continue_) { _, _ ->
+                val name = input.text.toString().trim().take(80)
+                if (name.isBlank()) return@setPositiveButton
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.notebook_protect)
+                    .setNegativeButton(R.string.notebook_unfiled) { _, _ ->
+                        saveNotebook(name, null)
+                    }
+                    .setPositiveButton(R.string.notebook_protect) { _, _ ->
+                        val passwordInput = EditText(this).apply {
+                            hint = getString(R.string.notebook_password)
+                            inputType = InputType.TYPE_CLASS_TEXT or
+                                InputType.TYPE_TEXT_VARIATION_PASSWORD
+                            isSingleLine = true
+                        }
+                        val passwordDialog = MaterialAlertDialogBuilder(this)
+                            .setTitle(R.string.notebook_protect)
+                            .setView(passwordInput)
+                            .setNegativeButton(R.string.cancel, null)
+                            .setPositiveButton(R.string.save, null)
+                            .create()
+                        passwordDialog.setOnShowListener {
+                            passwordDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE)
+                                .setOnClickListener {
+                                    val secret = passwordInput.text.toString()
+                                    if (secret.length < 12) {
+                                        passwordInput.error = getString(R.string.notebook_password)
+                                    } else {
+                                        passwordDialog.dismiss()
+                                        saveNotebook(name, secret)
+                                    }
+                                }
+                        }
+                        passwordDialog.show()
+                    }.show()
+            }.show()
+    }
+
+    private fun saveNotebook(name: String, password: String?) {
+        lifecycleScope.launch {
+            val hash = withContext(Dispatchers.Default) {
+                password?.toCharArray()?.let { chars ->
+                    try { NotebookPassword.hash(chars) } finally { chars.fill('\u0000') }
+                }.orEmpty()
+            }
+            val id = model.createNotebook(name, hash)
+            selectNotebook(id, name, hash.isNotEmpty())
+            Toast.makeText(this@MainActivity, R.string.notebook_created,
+                Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun requestNotebookPassword(folder: NotebookFolder, onVerified: () -> Unit) {
+        val entry = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            hint = getString(R.string.notebook_password)
+            isSingleLine = true
+        }
+        val dialog = MaterialAlertDialogBuilder(this).setTitle(folder.name)
+            .setView(entry)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.continue_, null).create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE)
+                .setOnClickListener {
+                    val secret = entry.text.toString().toCharArray()
+                    lifecycleScope.launch {
+                        val valid = withContext(Dispatchers.Default) {
+                            try { NotebookPassword.verify(secret, folder.passwordHash) }
+                            finally { secret.fill('\u0000') }
+                        }
+                        if (valid) {
+                            entry.text?.clear()
+                            dialog.dismiss()
+                            onVerified()
+                        } else entry.error = getString(R.string.notebook_wrong_password)
+                    }
+                }
+        }
+        dialog.show()
     }
 
     private fun setupActionMode() {
