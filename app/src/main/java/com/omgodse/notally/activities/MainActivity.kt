@@ -9,6 +9,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ImageView
 import android.widget.EditText
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import android.view.Gravity
 import android.view.ViewGroup
 import android.text.InputType
@@ -417,52 +419,92 @@ class MainActivity : NotasBaseActivity() {
         }
     }
 
-    private fun createNotebookDialog() {
-        val input = EditText(this).apply {
-            hint = getString(R.string.notebook_name)
+    /**
+     * Diálogos de Notas con campos Material delineados. Se usa un contenedor
+     * con márgenes reales en dp y el tema actual (Claro/Oscuro/AMOLED).
+     */
+    private fun notebookField(hint: Int, password: Boolean = false):
+        Pair<TextInputLayout, TextInputEditText> {
+        val input = TextInputEditText(this).apply {
             isSingleLine = true
-            setPadding(32, 16, 32, 16)
+            inputType = if (password) {
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            } else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            if (!password) filters = arrayOf(android.text.InputFilter.LengthFilter(80))
+            setTextColor(com.google.android.material.color.MaterialColors.getColor(
+                this@MainActivity, com.google.android.material.R.attr.colorOnSurface,
+                android.graphics.Color.WHITE))
         }
-        MaterialAlertDialogBuilder(this)
+        val layout = TextInputLayout(this).apply {
+            this.hint = getString(hint)
+            boxBackgroundMode = TextInputLayout.BOX_OUTLINE
+            boxStrokeColor = 0xFFF1C45B.toInt()
+            setBoxCornerRadii(14f, 14f, 14f, 14f)
+            addView(input, LinearLayout.LayoutParams(-1, -2))
+        }
+        return layout to input
+    }
+
+    private fun notebookDialogView(field: TextInputLayout): View {
+        val dp = resources.displayMetrics.density
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((22 * dp).toInt(), (12 * dp).toInt(),
+                (22 * dp).toInt(), (6 * dp).toInt())
+            addView(field, LinearLayout.LayoutParams(-1, -2))
+        }
+    }
+
+    private fun createNotebookDialog() {
+        val (field, input) = notebookField(R.string.notebook_name)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(R.string.notebook_new)
-            .setView(input)
+            .setView(notebookDialogView(field))
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.continue_) { _, _ ->
-                val name = input.text.toString().trim().take(80)
-                if (name.isBlank()) return@setPositiveButton
+            .setPositiveButton(R.string.continue_, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (name.isBlank()) {
+                    field.error = getString(R.string.notebook_name_required)
+                    return@setOnClickListener
+                }
+                dialog.dismiss()
                 MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.notebook_protect)
+                    .setMessage(R.string.notebook_password_optional)
                     .setNegativeButton(R.string.notebook_without_password) { _, _ ->
                         saveNotebook(name, null)
                     }
                     .setPositiveButton(R.string.notebook_protect) { _, _ ->
-                        val passwordInput = EditText(this).apply {
-                            hint = getString(R.string.notebook_password)
-                            inputType = InputType.TYPE_CLASS_TEXT or
-                                InputType.TYPE_TEXT_VARIATION_PASSWORD
-                            isSingleLine = true
-                        }
+                        val (passwordField, passwordInput) =
+                            notebookField(R.string.notebook_password, true)
                         val passwordDialog = MaterialAlertDialogBuilder(this)
                             .setTitle(R.string.notebook_protect)
-                            .setView(passwordInput)
+                            .setView(notebookDialogView(passwordField))
                             .setNegativeButton(R.string.cancel, null)
                             .setPositiveButton(R.string.save, null)
                             .create()
                         passwordDialog.setOnShowListener {
-                            passwordDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE)
-                                .setOnClickListener {
-                                    val secret = passwordInput.text.toString()
-                                    if (secret.length < 12) {
-                                        passwordInput.error = getString(R.string.notebook_password)
-                                    } else {
-                                        passwordDialog.dismiss()
-                                        saveNotebook(name, secret)
-                                    }
+                            passwordDialog.getButton(
+                                android.content.DialogInterface.BUTTON_POSITIVE
+                            ).setOnClickListener {
+                                val secret = passwordInput.text?.toString().orEmpty()
+                                if (secret.length < 12) {
+                                    passwordField.error = getString(R.string.notebook_password)
+                                } else {
+                                    passwordInput.text?.clear()
+                                    passwordDialog.dismiss()
+                                    saveNotebook(name, secret)
                                 }
+                            }
                         }
                         passwordDialog.show()
                     }.show()
-            }.show()
+            }
+        }
+        dialog.show()
     }
 
     private fun saveNotebook(name: String, password: String?) {
@@ -480,31 +522,34 @@ class MainActivity : NotasBaseActivity() {
     }
 
     private fun requestNotebookPassword(folder: NotebookFolder, onVerified: () -> Unit) {
-        val entry = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            hint = getString(R.string.notebook_password)
-            isSingleLine = true
-        }
-        val dialog = MaterialAlertDialogBuilder(this).setTitle(folder.name)
-            .setView(entry)
+        val (field, input) = notebookField(R.string.notebook_password, true)
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(folder.name)
+            .setView(notebookDialogView(field))
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.continue_, null).create()
         dialog.setOnShowListener {
-            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE)
-                .setOnClickListener {
-                    val secret = entry.text.toString().toCharArray()
-                    lifecycleScope.launch {
-                        val valid = withContext(Dispatchers.Default) {
-                            try { NotebookPassword.verify(secret, folder.passwordHash) }
-                            finally { secret.fill('\u0000') }
-                        }
-                        if (valid) {
-                            entry.text?.clear()
-                            dialog.dismiss()
-                            onVerified()
-                        } else entry.error = getString(R.string.notebook_wrong_password)
-                    }
+            val positive = dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE)
+            positive.setOnClickListener {
+                val secret = input.text?.toString().orEmpty().toCharArray()
+                if (secret.isEmpty()) {
+                    field.error = getString(R.string.notebook_wrong_password)
+                    return@setOnClickListener
                 }
+                positive.isEnabled = false
+                lifecycleScope.launch {
+                    val valid = withContext(Dispatchers.Default) {
+                        try { NotebookPassword.verify(secret, folder.passwordHash) }
+                        finally { secret.fill('\\u0000') }
+                    }
+                    positive.isEnabled = true
+                    if (valid) {
+                        input.text?.clear()
+                        dialog.dismiss()
+                        onVerified()
+                    } else field.error = getString(R.string.notebook_wrong_password)
+                }
+            }
         }
         dialog.show()
     }
