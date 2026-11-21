@@ -16,19 +16,31 @@ import com.omgodse.notally.room.IdReminder
 import com.omgodse.notally.room.Image
 import com.omgodse.notally.room.ListItem
 import com.omgodse.notally.room.Reminder
+import com.omgodse.notally.security.SecureFields
 
 @Dao
-interface BaseNoteDao {
+abstract class BaseNoteDao {
+    private fun BaseNote.sealed() = copy(
+        title = SecureFields.seal(title, "title"),
+        body = SecureFields.seal(body, "body"))
+    private fun BaseNote.opened() = copy(
+        title = SecureFields.open(title, "title"),
+        body = SecureFields.open(body, "body"))
+    private fun List<BaseNote>.opened() = map { it.opened() }
+
 
     @RawQuery
-    fun query(query: SupportSQLiteQuery): Int
+    abstract fun query(query: SupportSQLiteQuery): Int
 
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(baseNote: BaseNote): Long
+    abstract suspend fun insertStored(baseNote: BaseNote): Long
+    suspend fun insert(baseNote: BaseNote): Long = insertStored(baseNote.sealed())
 
     @Insert
-    suspend fun insert(baseNotes: List<BaseNote>): List<Long>
+    abstract suspend fun insertStored(baseNotes: List<BaseNote>): List<Long>
+    suspend fun insert(baseNotes: List<BaseNote>): List<Long> =
+        insertStored(baseNotes.map { it.sealed() })
 
 
     @Query(
@@ -36,17 +48,17 @@ interface BaseNoteDao {
                 "SELECT type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, notebookId, wallpaperName\n" +
                 "FROM BaseNote WHERE id IN (:ids)"
     )
-    suspend fun copy(ids: LongArray)
+    abstract suspend fun copy(ids: LongArray)
 
 
     @Query("DELETE FROM BaseNote WHERE id = :id")
-    suspend fun delete(id: Long)
+    abstract suspend fun delete(id: Long)
 
     @Query("DELETE FROM BaseNote WHERE id IN (:ids)")
-    suspend fun delete(ids: LongArray)
+    abstract suspend fun delete(ids: LongArray)
 
     @Query("DELETE FROM BaseNote WHERE folder = :folder")
-    suspend fun deleteFrom(folder: Folder)
+    abstract suspend fun deleteFrom(folder: Folder)
 
 
     // La vista general no muestra el contenido de carpetas protegidas.
@@ -56,87 +68,102 @@ interface BaseNoteDao {
                 (SELECT id FROM NotebookFolder WHERE passwordHash != '')))
             OR (notebookId = :notebookId AND :notebookId != -1)
         ) ORDER BY pinned DESC, timestamp DESC""")
-    fun getFromNotebook(folder: Folder, notebookId: Long): LiveData<List<BaseNote>>
+    abstract fun getFromNotebookStored(folder: Folder, notebookId: Long): LiveData<List<BaseNote>>
+
+    fun getFromNotebook(folder: Folder, notebookId: Long): LiveData<List<BaseNote>> =
+        Transformations.map(getFromNotebookStored(folder, notebookId)) { it.opened() }
 
     @Query("UPDATE BaseNote SET notebookId = :notebookId WHERE id = :id")
-    suspend fun moveToNotebook(id: Long, notebookId: Long)
+    abstract suspend fun moveToNotebook(id: Long, notebookId: Long)
 
     @Query("""SELECT * FROM BaseNote WHERE folder = :folder AND
         (notebookId = 0 OR notebookId NOT IN
             (SELECT id FROM NotebookFolder WHERE passwordHash != ''))
         ORDER BY pinned DESC, timestamp DESC""")
-    fun getFrom(folder: Folder): LiveData<List<BaseNote>>
+    abstract fun getFromStored(folder: Folder): LiveData<List<BaseNote>>
+
+    fun getFrom(folder: Folder): LiveData<List<BaseNote>> =
+        Transformations.map(getFromStored(folder)) { it.opened() }
 
     @Query("""SELECT * FROM BaseNote WHERE folder = 'NOTES'
         AND (notebookId = 0 OR notebookId NOT IN
              (SELECT id FROM NotebookFolder WHERE passwordHash != ''))
         ORDER BY pinned DESC, timestamp DESC""")
-    suspend fun getAllNotes(): List<BaseNote>
+    abstract suspend fun getAllNotesStored(): List<BaseNote>
+
+    suspend fun getAllNotes(): List<BaseNote> = getAllNotesStored().opened()
 
     @Query("SELECT * FROM BaseNote")
-    fun getAll(): LiveData<List<BaseNote>>
+    abstract fun getAllStored(): LiveData<List<BaseNote>>
+
+    fun getAll(): LiveData<List<BaseNote>> =
+        Transformations.map(getAllStored()) { it.opened() }
 
     @Query("SELECT * FROM BaseNote")
-    fun getAllForSync(): List<BaseNote>
+    abstract fun getAllForSyncStored(): List<BaseNote>
+
+    fun getAllForSync(): List<BaseNote> = getAllForSyncStored().opened()
 
     @Query("SELECT * FROM BaseNote WHERE id = :id")
-    fun get(id: Long): BaseNote?
+    abstract fun getStored(id: Long): BaseNote?
+
+    fun get(id: Long): BaseNote? = getStored(id)?.opened()
 
     @Query("SELECT images FROM BaseNote WHERE id = :id")
-    fun getImages(id: Long): String
+    abstract fun getImages(id: Long): String
 
 
     @Query("SELECT images FROM BaseNote")
-    fun getAllImages(): List<String>
+    abstract fun getAllImages(): List<String>
 
     @Query("SELECT wallpaperName FROM BaseNote WHERE wallpaperName != ''")
-    fun getAllWallpapers(): List<String>
+    abstract fun getAllWallpapers(): List<String>
 
     @Query("SELECT audios FROM BaseNote")
-    fun getAllAudios(): List<String>
+    abstract fun getAllAudios(): List<String>
 
 
     @Query("SELECT id, reminder FROM BaseNote WHERE reminder IS NOT NULL")
-    fun getAllReminders(): List<IdReminder>
+    abstract fun getAllReminders(): List<IdReminder>
 
 
     @Query("SELECT id FROM BaseNote WHERE folder = 'DELETED'")
-    suspend fun getDeletedNoteIds(): LongArray
+    abstract suspend fun getDeletedNoteIds(): LongArray
 
     @Query("SELECT id FROM BaseNote WHERE folder = 'DELETED' AND reminder IS NOT NULL")
-    suspend fun getDeletedNoteReminderIds(): List<Long>
+    abstract suspend fun getDeletedNoteReminderIds(): List<Long>
 
     @Query("SELECT images FROM BaseNote WHERE folder = 'DELETED'")
-    suspend fun getDeletedNoteImages(): List<String>
+    abstract suspend fun getDeletedNoteImages(): List<String>
 
     @Query("SELECT audios FROM BaseNote WHERE folder = 'DELETED'")
-    suspend fun getDeletedNoteAudios(): List<String>
+    abstract suspend fun getDeletedNoteAudios(): List<String>
 
 
     @Query("UPDATE BaseNote SET folder = :folder WHERE id IN (:ids)")
-    suspend fun move(ids: LongArray, folder: Folder)
+    abstract suspend fun move(ids: LongArray, folder: Folder)
 
 
     @Query("UPDATE BaseNote SET color = :color WHERE id IN (:ids)")
-    suspend fun updateColor(ids: LongArray, color: Color)
+    abstract suspend fun updateColor(ids: LongArray, color: Color)
 
     @Query("UPDATE BaseNote SET pinned = :pinned WHERE id IN (:ids)")
-    suspend fun updatePinned(ids: LongArray, pinned: Boolean)
+    abstract suspend fun updatePinned(ids: LongArray, pinned: Boolean)
 
     @Query("UPDATE BaseNote SET labels = :labels WHERE id = :id")
-    suspend fun updateLabels(id: Long, labels: List<String>)
+    abstract suspend fun updateLabels(id: Long, labels: List<String>)
 
     @Query("UPDATE BaseNote SET items = :items WHERE id = :id")
-    suspend fun updateItems(id: Long, items: List<ListItem>)
+    abstract suspend fun updateItems(id: Long, items: List<ListItem>)
 
     @Query("UPDATE BaseNote SET images = :images WHERE id = :id")
-    suspend fun updateImages(id: Long, images: List<Image>)
+    abstract suspend fun updateImages(id: Long, images: List<Image>)
 
     @Query("UPDATE BaseNote SET audios = :audios WHERE id = :id")
-    suspend fun updateAudios(id: Long, audios: List<Audio>)
+    abstract suspend fun updateAudios(id: Long, audios: List<Audio>)
 
     @Query("UPDATE BaseNote SET reminder = :reminder WHERE id = :id")
-    suspend fun updateReminder(id: Long, reminder: Reminder?)
+    abstract suspend fun updateReminder(id: Long, reminder: Reminder?)
 
 
     /**
@@ -177,11 +204,13 @@ interface BaseNoteDao {
     }
 
     @Query("""SELECT * FROM BaseNote WHERE folder = :folder
-        AND labels LIKE '%' || :label || '%'
         AND (notebookId = 0 OR notebookId NOT IN
             (SELECT id FROM NotebookFolder WHERE passwordHash != ''))
         ORDER BY pinned DESC, timestamp DESC""")
-    fun getBaseNotesByLabel(label: String, folder: Folder): LiveData<List<BaseNote>>
+    abstract fun getBaseNotesByLabelStored(folder: Folder): LiveData<List<BaseNote>>
+
+    fun getBaseNotesByLabel(label: String, folder: Folder): LiveData<List<BaseNote>> =
+        Transformations.map(getBaseNotesByLabelStored(folder)) { it.opened() }
 
 
     suspend fun getListOfBaseNotesByLabel(label: String): List<BaseNote> {
@@ -189,8 +218,10 @@ interface BaseNoteDao {
         return result.filter { baseNote -> baseNote.labels.contains(label) }
     }
 
-    @Query("SELECT * FROM BaseNote WHERE labels LIKE '%' || :label || '%'")
-    suspend fun getListOfBaseNotesByLabelImpl(label: String): List<BaseNote>
+    @Query("SELECT * FROM BaseNote")
+    abstract suspend fun getListOfBaseNotesByLabelStored(): List<BaseNote>
+
+    suspend fun getListOfBaseNotesByLabelImpl(label: String): List<BaseNote> = getListOfBaseNotesByLabelStored().opened()
 
 
     fun getBaseNotesByKeyword(keyword: String, folder: Folder): LiveData<List<BaseNote>> {
@@ -201,10 +232,11 @@ interface BaseNoteDao {
     @Query("""SELECT * FROM BaseNote WHERE folder = :folder
         AND (notebookId = 0 OR notebookId NOT IN
             (SELECT id FROM NotebookFolder WHERE passwordHash != ''))
-        AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%'
-            OR items LIKE '%' || :keyword || '%' OR labels LIKE '%' || :keyword || '%')
         ORDER BY pinned DESC, timestamp DESC""")
-    fun getBaseNotesByKeywordImpl(keyword: String, folder: Folder): LiveData<List<BaseNote>>
+    abstract fun getBaseNotesByKeywordStored(folder: Folder): LiveData<List<BaseNote>>
+
+    fun getBaseNotesByKeywordImpl(keyword: String, folder: Folder): LiveData<List<BaseNote>> =
+        Transformations.map(getBaseNotesByKeywordStored(folder)) { it.opened() }
 
 
     private fun matchesKeyword(baseNote: BaseNote, keyword: String): Boolean {
