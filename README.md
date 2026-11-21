@@ -44,3 +44,6 @@ Icono de rosa blanca sobre negro basado en la ilustración aportada por la propi
 ## Google Drive
 
 El respaldo automático de Rose está diseñado para la carpeta visible `Mi unidad/Rose` mediante OAuth y Google Drive API v3, en lugar de una carpeta del almacenamiento interno. Consulta [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md) para configurar Google Cloud y la firma. La funcionalidad está pendiente de compilación y pruebas en Android.
+
+### Icono oficial del launcher
+La rosa blanca se incorpora como imagen WebP reducida de la ilustración aportada por la propietaria, sin redibujar su forma. El interior de la aplicación continúa llamándose «Notas». La rama de desarrollo activa la compilación solo cuando cambia `.github/rose-build-request.txt` o mediante un disparo manual explícito.

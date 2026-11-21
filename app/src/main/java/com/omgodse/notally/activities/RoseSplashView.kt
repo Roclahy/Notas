@@ -22,7 +22,7 @@ import kotlin.math.min
  */
 internal class RoseSplashView(activity: Activity) : View(activity) {
     private val parent = activity.window.decorView as ViewGroup
-    private val logo = requireNotNull(AppCompatResources.getDrawable(activity, R.drawable.rose_logo)).mutate()
+    private val logo = requireNotNull(AppCompatResources.getDrawable(activity, R.drawable.rose_original_art)).mutate()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         textSize = 34f * resources.displayMetrics.scaledDensity
