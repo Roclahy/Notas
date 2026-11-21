@@ -32,7 +32,7 @@ class WidgetFactory(private val app: Application, private val id: Long) : Remote
                 Type.NOTE -> 1
                 Type.LIST -> 1 + copy.items.size
             }
-        } else 0
+        }
     }
 
     override fun onDataSetChanged() {
