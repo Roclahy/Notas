@@ -1,9 +1,6 @@
 name: Build Notas - dev APK
 
 on:
-  push:
-    branches:
-      - work/notas-apple-amoled-v1
   workflow_dispatch:
 
 permissions:
