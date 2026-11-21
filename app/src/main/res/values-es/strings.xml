@@ -201,4 +201,11 @@
     <string name="lock_note">Bloquear nota con PIN</string>
     <string name="remove_note_pin">Quitar bloqueo de nota</string>
     <string name="locked_note">Nota bloqueada</string>
+    <string name="draw_with_finger">Dibujar con el dedo</string>
+    <string name="undo">Deshacer</string>
+    <string name="clear">Borrar</string>
+    <string name="gold_ink">Dorado</string>
+    <string name="white_ink">Blanco</string>
+    <string name="empty_drawing">Dibuja algo antes de guardar</string>
+    <string name="drawing_save_error">No se pudo guardar el dibujo</string>
 </resources>

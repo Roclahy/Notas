@@ -759,6 +759,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         action(R.string.labels, R.drawable.label) { label() }
         if (model.type == Type.NOTE) action(R.string.search, R.drawable.search) { model.searchEnabled.value = true }
         action(R.string.add_images, R.drawable.add_images) { selectImages() }
+        action(R.string.draw_with_finger, R.drawable.notas_draw) {
+            startActivityForResult(Intent(this, DrawingActivity::class.java), REQUEST_ADD_IMAGES)
+        }
         action(R.string.change_color, R.drawable.change_color) { showNoteColorPicker() }
         if (PinSecurity.noteLocked(this, model.id)) {
             action(R.string.remove_note_pin, R.drawable.notas_lock) {
