@@ -1,6 +1,7 @@
 package com.omgodse.notally.room
 
 import androidx.room.TypeConverter
+import com.omgodse.notally.security.SecureFields
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -8,10 +9,10 @@ import org.json.JSONObject
 object Converters {
 
     @TypeConverter
-    fun labelsToJson(labels: List<String>) = JSONArray(labels).toString()
+    fun labelsToJson(labels: List<String>) = SecureFields.seal(JSONArray(labels).toString(), "labels")
 
     @TypeConverter
-    fun jsonToLabels(json: String) = JSONArray(json).iterable<String>().toList()
+    fun jsonToLabels(json: String) = JSONArray(SecureFields.open(json, "labels")).iterable<String>().toList()
 
 
     @TypeConverter
@@ -21,12 +22,12 @@ object Converters {
             jsonObject.put("name", image.name)
             jsonObject.put("mimeType", image.mimeType)
         }
-        return JSONArray(objects).toString()
+        return SecureFields.seal(JSONArray(objects).toString(), "images")
     }
 
     @TypeConverter
     fun jsonToImages(json: String): List<Image> {
-        val iterable = JSONArray(json).iterable<JSONObject>()
+        val iterable = JSONArray(SecureFields.open(json, "images")).iterable<JSONObject>()
         return iterable.map { jsonObject ->
             val name = jsonObject.getString("name")
             val mimeType = jsonObject.getString("mimeType")
@@ -43,12 +44,12 @@ object Converters {
             jsonObject.put("duration", audio.duration)
             jsonObject.put("timestamp", audio.timestamp)
         }
-        return JSONArray(objects).toString()
+        return SecureFields.seal(JSONArray(objects).toString(), "audios")
     }
 
     @TypeConverter
     fun jsonToAudios(json: String): List<Audio> {
-        val iterable = JSONArray(json).iterable<JSONObject>()
+        val iterable = JSONArray(SecureFields.open(json, "audios")).iterable<JSONObject>()
         return iterable.map { jsonObject ->
             val name = jsonObject.getString("name")
             val duration = jsonObject.getLong("duration")
@@ -63,12 +64,12 @@ object Converters {
         return JSONObject()
             .put("timestamp", reminder.timestamp)
             .put("frequency", reminder.frequency.name)
-            .toString()
+            .toString().let { SecureFields.seal(it, "reminder") }
     }
 
     @TypeConverter
     fun jsonToReminder(json: String): Reminder {
-        val jsonObject = JSONObject(json)
+        val jsonObject = JSONObject(SecureFields.open(json, "reminder"))
         val timestamp = jsonObject.getLong("timestamp")
         val frequency = Frequency.valueOf(jsonObject.getString("frequency"))
         return Reminder(timestamp, frequency)
@@ -77,7 +78,7 @@ object Converters {
 
     @TypeConverter
     fun jsonToSpans(json: String): List<SpanRepresentation> {
-        val iterable = JSONArray(json).iterable<JSONObject>()
+        val iterable = JSONArray(SecureFields.open(json, "spans")).iterable<JSONObject>()
         return iterable.map { jsonObject ->
             val bold = jsonObject.getSafeBoolean("bold")
             val link = jsonObject.getSafeBoolean("link")
@@ -91,12 +92,12 @@ object Converters {
     }
 
     @TypeConverter
-    fun spansToJson(list: List<SpanRepresentation>) = spansToJSONArray(list).toString()
+    fun spansToJson(list: List<SpanRepresentation>) = SecureFields.seal(spansToJSONArray(list).toString(), "spans")
 
 
     @TypeConverter
     fun jsonToItems(json: String): List<ListItem> {
-        val iterable = JSONArray(json).iterable<JSONObject>()
+        val iterable = JSONArray(SecureFields.open(json, "items")).iterable<JSONObject>()
         return iterable.map { jsonObject ->
             val body = jsonObject.getString("body")
             val checked = jsonObject.getBoolean("checked")
@@ -105,7 +106,7 @@ object Converters {
     }
 
     @TypeConverter
-    fun itemsToJson(list: List<ListItem>) = itemsToJSONArray(list).toString()
+    fun itemsToJson(list: List<ListItem>) = SecureFields.seal(itemsToJSONArray(list).toString(), "items")
 
 
     fun itemsToJSONArray(list: List<ListItem>): JSONArray {
