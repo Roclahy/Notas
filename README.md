@@ -47,3 +47,14 @@ El respaldo automático de Notas está diseñado para la carpeta visible `Mi uni
 
 ### Icono oficial del launcher
 La rosa blanca se incorpora como imagen WebP reducida de la ilustración aportada por la propietaria, sin redibujar su forma. La aplicación se llama «Notas» en el launcher y en su interior; la rosa queda solo como su icono. La rama de desarrollo activa la compilación solo cuando cambia `.github/rose-build-request.txt` o mediante un disparo manual explícito.
+
+## Versión 1.4.0 — edge-to-edge y respaldo por cambios
+
+- `versionCode 104`, Android 7+ y `targetSdk 35`.
+- Ventanas transparentes con WindowInsetsCompat: cabecera, navegación por gestos, IME del editor y pantallas auxiliares adaptadas para no tapar los controles.
+- El respaldo cifrado a Google Drive funciona con programación diaria de WorkManager y también se solicita tras cambios locales en notas, listas o preferencias, con una espera de 30 segundos para agrupar escrituras y requisito de conexión.
+- La píldora RefreshCw antes de Ajustes (Inicio) muestra una copia cifrada confirmada de todas las notas y preferencias; RefreshCwOff significa que quedan elementos pendientes, no hay autorización o no se ha realizado una copia válida.
+- En el editor, el indicador antes de Fijar se actualiza al editar y solo muestra RefreshCw si la versión guardada aparece en un respaldo subido correctamente.
+- Al tocar cualquier indicador se puede solicitar un respaldo inmediato; los iconos no deben mostrar éxito antes de la confirmación de Drive.
+- **Importante**: esto es respaldo de instantáneas cifradas, no sincronización bidireccional entre dispositivos. Incluye la base de datos y los adjuntos completos: cada nueva copia puede consumir datos móviles en función del tamaño acumulado.
+- El OAuth de Google y el comportamiento en dispositivos reales requieren pruebas. No se ha ejecutado la compilación 1.4.0; GitHub Actions permanece exclusivamente manual.

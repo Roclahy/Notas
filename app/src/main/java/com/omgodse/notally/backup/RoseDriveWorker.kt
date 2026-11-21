@@ -26,34 +26,42 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
     override fun doWork(): Result {
         if (!lock.tryLock()) return Result.retry()
         val app = applicationContext as Application
-        if (!RoseDriveState.enabled(app)) { lock.unlock(); return Result.success() }
-        val passphrase = BackupSecrets.read(app) ?: run { lock.unlock(); return Result.failure() }
         var file: File? = null
-        try {
+        var passphrase: CharArray? = null
+        return try {
+            if (!RoseDriveState.enabled(app)) return Result.success()
+            passphrase = BackupSecrets.read(app) ?: return Result.failure()
+
             val request = AuthorizationRequest.builder().setRequestedScopes(
                 listOf(Scope("https://www.googleapis.com/auth/drive.file"))
             ).build()
             val authorization = Tasks.await(
-                Identity.getAuthorizationClient(app).authorize(request),45L,TimeUnit.SECONDS
+                Identity.getAuthorizationClient(app).authorize(request), 45L, TimeUnit.SECONDS
             )
             if (authorization.hasResolution() || authorization.accessToken.isNullOrEmpty()) {
                 RoseDriveState.markNeedsAuthorization(app)
-                return Result.failure() // No abrir consentimiento desde un Worker.
+                return Result.failure()
             }
-            val recorded = RoseDriveState.snapshot(NotallyDatabase.getDatabase(app).getBaseNoteDao().getAllForSync())
+            // Captura conservadora anterior a crear la copia.
+            // Nunca se marcan datos que se modifiquen tras esta captura.
+            val recorded = RoseDriveState.snapshot(
+                NotallyDatabase.getDatabase(app).getBaseNoteDao().getAllForSync())
             val settingsHash = RoseDriveState.settingsFingerprint(app)
-            file = File.createTempFile("rose_backup_",".rnotas",app.cacheDir)
-            file.outputStream().use { output -> EncryptedBackups.write(app,output,passphrase) }
+            file = File.createTempFile("notas_backup_", ".rnotas", app.cacheDir)
+            file.outputStream().use { output ->
+                EncryptedBackups.write(app, output, requireNotNull(passphrase))
+            }
             val name = "Notas-" +
-                SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(Date()) + ".rnotas"
-            RoseDriveApi.backup(requireNotNull(authorization.accessToken),file,name)
+                SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".rnotas"
+            RoseDriveApi.backup(requireNotNull(authorization.accessToken), requireNotNull(file), name)
+            // Únicamente después de obtener éxito HTTP en Google Drive.
             RoseDriveState.markUploaded(app, recorded, settingsHash)
-            return Result.success()
+            Result.success()
         } catch (_: Exception) {
-            return Result.retry() // WorkManager reintenta al regresar Internet.
+            Result.retry() // WorkManager reintenta al volver Internet.
         } finally {
-            file?.delete() // Solo se almacena temporalmente el archivo ya cifrado.
-            passphrase.fill('\u0000')
+            file?.delete()
+            passphrase?.fill('\u0000')
             lock.unlock()
         }
     }
