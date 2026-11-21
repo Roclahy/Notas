@@ -304,4 +304,9 @@
     <string name="language_english">English</string>
     <string name="website">Website</string>
     <string name="privacy_policy">Privacy policy</string>
+    <string name="notebook_delete">Delete folder</string>
+    <string name="notebook_delete_confirmation">Delete the folder “%1$s”? Its notes will remain under Unfiled.</string>
+    <string name="notebook_deleted">Folder deleted. Notes were kept.</string>
+    <string name="notebook_not_found">This folder no longer exists.</string>
+    <string name="notebook_delete_error">Could not delete the folder.</string>
 </resources>

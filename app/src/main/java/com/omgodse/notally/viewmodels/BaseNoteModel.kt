@@ -170,6 +170,21 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             )
         }
 
+    /**
+     * Conserva notas y adjuntos: solo quita su pertenencia a la carpeta.
+     * Ambas escrituras deben ser atómicas para evitar referencias huérfanas.
+     */
+    suspend fun deleteNotebookKeepingNotes(id: Long): Boolean =
+        withContext(Dispatchers.IO) {
+            database.withTransaction {
+                val folders = database.getNotebookFolderDao()
+                if (folders.get(id) == null) return@withTransaction false
+                folders.unfile(id)
+                folders.delete(id)
+                true
+            }
+        }
+
     fun setActiveNotebook(id: Long) {
         selectedNotebookId.value = id
     }

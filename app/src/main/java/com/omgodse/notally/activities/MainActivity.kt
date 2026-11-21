@@ -327,18 +327,21 @@ class MainActivity : NotasBaseActivity() {
     }
 
     private fun showNotebookOptions(folder: NotebookFolder) {
-        val options = mutableListOf(getString(R.string.notebook_wallpaper))
+        val items = mutableListOf(
+            getString(R.string.notebook_wallpaper) to "wallpaper")
         if (folder.wallpaperName.isNotBlank()) {
-            options.add(getString(R.string.notebook_remove_wallpaper))
+            items.add(getString(R.string.notebook_remove_wallpaper) to "remove_wallpaper")
         }
+        items.add(getString(R.string.notebook_delete) to "delete")
         MaterialAlertDialogBuilder(this)
             .setTitle(folder.name)
-            .setItems(options.toTypedArray()) { _, choice ->
-                if (choice == 0) {
-                    pendingWallpaperFolderId = folder.id
-                    wallpaperPicker.launch("image/*")
-                } else {
-                    lifecycleScope.launch {
+            .setItems(items.map { it.first }.toTypedArray()) { _, selected ->
+                when (items[selected].second) {
+                    "wallpaper" -> {
+                        pendingWallpaperFolderId = folder.id
+                        wallpaperPicker.launch("image/*")
+                    }
+                    "remove_wallpaper" -> lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
                             com.omgodse.notally.room.NotallyDatabase.getDatabase(application)
                                 .getNotebookFolderDao().updateWallpaper(folder.id, "")
@@ -346,8 +349,49 @@ class MainActivity : NotasBaseActivity() {
                         Toast.makeText(this@MainActivity,
                             R.string.notebook_wallpaper_saved, Toast.LENGTH_SHORT).show()
                     }
+                    "delete" -> confirmNotebookDeletion(folder)
                 }
             }.show()
+    }
+
+    private fun confirmNotebookDeletion(folder: NotebookFolder) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.notebook_delete)
+            .setMessage(getString(R.string.notebook_delete_confirmation, folder.name))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.notebook_delete, null)
+            .create().apply {
+                setOnShowListener {
+                    getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                        getButton(android.content.DialogInterface.BUTTON_POSITIVE).isEnabled = false
+                        lifecycleScope.launch {
+                            try {
+                                val removed = model.deleteNotebookKeepingNotes(folder.id)
+                                if (removed) {
+                                    // Restablecer primero la carpeta activa: notas conservadas.
+                                    if (model.selectedNotebookId.value == folder.id) {
+                                        selectNotebook(-1L, getString(R.string.notebook_all), false)
+                                    }
+                                    dismiss()
+                                    Toast.makeText(this@MainActivity,
+                                        R.string.notebook_deleted, Toast.LENGTH_SHORT).show()
+                                } else {
+                                    dismiss()
+                                    Toast.makeText(this@MainActivity,
+                                        R.string.notebook_not_found, Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (error: Exception) {
+                                android.util.Log.e("NotasFolders", "Unable to remove folder", error)
+                                getButton(android.content.DialogInterface.BUTTON_POSITIVE)
+                                    .isEnabled = true
+                                Toast.makeText(this@MainActivity,
+                                    R.string.notebook_delete_error, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
+                show()
+            }
     }
 
     private fun saveNotebookWallpaper(folderId: Long, uri: Uri) {
