@@ -64,6 +64,7 @@ dependencies {
     implementation "androidx.room:room-runtime:$roomVersion"
     // Cifrado nativo mediante Android Keystore y javax.crypto (sin SQLCipher).
 
+    implementation "androidx.biometric:biometric:1.1.0"
     implementation "androidx.work:work-runtime:2.9.0"
     implementation "com.google.android.gms:play-services-auth:22.0.0"
     // Alinea lifecycle-ktx con lifecycle-viewmodel para evitar ViewModelLazy duplicada.

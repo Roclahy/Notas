@@ -31,6 +31,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.PinDialogs
+import com.omgodse.notally.security.BiometricSecurity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -356,7 +357,13 @@ class Settings : Fragment() {
         setupProgressDialog(R.string.importing_backup, model.importingBackup)
 
         fun updatePinLabel() {
-            binding.AppPin.setText(if (PinSecurity.appEnabled(requireContext())) R.string.disable_app_pin else R.string.enable_app_pin)
+            val enabled = PinSecurity.appEnabled(requireContext())
+            binding.AppPin.setText(if (enabled) R.string.disable_app_pin else R.string.enable_app_pin)
+            binding.AppBiometric.visibility =
+                if (enabled && BiometricSecurity.supported(requireContext())) View.VISIBLE else View.GONE
+            binding.AppBiometric.setText(
+                if (BiometricSecurity.isEnabled(requireContext(), "pin:app"))
+                    R.string.disable_app_biometric else R.string.enable_app_biometric)
         }
         updatePinLabel()
         binding.AppPin.setOnClickListener {
@@ -371,6 +378,22 @@ class Settings : Fragment() {
                     updatePinLabel()
                 }
             }
+        }
+
+        binding.AppBiometric.setOnClickListener {
+            if (!PinSecurity.appEnabled(requireContext())) return@setOnClickListener
+            PinDialogs.check(requireActivity(), "pin:app", onVerified = {
+                if (BiometricSecurity.isEnabled(requireContext(), "pin:app")) {
+                    BiometricSecurity.setEnabled(requireContext(), "pin:app", false)
+                    updatePinLabel()
+                } else {
+                    BiometricSecurity.authenticate(requireActivity(),
+                        getString(R.string.biometric_unlock), onAuthenticated = {
+                            BiometricSecurity.setEnabled(requireContext(), "pin:app", true)
+                            updatePinLabel()
+                        }, onFallback = {})
+                }
+            })
         }
 
         // La autoría es texto informativo; el canal abre Telegram.

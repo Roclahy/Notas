@@ -229,7 +229,15 @@
     <string name="white_ink">White</string>
     <string name="empty_drawing">Draw something before saving</string>
     <string name="drawing_save_error">Could not save drawing</string>
-    <string name="pin_access_notice">PIN restricts access in the app but does not encrypt notes or backups.</string>
+    <string name="biometric_unlock">Unlock with biometrics</string>
+    <string name="enable_app_biometric">Enable biometric app unlock</string>
+    <string name="disable_app_biometric">Disable biometric app unlock</string>
+    <string name="enable_note_biometric">Allow biometrics for this note</string>
+    <string name="disable_note_biometric">Remove biometric access for this note</string>
+    <string name="enable_folder_biometric">Allow biometrics for this folder</string>
+    <string name="disable_folder_biometric">Remove biometric access for this folder</string>
+    <string name="use_pin">Use PIN or password</string>
+PIN restricts access in the app but does not encrypt notes or backups.</string>
     <string name="choose_color">Choose color</string>
     <string name="hue">Hue</string>
     <string name="saturation">Saturation</string>

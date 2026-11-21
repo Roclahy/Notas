@@ -79,11 +79,19 @@ object PinDialogs {
     }
 
     fun check(activity: Activity, key: String, onVerified: () -> Unit, onCancel: () -> Unit = {}) {
-        ask(activity, R.string.enter_pin, true, onCancel,
-            validator = { input -> PinSecurity.verify(activity, key, input) }) {
-            onVerified()
-            true
+        val fallback = {
+            ask(activity, R.string.enter_pin, true, onCancel,
+                validator = { input -> PinSecurity.verify(activity, key, input) }) {
+                onVerified()
+                true
+            }
+            Unit
         }
+        if (BiometricSecurity.isEnabled(activity, key) &&
+            activity is androidx.fragment.app.FragmentActivity) {
+            BiometricSecurity.authenticate(activity, activity.getString(R.string.biometric_unlock),
+                onVerified, fallback)
+        } else fallback()
     }
 
     private fun ask(

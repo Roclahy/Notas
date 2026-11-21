@@ -8,6 +8,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.PinDialogs
+import com.omgodse.notally.security.BiometricSecurity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -175,6 +176,18 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             onGranted()
             return
         }
+        val key = "folder:${folder.id}"
+        if (BiometricSecurity.isEnabled(this, key)) {
+            BiometricSecurity.authenticate(this, folder.name, onAuthenticated = {
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                onGranted()
+            }, onFallback = { requestFolderPassword(folder, onGranted) })
+        } else requestFolderPassword(folder, onGranted)
+    }
+
+    private fun requestFolderPassword(
+        folder: com.omgodse.notally.room.NotebookFolder, onGranted: () -> Unit
+    ) {
         val entry = EditText(this).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             hint = getString(R.string.notebook_password)
@@ -1053,6 +1066,22 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         }
         action(R.string.notebook_move, R.drawable.notas_nav_folder) { moveToNotebook() }
         if (PinSecurity.noteLocked(this, model.id)) {
+            val key = PinSecurity.noteKey(model.id)
+            action(
+                if (BiometricSecurity.isEnabled(this, key)) R.string.disable_note_biometric
+                else R.string.enable_note_biometric, R.drawable.notas_lock
+            ) {
+                PinDialogs.check(this, key, onVerified = {
+                    if (BiometricSecurity.isEnabled(this, key)) {
+                        BiometricSecurity.setEnabled(this, key, false)
+                    } else {
+                        BiometricSecurity.authenticate(this,
+                            getString(R.string.biometric_unlock), onAuthenticated = {
+                                BiometricSecurity.setEnabled(this, key, true)
+                            }, onFallback = {})
+                    }
+                })
+            }
             action(R.string.remove_note_pin, R.drawable.notas_lock) {
                 PinDialogs.check(this, PinSecurity.noteKey(model.id), onVerified = {
                     PinSecurity.removeNotePin(this, model.id)

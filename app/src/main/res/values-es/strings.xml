@@ -223,7 +223,15 @@
     <string name="hue">Tono</string>
     <string name="saturation">Saturación</string>
     <string name="brightness">Brillo</string>
-    <string name="lock_screen_hint">Protegido con tu PIN</string>
+    <string name="biometric_unlock">Desbloquear con biometría</string>
+    <string name="enable_app_biometric">Activar desbloqueo biométrico de la app</string>
+    <string name="disable_app_biometric">Desactivar biometría de la app</string>
+    <string name="enable_note_biometric">Permitir biometría para esta nota</string>
+    <string name="disable_note_biometric">Quitar acceso biométrico a esta nota</string>
+    <string name="enable_folder_biometric">Permitir biometría para esta carpeta</string>
+    <string name="disable_folder_biometric">Quitar acceso biométrico a esta carpeta</string>
+    <string name="use_pin">Usar PIN o contraseña</string>
+Protegido con tu PIN</string>
     <string name="encrypted_auto_backup">Respaldo cifrado automático</string>
     <string name="backup_not_configured">Desactivado · sin conexión por defecto</string>
     <string name="daily_encrypted_backup">Cada 24 horas · cifrado de extremo a extremo</string>

@@ -79,10 +79,12 @@ object PinSecurity {
     }
     fun removeAppPin(context: Context) {
         clear(context, APP_KEY)
+        BiometricSecurity.setEnabled(context, APP_KEY, false)
         appUnlocked = true
     }
     fun removeNotePin(context: Context, id: Long) {
         clear(context, noteKey(id))
+        BiometricSecurity.setEnabled(context, noteKey(id), false)
         mutableNoteChanges.postValue(id)
     }
 

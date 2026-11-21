@@ -17,6 +17,7 @@ import android.content.res.ColorStateList
 import android.view.WindowManager
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.PinDialogs
+import com.omgodse.notally.security.BiometricSecurity
 import androidx.appcompat.app.AppCompatActivity
 import com.omgodse.notally.R
 import com.omgodse.notally.preferences.Preferences
@@ -55,6 +56,7 @@ open class NotasBaseActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (pinOverlay != null) return
         if (PinSecurity.appEnabled(this) && !PinSecurity.appUnlocked) {
             window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
             val content = window.decorView as ViewGroup
@@ -89,13 +91,15 @@ open class NotasBaseActivity : AppCompatActivity() {
             overlay.addView(helper)
             content.addView(overlay, ViewGroup.LayoutParams(-1, -1))
             pinOverlay = overlay
-            PinDialogs.check(this, "pin:app", onVerified = {
+            val granted = {
                 PinSecurity.appUnlocked = true
                 content.removeView(overlay)
                 pinOverlay = null
                 window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                 onAppAccessGranted()
-            }, onCancel = { finish() })
+            }
+            PinDialogs.check(this, "pin:app", onVerified = granted,
+                onCancel = { finish() })
         } else {
             onAppAccessGranted()
         }

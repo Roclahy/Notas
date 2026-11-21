@@ -15,6 +15,7 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.text.InputType
 import com.omgodse.notally.security.NotebookPassword
+import com.omgodse.notally.security.BiometricSecurity
 import com.omgodse.notally.room.NotebookFolder
 import com.omgodse.notally.miscellaneous.Constants
 import kotlinx.coroutines.Dispatchers
@@ -349,6 +350,12 @@ class MainActivity : NotasBaseActivity() {
         if (folder.wallpaperName.isNotBlank()) {
             items.add(getString(R.string.notebook_remove_wallpaper) to "remove_wallpaper")
         }
+        if (folder.passwordHash.isNotBlank() && BiometricSecurity.supported(this)) {
+            items.add(getString(
+                if (BiometricSecurity.isEnabled(this, "folder:${folder.id}"))
+                    R.string.disable_folder_biometric else R.string.enable_folder_biometric
+            ) to "biometric")
+        }
         items.add(getString(R.string.notebook_delete) to "delete")
         MaterialAlertDialogBuilder(this)
             .setTitle(folder.name)
@@ -365,6 +372,17 @@ class MainActivity : NotasBaseActivity() {
                         }
                         Toast.makeText(this@MainActivity,
                             R.string.notebook_wallpaper_saved, Toast.LENGTH_SHORT).show()
+                    }
+                    "biometric" -> {
+                        val key = "folder:${folder.id}"
+                        if (BiometricSecurity.isEnabled(this, key)) {
+                            BiometricSecurity.setEnabled(this, key, false)
+                        } else {
+                            BiometricSecurity.authenticate(this, folder.name,
+                                onAuthenticated = {
+                                    BiometricSecurity.setEnabled(this, key, true)
+                                }, onFallback = {})
+                        }
                     }
                     "delete" -> confirmNotebookDeletion(folder)
                 }
@@ -385,6 +403,8 @@ class MainActivity : NotasBaseActivity() {
                             try {
                                 val removed = model.deleteNotebookKeepingNotes(folder.id)
                                 if (removed) {
+                                    BiometricSecurity.setEnabled(
+                                        this@MainActivity, "folder:${folder.id}", false)
                                     // Restablecer primero la carpeta activa: notas conservadas.
                                     if (model.selectedNotebookId.value == folder.id) {
                                         selectNotebook(-1L, getString(R.string.notebook_all), false)
@@ -539,7 +559,14 @@ class MainActivity : NotasBaseActivity() {
         }
     }
 
-    private fun requestNotebookPassword(folder: NotebookFolder, onVerified: () -> Unit) {
+    private fun requestNotebookPassword(folder: NotebookFolder, onVerified: () -> Unit,
+                                        bypassBiometric: Boolean = false) {
+        val key = "folder:${folder.id}"
+        if (!bypassBiometric && BiometricSecurity.isEnabled(this, key)) {
+            BiometricSecurity.authenticate(this, folder.name, onVerified,
+                onFallback = { requestNotebookPassword(folder, onVerified, true) })
+            return
+        }
         val (field, input) = notebookField(R.string.notebook_password, true)
         val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(folder.name)
