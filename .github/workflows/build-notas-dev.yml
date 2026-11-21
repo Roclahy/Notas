@@ -1,4 +1,4 @@
-name: Build Rose Native AES + AGSL Liquid Glass
+name: Build Rose 1.4.0 Native AES + Knowledge Links
 
 on:
   workflow_dispatch:
@@ -8,6 +8,10 @@ on:
     paths:
       - .github/workflows/build-notas-dev.yml
       - app/**
+
+concurrency:
+  group: rose-build-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
