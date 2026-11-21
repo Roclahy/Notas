@@ -29,6 +29,7 @@ import com.omgodse.notally.legacy.XMLUtils
 import com.omgodse.notally.miscellaneous.Export
 import com.omgodse.notally.miscellaneous.IO
 import com.omgodse.notally.security.SecureMedia
+import com.omgodse.notally.security.RoseInternalLinks
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.backup.EncryptedBackups
 import com.omgodse.notally.miscellaneous.Operations
@@ -368,7 +369,23 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 val importedIds = commonDao.importBackup(resolvedNotes.map { note ->
                     note.copy(wallpaperName = wallpaperRemap[note.wallpaperName] ?: "")
                 }, labels)
-                PinSecurity.restoreHashes(app, previousIds.zip(importedIds).toMap(), pinHashes)
+                val noteIdMap = previousIds.zip(importedIds).toMap()
+                PinSecurity.restoreHashes(app, noteIdMap, pinHashes)
+                // El destino de cada vínculo es un ID, no un título. Al
+                // restaurar, las IDs cambian y deben reescribirse los spans.
+                for ((index, note) in resolvedNotes.withIndex()) {
+                    val localId = importedIds.getOrNull(index) ?: continue
+                    val converted = note.spans.map { span ->
+                        if (span.link && RoseInternalLinks.parse(span.url) != null)
+                            span.copy(url = RoseInternalLinks.remap(span.url, noteIdMap, remap))
+                        else span
+                    }
+                    if (converted != note.spans) {
+                        baseNoteDao.insert(note.copy(id = localId,
+                            wallpaperName = wallpaperRemap[note.wallpaperName] ?: "",
+                            spans = converted))
+                    }
+                }
                 val reminders = baseNoteDao.getAllReminders()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     if (manager.canScheduleExactAlarms()) {

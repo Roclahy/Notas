@@ -7,7 +7,9 @@ data class SpanRepresentation(
     var monospace: Boolean,
     var strikethrough: Boolean,
     var start: Int,
-    var end: Int
+    var end: Int,
+    /** URL externa o referencia interna rose://note/id o rose://folder/id. */
+    var url: String? = null
 ) {
 
     fun isNotUseless(): Boolean {

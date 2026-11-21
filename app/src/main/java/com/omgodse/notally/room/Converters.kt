@@ -87,7 +87,8 @@ object Converters {
             val strikethrough = jsonObject.getSafeBoolean("strikethrough")
             val start = jsonObject.getInt("start")
             val end = jsonObject.getInt("end")
-            SpanRepresentation(bold, link, italic, monospace, strikethrough, start, end)
+            val url = jsonObject.optString("url").takeIf { it.isNotBlank() }
+            SpanRepresentation(bold, link, italic, monospace, strikethrough, start, end, url)
         }
     }
 
@@ -128,6 +129,7 @@ object Converters {
             jsonObject.put("strikethrough", representation.strikethrough)
             jsonObject.put("start", representation.start)
             jsonObject.put("end", representation.end)
+            representation.url?.let { jsonObject.put("url", it) }
         }
         return JSONArray(objects)
     }

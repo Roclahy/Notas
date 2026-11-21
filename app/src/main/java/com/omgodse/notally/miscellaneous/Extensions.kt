@@ -25,7 +25,8 @@ import com.omgodse.notally.room.SpanRepresentation
  */
 fun String.applySpans(representations: List<SpanRepresentation>): Editable {
     val editable = Editable.Factory.getInstance().newEditable(this)
-    representations.forEach { (bold, link, italic, monospace, strikethrough, start, end) ->
+    representations.forEach { representation ->
+        val (bold, link, italic, monospace, strikethrough, start, end) = representation
         try {
             if (bold) {
                 editable.setSpan(StyleSpan(Typeface.BOLD), start, end)
@@ -34,7 +35,7 @@ fun String.applySpans(representations: List<SpanRepresentation>): Editable {
                 editable.setSpan(StyleSpan(Typeface.ITALIC), start, end)
             }
             if (link) {
-                val url = getURL(start, end)
+                val url = representation.url ?: getURL(start, end)
                 editable.setSpan(URLSpan(url), start, end)
             }
             if (monospace) {
