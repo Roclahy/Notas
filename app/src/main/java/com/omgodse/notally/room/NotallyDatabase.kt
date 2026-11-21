@@ -11,14 +11,16 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.omgodse.notally.room.dao.BaseNoteDao
 import com.omgodse.notally.room.dao.CommonDao
 import com.omgodse.notally.room.dao.LabelDao
+import com.omgodse.notally.room.dao.NotebookFolderDao
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class], version = 5)
+@Database(entities = [BaseNote::class, Label::class, NotebookFolder::class], version = 6)
 abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
     abstract fun getCommonDao(): CommonDao
     abstract fun getBaseNoteDao(): BaseNoteDao
+    abstract fun getNotebookFolderDao(): NotebookFolderDao
 
     fun checkpoint() {
         getBaseNoteDao().query(SimpleSQLiteQuery("pragma wal_checkpoint(FULL)"))
@@ -38,7 +40,7 @@ abstract class NotallyDatabase : RoomDatabase() {
         fun getDatabase(app: Application): NotallyDatabase {
             return instance ?: synchronized(this) {
                 val instance = Room.databaseBuilder(app, NotallyDatabase::class.java, DatabaseName)
-                    .addMigrations(Migration2, Migration3, Migration4, Migration5)
+                    .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6)
                     .allowMainThreadQueries()
                     .build()
                 this.instance = instance
@@ -64,6 +66,20 @@ abstract class NotallyDatabase : RoomDatabase() {
 
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `audios` TEXT NOT NULL DEFAULT `[]`")
+            }
+        }
+
+        object Migration6 : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE BaseNote ADD COLUMN notebookId INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS NotebookFolder (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        passwordHash TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
+                """.trimIndent())
             }
         }
 

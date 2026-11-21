@@ -265,4 +265,14 @@
     <string name="sync_queued">Encrypted backup requested. Check its status in Settings.</string>
     <string name="sync_not_configured">Enable encrypted Google Drive backup in Settings</string>
     <string name="liquid_glass">Liquid Glass</string>
+    <string name="notebook_folders">Folders</string>
+    <string name="notebook_all">All notes</string>
+    <string name="notebook_unfiled">Unfiled</string>
+    <string name="notebook_new">New folder</string>
+    <string name="notebook_name">Folder name</string>
+    <string name="notebook_protect">Password-protect folder</string>
+    <string name="notebook_password">Folder password (12 characters minimum)</string>
+    <string name="notebook_wrong_password">Incorrect password</string>
+    <string name="notebook_move">Move to folder</string>
+    <string name="notebook_created">Folder created</string>
 </resources>

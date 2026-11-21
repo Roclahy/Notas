@@ -140,6 +140,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         noteLoadStarted = true
         val id = pendingState?.getLong("id")
             ?: intent.getLongExtra(Constants.SelectedBaseNote, 0L)
+        if (id == 0L) model.notebookId =
+            intent.getLongExtra(Constants.SelectedNotebookId, 0L)
         if (id > 0 && PinSecurity.noteLocked(this, id)) {
             PinDialogs.check(this, PinSecurity.noteKey(id), onVerified = {
                 loadAuthorizedNote(id)

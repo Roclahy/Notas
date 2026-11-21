@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.core.text.toHtml
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.viewModelScope
 import androidx.room.withTransaction
@@ -77,7 +78,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     val labels = labelDao.getAll()
     val allNotes = baseNoteDao.getAll()
-    val baseNotes = Content(baseNoteDao.getFrom(Folder.NOTES), ::transform)
+    val selectedNotebookId = MutableLiveData(-1L)
+    val notebookFolders = database.getNotebookFolderDao().getAll()
+    val baseNotes = Content(
+        Transformations.switchMap(selectedNotebookId) { id ->
+            baseNoteDao.getFromNotebook(Folder.NOTES, id)
+        }, ::transform
+    )
     val deletedNotes = Content(baseNoteDao.getFrom(Folder.DELETED), ::transform)
     val archivedNotes = Content(baseNoteDao.getFrom(Folder.ARCHIVED), ::transform)
 
@@ -148,6 +155,27 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
 
     private fun transform(list: List<BaseNote>) = transform(list, pinned, others)
+
+    suspend fun createNotebook(name: String, passwordHash: String = ""): Long =
+        withContext(Dispatchers.IO) {
+            database.getNotebookFolderDao().insert(
+                com.omgodse.notally.room.NotebookFolder(
+                    name = name.trim().take(80),
+                    passwordHash = passwordHash
+                )
+            )
+        }
+
+    fun setActiveNotebook(id: Long) {
+        selectedNotebookId.value = id
+    }
+
+    suspend fun moveNoteToNotebook(id: Long, notebookId: Long) =
+        withContext(Dispatchers.IO) { baseNoteDao.moveToNotebook(id, notebookId) }
+
+    suspend fun getNotebookFolders() = withContext(Dispatchers.IO) {
+        database.getNotebookFolderDao().listOnce()
+    }
 
 
     fun savePreference(info: SeekbarInfo, value: Int) = executeAsync { preferences.savePreference(info, value) }
@@ -387,7 +415,8 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             }
         }
 
-        return BaseNote(0, type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, reminder)
+        return BaseNote(0, type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, reminder,
+            cursor.getColumnIndex("notebookId").takeIf { it >= 0 }?.let(cursor::getLong) ?: 0L)
     }
 
     private fun <T> convertCursorToList(cursor: Cursor, convert: (cursor: Cursor) -> T): ArrayList<T> {

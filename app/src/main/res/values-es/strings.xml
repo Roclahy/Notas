@@ -252,4 +252,14 @@
     <string name="sync_queued">Copia cifrada solicitada. Consulta su estado en Ajustes.</string>
     <string name="sync_not_configured">Activa la copia cifrada en Google Drive desde Ajustes</string>
     <string name="liquid_glass">Liquid Glass</string>
+    <string name="notebook_folders">Carpetas</string>
+    <string name="notebook_all">Todas las notas</string>
+    <string name="notebook_unfiled">Sin carpeta</string>
+    <string name="notebook_new">Nueva carpeta</string>
+    <string name="notebook_name">Nombre de la carpeta</string>
+    <string name="notebook_protect">Proteger con contraseña</string>
+    <string name="notebook_password">Contraseña de la carpeta (mínimo 12 caracteres)</string>
+    <string name="notebook_wrong_password">Contraseña incorrecta</string>
+    <string name="notebook_move">Mover a carpeta</string>
+    <string name="notebook_created">Carpeta creada</string>
 </resources>

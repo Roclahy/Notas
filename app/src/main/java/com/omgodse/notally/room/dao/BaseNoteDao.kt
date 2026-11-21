@@ -32,8 +32,8 @@ interface BaseNoteDao {
 
 
     @Query(
-        "INSERT INTO BaseNote (type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios)\n" +
-                "SELECT type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios\n" +
+        "INSERT INTO BaseNote (type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, notebookId)\n" +
+                "SELECT type, folder, color, title, pinned, timestamp, labels, body, spans, items, images, audios, notebookId\n" +
                 "FROM BaseNote WHERE id IN (:ids)"
     )
     suspend fun copy(ids: LongArray)
@@ -48,6 +48,18 @@ interface BaseNoteDao {
     @Query("DELETE FROM BaseNote WHERE folder = :folder")
     suspend fun deleteFrom(folder: Folder)
 
+
+    // La vista general no muestra el contenido de carpetas protegidas.
+    @Query("""SELECT * FROM BaseNote
+        WHERE folder = :folder AND (
+            (:notebookId = -1 AND (notebookId = 0 OR notebookId NOT IN
+                (SELECT id FROM NotebookFolder WHERE passwordHash != '')))
+            OR (notebookId = :notebookId AND :notebookId != -1)
+        ) ORDER BY pinned DESC, timestamp DESC""")
+    fun getFromNotebook(folder: Folder, notebookId: Long): LiveData<List<BaseNote>>
+
+    @Query("UPDATE BaseNote SET notebookId = :notebookId WHERE id = :id")
+    suspend fun moveToNotebook(id: Long, notebookId: Long)
 
     @Query("SELECT * FROM BaseNote WHERE folder = :folder ORDER BY pinned DESC, timestamp DESC")
     fun getFrom(folder: Folder): LiveData<List<BaseNote>>
