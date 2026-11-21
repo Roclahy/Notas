@@ -288,4 +288,5 @@
     <string name="notebook_wallpaper">Folder background</string>
     <string name="notebook_remove_wallpaper">Remove folder background</string>
     <string name="notebook_wallpaper_saved">Folder background updated</string>
+    <string name="notebook_without_password">Without password</string>
 </resources>

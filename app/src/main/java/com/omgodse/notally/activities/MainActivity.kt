@@ -385,7 +385,7 @@ class MainActivity : NotasBaseActivity() {
                 if (name.isBlank()) return@setPositiveButton
                 MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.notebook_protect)
-                    .setNegativeButton(R.string.notebook_unfiled) { _, _ ->
+                    .setNegativeButton(R.string.notebook_without_password) { _, _ ->
                         saveNotebook(name, null)
                     }
                     .setPositiveButton(R.string.notebook_protect) { _, _ ->

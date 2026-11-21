@@ -275,4 +275,5 @@
     <string name="notebook_wallpaper">Fondo de carpeta</string>
     <string name="notebook_remove_wallpaper">Quitar fondo de carpeta</string>
     <string name="notebook_wallpaper_saved">Fondo de carpeta actualizado</string>
+    <string name="notebook_without_password">Sin contraseña</string>
 </resources>
