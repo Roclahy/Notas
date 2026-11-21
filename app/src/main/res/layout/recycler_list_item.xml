@@ -32,7 +32,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:button="@drawable/notas_round_checkbox"
-            android:buttonTint="@null"
+            android:buttonTint="@color/NotasGold"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
             android:minWidth="0dp"

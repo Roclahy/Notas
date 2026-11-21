@@ -229,4 +229,5 @@
     <string name="wrong_backup_password">Contraseña incorrecta o copia dañada</string>
     <string name="encrypted_restore_complete">Copia restaurada. Reinicia la app para aplicar la apariencia.</string>
     <string name="backup_requires_android_6">El respaldo automático cifrado requiere Android 6 o posterior</string>
+    <string name="backup_provider_unavailable">El proveedor no permite seleccionar esa carpeta para respaldo automático. Puedes usar la exportación cifrada manual.</string>
 </resources>

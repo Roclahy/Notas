@@ -98,6 +98,17 @@ class Preferences private constructor(app: Application) {
     }
 
 
+    /** Actualiza los valores vivos después de restaurar preferencias autenticadas. */
+    fun reloadAfterBackupRestore() {
+        view.postValue(getListPref(View))
+        theme.postValue(getListPref(Theme))
+        dateFormat.postValue(getListPref(DateFormat))
+        textSize.postValue(getListPref(TextSize))
+        maxItems = getSeekbarPref(MaxItems)
+        maxLines = getSeekbarPref(MaxLines)
+        maxTitle = getSeekbarPref(MaxTitle)
+    }
+
     fun isAmoledTheme(): Boolean = getListPref(Theme) == Theme.amoled
 
     fun showDateCreated(): Boolean {

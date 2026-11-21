@@ -146,8 +146,12 @@ class Settings : Fragment() {
                     REQUEST_IMPORT_BACKUP -> importSelectedBackup(uri)
                     REQUEST_EXPORT_BACKUP -> exportEncryptedBackup(uri)
                     REQUEST_CHOOSE_FOLDER -> {
-                        model.setAutoBackupPath(uri)
-                        BackupScheduler.schedule(requireActivity().application, uri, refresh = true)
+                        try {
+                            model.setAutoBackupPath(uri)
+                            BackupScheduler.schedule(requireActivity().application, uri, refresh = true)
+                        } catch (_: Exception) {
+                            Toast.makeText(requireContext(),R.string.backup_provider_unavailable,Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             }

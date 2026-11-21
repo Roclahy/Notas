@@ -150,7 +150,8 @@ object EncryptedBackups {
                     if (value.length <= 40) edit.putString(key, value)
                 }
             }
-            edit.apply()
+            edit.commit()
         }
+        com.omgodse.notally.preferences.Preferences.getInstance(app).reloadAfterBackupRestore()
     }
 }

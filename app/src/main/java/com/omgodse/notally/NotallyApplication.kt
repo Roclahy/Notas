@@ -17,6 +17,8 @@ class NotallyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Elimina archivos ZIP temporales de restauraciones interrumpidas.
+        java.io.File(cacheDir,"encrypted_restore").listFiles()?.forEach { it.delete() }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             private var visibleActivities = 0
             override fun onActivityCreated(activity: Activity, state: Bundle?) {}

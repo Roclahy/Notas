@@ -240,4 +240,5 @@
     <string name="wrong_backup_password">Wrong passphrase or damaged backup</string>
     <string name="encrypted_restore_complete">Backup restored. Restart the app to apply appearance.</string>
     <string name="backup_requires_android_6">Encrypted automatic backups require Android 6 or newer</string>
+    <string name="backup_provider_unavailable">The provider does not allow selecting that folder for automatic backups. Manual encrypted export is available.</string>
 </resources>
