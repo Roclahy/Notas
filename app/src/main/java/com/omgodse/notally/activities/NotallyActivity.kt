@@ -47,6 +47,10 @@ import androidx.transition.TransitionManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.MaterialFade
 import com.omgodse.notally.R
+import com.omgodse.notally.backup.RoseDriveState
+import com.omgodse.notally.backup.BackupScheduler
+import com.omgodse.notally.room.NotallyDatabase
+import android.widget.ImageButton
 import com.omgodse.notally.databinding.ActivityNotallyBinding
 import com.omgodse.notally.databinding.DialogProgressBinding
 import com.omgodse.notally.databinding.DialogReminderBinding
@@ -81,6 +85,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     private var permittedToSave = false
     private var noteLoadStarted = false
     private var pendingState: Bundle? = null
+    private var syncActionButton: ImageButton? = null
+    private var editorDirty = false
 
     override fun onBackPressed() {
         if (model.searchEnabled.value) {
@@ -149,6 +155,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             setupListeners()
             setStateFromModel()
             configureUI()
+            editorDirty = false
+            updateNoteSyncIndicator()
             binding.ScrollView.visibility = View.VISIBLE
         }
     }
@@ -224,9 +232,15 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         binding.EnterTitle.doAfterTextChanged { text ->
             model.title = requireNotNull(text).trim().toString()
             updateCharacterCount()
+            editorDirty = true
+            updateNoteSyncIndicator()
         }
         if (model.type == Type.NOTE) {
-            binding.EnterBody.doAfterTextChanged { updateCharacterCount() }
+            binding.EnterBody.doAfterTextChanged {
+                updateCharacterCount()
+                editorDirty = true
+                updateNoteSyncIndicator()
+            }
         }
     }
 
@@ -682,10 +696,57 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         }
     }
 
+    private fun updateNoteSyncIndicator() {
+        val button = syncActionButton ?: return
+        val note = if (model.id > 0L) {
+            NotallyDatabase.getDatabase(application).getBaseNoteDao().get(model.id)
+        } else null
+        val synced = note != null && !editorDirty && RoseDriveState.noteSynced(this, note)
+        button.setImageResource(if (synced) R.drawable.refresh_cw else R.drawable.refresh_cw_off)
+        button.imageTintList = ColorStateList.valueOf(
+            if (synced) 0xFFF1C45B.toInt() else 0xFF98989D.toInt())
+        button.contentDescription = getString(if (synced) R.string.sync_note_uploaded else R.string.sync_note_pending)
+    }
+
+    private fun forceCurrentNoteSync() {
+        lifecycleScope.launch {
+            // Guarda el contenido actual antes de crear la copia cifrada.
+            if (permittedToSave) {
+                model.saveNote()
+                editorDirty = false
+            }
+            if (BackupScheduler.force(application)) {
+                Toast.makeText(this@NotallyActivity, R.string.sync_queued, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this@NotallyActivity, R.string.sync_not_configured, Toast.LENGTH_LONG).show()
+            }
+            updateNoteSyncIndicator()
+        }
+    }
+
     private fun setupToolbar() {
         binding.Toolbar.setNavigationOnClickListener { finish() }
         val menu = binding.Toolbar.menu
         menu.clear()
+
+        // ActionView compacto para que el indicador preceda al PIN.
+        val dp = resources.displayMetrics.density
+        val sync = ImageButton(this).apply {
+            layoutParams = android.view.ViewGroup.LayoutParams((44 * dp).toInt(), (42 * dp).toInt())
+            background = androidx.appcompat.content.res.AppCompatResources.getDrawable(
+                this@NotallyActivity, R.drawable.notas_info_pill)
+            setPadding((10 * dp).toInt(), (10 * dp).toInt(), (10 * dp).toInt(), (10 * dp).toInt())
+            scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+            setOnClickListener { forceCurrentNoteSync() }
+        }
+        syncActionButton = sync
+        menu.add(R.string.sync_pending).apply {
+            setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            actionView = sync
+        }
+        RoseDriveState.revision.observe(this) { updateNoteSyncIndicator() }
+        updateNoteSyncIndicator()
+
         val pin = menu.add(R.string.pin, R.drawable.pin) { model.togglePin() }
         pin.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         model.pinned.observe(this, Observer { pinned -> bindPinned(pin, pinned) })

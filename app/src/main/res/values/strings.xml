@@ -254,4 +254,10 @@
     <string name="google_drive_authorized">Google Drive connected. Backups will be encrypted before upload.</string>
     <string name="google_drive_require_google">This feature requires a Google account and Play Services.</string>
     <string name="google_drive_backup_description">End-to-end encrypted · Daily · Files in My Drive/Notas</string>
+    <string name="sync_pending">Sincronización pendiente</string>
+    <string name="sync_up_to_date">Todo sincronizado con Google Drive</string>
+    <string name="sync_note_uploaded">Nota incluida en la copia cifrada de Google Drive</string>
+    <string name="sync_note_pending">Nota pendiente de copia cifrada</string>
+    <string name="sync_queued">Copia cifrada solicitada; se subirá cuando haya conexión</string>
+    <string name="sync_not_configured">Activa la copia cifrada en Google Drive desde Ajustes</string>
 </resources>

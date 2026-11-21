@@ -39,6 +39,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.MaterialFade
 import com.omgodse.notally.MenuDialog
 import com.omgodse.notally.R
+import com.omgodse.notally.backup.RoseDriveState
+import com.omgodse.notally.backup.BackupScheduler
+import android.content.res.ColorStateList
 import com.omgodse.notally.databinding.ActivityMainBinding
 import com.omgodse.notally.databinding.DialogColorBinding
 import com.omgodse.notally.miscellaneous.Operations
@@ -82,6 +85,31 @@ class MainActivity : NotasBaseActivity() {
         setupActionMode()
         setupNavigation()
         setupSearch()
+        setupSyncStatus()
+    }
+
+    private fun setupSyncStatus() {
+        fun refresh() {
+            val complete = RoseDriveState.allSynced(this, model.allNotes.value.orEmpty())
+            binding.SyncStatus.setImageResource(if (complete) R.drawable.refresh_cw else R.drawable.refresh_cw_off)
+            binding.SyncStatus.imageTintList = ColorStateList.valueOf(
+                if (complete) 0xFFF1C45B.toInt() else 0xFF98989D.toInt())
+            binding.SyncStatus.contentDescription =
+                getString(if (complete) R.string.sync_up_to_date else R.string.sync_pending)
+        }
+        model.allNotes.observe(this) { refresh() }
+        RoseDriveState.revision.observe(this) { refresh() }
+        binding.SyncStatus.setOnClickListener {
+            if (BackupScheduler.force(application)) {
+                Toast.makeText(this, R.string.sync_queued, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, R.string.sync_not_configured, Toast.LENGTH_LONG).show()
+                if (navController.currentDestination?.id != R.id.Settings) {
+                    navController.navigate(R.id.Settings)
+                }
+            }
+        }
+        refresh()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -420,6 +448,7 @@ class MainActivity : NotasBaseActivity() {
         binding.SectionTitle.text = if (destination.id == R.id.Notes) getString(R.string.internal_app_name) else (destination.label ?: getString(R.string.notes))
         binding.SectionTitle.visibility = if (destination.id == R.id.Search) View.GONE else View.VISIBLE
         binding.OpenSections.visibility = if (destination.id == R.id.Search) View.GONE else View.VISIBLE
+        binding.SyncStatus.visibility = if (destination.id == R.id.Notes) View.VISIBLE else View.GONE
         binding.BottomPill.visibility =
             if (destination.id == R.id.Notes && !model.actionMode.isEnabled()) View.VISIBLE else View.GONE
 
