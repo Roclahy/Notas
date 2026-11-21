@@ -3,6 +3,8 @@ package com.omgodse.notally.security
 import android.content.Context
 import android.os.SystemClock
 import android.util.Base64
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
@@ -18,6 +20,11 @@ object PinSecurity {
     @Volatile var appUnlocked = false
     private val random = SecureRandom()
 
+    // El PIN vive fuera de Room: los cambios deben avisar a las tarjetas
+    // aunque el contenido de la nota no haya sido modificado.
+    private val mutableNoteChanges = MutableLiveData<Long>()
+    val noteChanges: LiveData<Long> get() = mutableNoteChanges
+
     fun appEnabled(context: Context): Boolean = enabled(context, APP_KEY)
     fun noteLocked(context: Context, id: Long): Boolean = id > 0 && enabled(context, noteKey(id))
     fun noteKey(id: Long): String = "pin:note:$id"
@@ -30,12 +37,19 @@ object PinSecurity {
         appUnlocked = true
     }
 
-    fun setNotePin(context: Context, id: Long, pin: String) = store(context, noteKey(id), pin)
+    fun setNotePin(context: Context, id: Long, pin: String) {
+        require(id > 0L) { "A note must be saved before it can be locked" }
+        store(context, noteKey(id), pin)
+        mutableNoteChanges.postValue(id)
+    }
     fun removeAppPin(context: Context) {
         clear(context, APP_KEY)
         appUnlocked = true
     }
-    fun removeNotePin(context: Context, id: Long) = clear(context, noteKey(id))
+    fun removeNotePin(context: Context, id: Long) {
+        clear(context, noteKey(id))
+        mutableNoteChanges.postValue(id)
+    }
 
     private fun clear(c: Context, key: String) {
         prefs(c).edit().remove(key).remove("$key:attempts").remove("$key:until").apply()

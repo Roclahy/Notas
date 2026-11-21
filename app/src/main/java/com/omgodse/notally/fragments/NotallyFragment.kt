@@ -16,6 +16,7 @@ import com.omgodse.notally.activities.MakeList
 import com.omgodse.notally.activities.TakeNote
 import com.omgodse.notally.databinding.FragmentNotesBinding
 import com.omgodse.notally.miscellaneous.Constants
+import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.recyclerview.ItemListener
 import com.omgodse.notally.recyclerview.adapter.BaseNoteAdapter
 import com.omgodse.notally.room.BaseNote
@@ -112,6 +113,18 @@ abstract class NotallyFragment : Fragment(), ItemListener {
     }
 
     private fun setupObserver() {
+        // Los PIN se guardan en SharedPreferences, no en Room. DiffUtil no
+        // detecta un cambio de candado cuando BaseNote sigue siendo igual.
+        // Al regresar desde el editor, LiveData entrega el último cambio
+        // pendiente y fuerza un bind completo solo de la tarjeta afectada.
+        PinSecurity.noteChanges.observe(viewLifecycleOwner) { changedId ->
+            val notesAdapter = adapter ?: return@observe
+            val position = notesAdapter.currentList.indexOfFirst {
+                it is BaseNote && it.id == changedId
+            }
+            if (position >= 0) notesAdapter.notifyItemChanged(position)
+        }
+
         getObservable().observe(viewLifecycleOwner) { list ->
             adapter?.submitList(list)
             binding?.ImageView?.isVisible = list.isEmpty()
