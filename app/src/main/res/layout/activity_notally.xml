@@ -51,7 +51,6 @@
         android:layout_height="match_parent"
         android:layout_below="@id/ToolbarContainer"
         android:fillViewport="true"
-        android:theme="@style/Colorless"
         android:visibility="gone">
 
         <LinearLayout
@@ -81,17 +80,43 @@
                 android:textSize="26sp"
                 android:textAppearance="?attr/textAppearanceHeadline6" />
 
-            <TextView
-                android:id="@+id/DateCreated"
+            <!-- Píldoras discretas bajo el título, integradas en el editor. -->
+            <LinearLayout
+                android:id="@+id/InfoPills"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:paddingStart="24dp"
-                android:paddingTop="10dp"
                 android:paddingEnd="24dp"
-                android:textSize="12sp"
-                android:text="@string/date"
-                android:textAppearance="?attr/textAppearanceBody2"
-                android:textColor="?android:textColorHint" />
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/DateCreated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="11dp"
+                    android:paddingVertical="7dp"
+                    android:text="@string/date"
+                    android:background="@drawable/notas_info_pill"
+                    android:textColor="@color/NotasMuted"
+                    android:fontFamily="@font/notas_sans"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/CharacterCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/notas_info_pill"
+                    android:paddingHorizontal="11dp"
+                    android:paddingVertical="7dp"
+                    android:fontFamily="@font/notas_sans"
+                    android:textColor="@color/NotasMuted"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/Reminder"
@@ -180,23 +205,5 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Contador contextual: queda encima del teclado con adjustResize. -->
-    <TextView
-        android:id="@+id/CharacterCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="12dp"
-        android:background="@drawable/notas_counter_pill"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="7dp"
-        android:paddingBottom="7dp"
-        android:fontFamily="@font/notas_sans"
-        android:textColor="@color/NotasMuted"
-        android:textSize="11sp"
-        android:visibility="gone" />
 
 </RelativeLayout>

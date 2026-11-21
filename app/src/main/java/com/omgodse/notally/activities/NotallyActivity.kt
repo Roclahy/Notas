@@ -239,7 +239,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     }
 
     open fun setStateFromModel() {
-        val formatter = DateFormat.getDateInstance(DateFormat.FULL)
+        val formatter = DateFormat.getDateInstance(DateFormat.MEDIUM)
         binding.DateCreated.text = formatter.format(model.timestamp)
 
         binding.EnterTitle.setText(model.title)
@@ -517,10 +517,10 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                     Frequency.MONTHLY -> getString(R.string.repeats_monthly, date)
                 }
                 binding.Reminder.visibility = View.VISIBLE
-                binding.DateCreated.updatePadding(bottom = 0)
+                binding.DateCreated.visibility = View.VISIBLE
             } else {
                 binding.Reminder.visibility = View.GONE
-                binding.DateCreated.updatePadding(bottom = padding)
+                binding.DateCreated.visibility = View.VISIBLE
             }
         })
 
@@ -713,19 +713,21 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     private fun showActionsSheet() {
         val dialog = BottomSheetDialog(this)
+        val sheetSurface = com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface, 0xFFF5F5F7.toInt())
+        val sheetText = com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0xFF1C1C1E.toInt())
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val pad = (20 * resources.displayMetrics.density).toInt()
             setPadding(pad, pad, pad, pad + (12 * resources.displayMetrics.density).toInt())
             background = GradientDrawable().apply {
-                setColor(if (com.omgodse.notally.preferences.Preferences.getInstance(application).isAmoledTheme()) 0xFF1C1C1E.toInt() else 0xFF303034.toInt())
+                setColor(sheetSurface)
                 val radius = 28f * resources.displayMetrics.density
                 cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
             }
         }
         val title = TextView(this).apply {
             text = getString(R.string.note_actions)
-            setTextColor(0xFFF5F5F7.toInt())
+            setTextColor(sheetText)
             textSize = 19f
             setPadding(12, 0, 0, (12 * resources.displayMetrics.density).toInt())
         }
@@ -749,7 +751,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             })
             val label = TextView(this).apply {
                 setText(titleId)
-                setTextColor(0xFFF5F5F7.toInt())
+                setTextColor(sheetText)
                 textSize = 15f
                 typeface = androidx.core.content.res.ResourcesCompat.getFont(this@NotallyActivity, R.font.notas_sans)
             }
@@ -796,8 +798,15 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             }
         }
         dialog.setContentView(container)
+        dialog.setOnShowListener {
+            dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.apply {
+                backgroundTintList = null
+                background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+                clipToOutline = false
+            }
+            dialog.window?.navigationBarColor = sheetSurface
+        }
         dialog.show()
-        dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private fun initialiseBinding() {
@@ -816,7 +825,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         val bodySize = TextSize.getDisplayBodySize(model.textSize)
 
         binding.EnterTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getEditTitleSize(model.textSize))
-        binding.DateCreated.setTextSize(TypedValue.COMPLEX_UNIT_SP, bodySize)
+        binding.DateCreated.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
         binding.Reminder.setTextSize(TypedValue.COMPLEX_UNIT_SP, bodySize)
         binding.EnterBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getEditBodySize(model.textSize))
 

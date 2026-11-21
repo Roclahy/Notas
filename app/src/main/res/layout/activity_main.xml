@@ -91,7 +91,7 @@
                 android:padding="13dp"
                 android:scaleType="centerInside"
                 app:srcCompat="@drawable/search"
-                app:tint="@color/NotasWhite" />
+                app:tint="?attr/colorOnSurface" />
 
             <ImageButton
                 android:id="@+id/TakeNote"
@@ -113,7 +113,7 @@
                 android:padding="13dp"
                 android:scaleType="centerInside"
                 app:srcCompat="@drawable/checkbox"
-                app:tint="@color/NotasWhite" />
+                app:tint="?attr/colorOnSurface" />
 
         </LinearLayout>
 
