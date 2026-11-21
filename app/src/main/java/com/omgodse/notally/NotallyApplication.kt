@@ -50,7 +50,7 @@ class NotallyApplication : Application() {
         BackupScheduler.schedule(this)
 
         val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key in RoseDriveState.trackedSettings) {
+            if (key != null && key in RoseDriveState.trackedSettings) {
                 RoseDriveState.invalidate()
                 if (RoseDriveState.enabled(this)) BackupScheduler.changed(this)
             }

@@ -41,6 +41,7 @@ class MakeList : NotallyActivity(Type.LIST) {
             override fun delete(position: Int) {
                 model.items.removeAt(position)
                 adapter.notifyItemRemoved(position)
+                markNoteEdited()
             }
 
             override fun moveToNext(position: Int) {
@@ -49,10 +50,12 @@ class MakeList : NotallyActivity(Type.LIST) {
 
             override fun textChanged(position: Int, text: String) {
                 model.items[position].body = text
+                markNoteEdited()
             }
 
             override fun checkedChanged(position: Int, checked: Boolean) {
                 model.items[position].checked = checked
+                markNoteEdited()
             }
         })
 
@@ -64,6 +67,7 @@ class MakeList : NotallyActivity(Type.LIST) {
         val position = model.items.size
         val listItem = ListItem(String(), false)
         model.items.add(listItem)
+        markNoteEdited()
         adapter.notifyItemInserted(position)
         val inputManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         binding.RecyclerView.post {

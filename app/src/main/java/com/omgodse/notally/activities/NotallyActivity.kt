@@ -88,6 +88,11 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     private var syncActionButton: ImageButton? = null
     private var editorDirty = false
 
+    protected fun markNoteEdited() {
+        editorDirty = true
+        updateNoteSyncIndicator()
+    }
+
     override fun onBackPressed() {
         if (model.searchEnabled.value) {
             model.closeSearch()
@@ -233,14 +238,12 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         binding.EnterTitle.doAfterTextChanged { text ->
             model.title = requireNotNull(text).trim().toString()
             updateCharacterCount()
-            editorDirty = true
-            updateNoteSyncIndicator()
+            markNoteEdited()
         }
         if (model.type == Type.NOTE) {
             binding.EnterBody.doAfterTextChanged {
                 updateCharacterCount()
-                editorDirty = true
-                updateNoteSyncIndicator()
+                markNoteEdited()
             }
         }
     }
@@ -425,6 +428,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 // La superficie de la nota continúa bajo la barra transparente.
                 window.statusBarColor = Color.TRANSPARENT
+                androidx.core.view.WindowCompat.getInsetsController(
+                    window, window.decorView).isAppearanceLightStatusBars =
+                    androidx.core.graphics.ColorUtils.calculateLuminance(colorInt) > 0.55
             }
             binding.root.setBackgroundColor(colorInt)
             binding.RecyclerView.setBackgroundColor(colorInt)
@@ -700,7 +706,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     private fun updateNoteSyncIndicator() {
         val button = syncActionButton ?: return
-        val note = if (model.id > 0L) {
+        val note = if (model.id > 0L && !editorDirty) {
             NotallyDatabase.getDatabase(application).getBaseNoteDao().get(model.id)
         } else null
         val synced = note != null && !editorDirty && RoseDriveState.noteSynced(this, note)
@@ -751,7 +757,10 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
         val pin = menu.add(R.string.pin, R.drawable.pin) { model.togglePin() }
         pin.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        model.pinned.observe(this, Observer { pinned -> bindPinned(pin, pinned) })
+        model.pinned.observe(this, Observer { pinned ->
+            bindPinned(pin, pinned)
+            if (permittedToSave) markNoteEdited()
+        })
         menu.add(R.string.share, R.drawable.share) { share() }
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.add(R.string.more_options, R.drawable.notas_more) { showActionsSheet() }
