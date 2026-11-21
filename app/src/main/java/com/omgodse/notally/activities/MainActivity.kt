@@ -437,7 +437,7 @@ class MainActivity : NotasBaseActivity() {
         }
         val layout = TextInputLayout(this).apply {
             this.hint = getString(hint)
-            boxBackgroundMode = TextInputLayout.BOX_OUTLINE
+            boxBackgroundMode = TextInputLayout.BOX_BACKGROUND_OUTLINE
             boxStrokeColor = 0xFFF1C45B.toInt()
             setBoxCornerRadii(14f * resources.displayMetrics.density,
                 14f * resources.displayMetrics.density,
