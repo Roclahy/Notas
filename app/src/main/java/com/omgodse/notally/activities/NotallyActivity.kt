@@ -13,6 +13,12 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.LayerDrawable
+import com.omgodse.notally.security.SecureMedia
+import java.io.File
+import java.util.UUID
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ImageView
@@ -178,6 +184,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
+                REQUEST_NOTE_WALLPAPER -> {
+                    data?.data?.let(::saveNewWallpaper)
+                }
                 REQUEST_ADD_IMAGES -> {
                     val uri = data?.data
                     val clipData = data?.clipData
@@ -426,35 +435,96 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     }
 
 
+    private fun saveNewWallpaper(uri: Uri) {
+        lifecycleScope.launch {
+            try {
+                val saved = withContext(Dispatchers.IO) {
+                    val root = File(application.filesDir, "SecureMedia/Wallpapers")
+                        .apply { mkdirs() }
+                    val name = UUID.randomUUID().toString() + ".wall"
+                    val source = requireNotNull(contentResolver.openInputStream(uri))
+                    SecureMedia.encryptFromStream(application, source, File(root, name))
+                    name
+                }
+                model.wallpaperName = saved
+                markNoteEdited()
+                applyNoteAppearance(model.color.value)
+            } catch (_: Exception) {
+                Toast.makeText(this@NotallyActivity,
+                    R.string.wallpaper_invalid, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun applyNoteAppearance(noteColor: NoteColor) {
+        val isAmoled = com.omgodse.notally.preferences.Preferences
+            .getInstance(application).isAmoledTheme()
+        val colorInt = if (isAmoled && noteColor == NoteColor.DEFAULT) Color.BLACK
+            else Operations.extractColor(noteColor, this)
+        val wallpaperFile = model.wallpaperName.takeIf { it.isNotBlank() }
+            ?.let { File(application.filesDir, "SecureMedia/Wallpapers/$it") }
+
+        var backgroundColor = colorInt
+        var hasWallpaper = false
+        var foreground = if (androidx.core.graphics.ColorUtils.calculateLuminance(colorInt) < 0.48)
+            Color.WHITE else 0xFF222225.toInt()
+        if (wallpaperFile != null && wallpaperFile.exists()) {
+            try {
+                val bitmap = SecureMedia.openDecrypted(application, wallpaperFile).use {
+                    BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply {
+                        inSampleSize = 4
+                    })
+                }
+                if (bitmap != null) {
+                    val avg = NoteWallpaperDrawable.average(bitmap)
+                    val darkText = androidx.core.graphics.ColorUtils.calculateLuminance(avg) > 0.6
+                    foreground = if (darkText) 0xFF151924.toInt() else Color.WHITE
+                    backgroundColor = avg
+                    binding.root.background = NoteWallpaperDrawable(bitmap, darkText)
+                    hasWallpaper = true
+                }
+            } catch (_: Exception) { hasWallpaper = false }
+        }
+        if (!hasWallpaper) binding.root.setBackgroundColor(colorInt)
+        binding.RecyclerView.setBackgroundColor(
+            if (hasWallpaper) Color.TRANSPARENT else colorInt)
+        binding.Toolbar.setBackgroundColor(
+            if (hasWallpaper) Color.TRANSPARENT else colorInt)
+        binding.Search.setBackgroundColor(
+            if (hasWallpaper) Color.TRANSPARENT else colorInt)
+        binding.ToolbarContainer.setBackgroundColor(
+            if (hasWallpaper) Color.TRANSPARENT else colorInt)
+        binding.EnterTitle.setTextColor(foreground)
+        binding.EnterBody.setTextColor(foreground)
+        binding.EnterTitle.setHintTextColor(
+            androidx.core.graphics.ColorUtils.setAlphaComponent(foreground, 165))
+        binding.EnterBody.setHintTextColor(
+            androidx.core.graphics.ColorUtils.setAlphaComponent(foreground, 165))
+        val pill = if (foreground == Color.WHITE) 0x4D000000 else 0x44FFFFFF
+        listOf(binding.DateCreated, binding.CharacterCount).forEach { view ->
+            view.background = GradientDrawable().apply {
+                setColor(pill)
+                cornerRadius = 999f * resources.displayMetrics.density
+            }
+            view.setTextColor(foreground)
+        }
+        for (i in 0 until binding.Toolbar.menu.size()) {
+            binding.Toolbar.menu.getItem(i).icon?.mutate()?.setTint(foreground)
+        }
+        binding.Toolbar.navigationIcon?.mutate()?.setTint(foreground)
+        syncActionButton?.imageTintList = ColorStateList.valueOf(foreground)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            window.statusBarColor = Color.TRANSPARENT
+            androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                .isAppearanceLightStatusBars = if (hasWallpaper) false
+                else androidx.core.graphics.ColorUtils.calculateLuminance(backgroundColor) > 0.55
+        }
+    }
+
     private fun setupColor() {
         model.color.observe(this, Observer { color ->
             if (permittedToSave) markNoteEdited()
-            // Las notas heredan negro puro en AMOLED, incluso si tenían color previo.
-            val isAmoled = com.omgodse.notally.preferences.Preferences.getInstance(application).isAmoledTheme()
-            val colorInt = if (isAmoled && color == NoteColor.DEFAULT) Color.BLACK else Operations.extractColor(color, this)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                // La superficie de la nota continúa bajo la barra transparente.
-                window.statusBarColor = Color.TRANSPARENT
-                androidx.core.view.WindowCompat.getInsetsController(
-                    window, window.decorView).isAppearanceLightStatusBars =
-                    androidx.core.graphics.ColorUtils.calculateLuminance(colorInt) > 0.55
-            }
-            binding.root.setBackgroundColor(colorInt)
-            binding.RecyclerView.setBackgroundColor(colorInt)
-            binding.Toolbar.backgroundTintList = ColorStateList.valueOf(colorInt)
-            binding.Search.backgroundTintList = ColorStateList.valueOf(colorInt)
-            binding.ToolbarContainer.setBackgroundColor(colorInt)
-            // Píldoras translúcidas que acompañan el color de cada nota.
-            val pillLight = androidx.core.graphics.ColorUtils.calculateLuminance(colorInt) < 0.48
-            val foreground = if (pillLight) Color.WHITE else 0xFF303034.toInt()
-            val pill = if (pillLight) 0x3DFFFFFF else 0x30000000
-            listOf(binding.DateCreated, binding.CharacterCount).forEach { view ->
-                view.background = GradientDrawable().apply {
-                    setColor(pill)
-                    cornerRadius = 999f * resources.displayMetrics.density
-                }
-                view.setTextColor(foreground)
-            }
+            applyNoteAppearance(color)
         })
     }
 
@@ -907,6 +977,21 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             startActivityForResult(Intent(this, DrawingActivity::class.java), REQUEST_ADD_IMAGES)
         }
         action(R.string.change_color, R.drawable.change_color) { showNoteColorPicker() }
+        action(R.string.wallpaper_custom, R.drawable.add_images) {
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "image/*"
+                addCategory(Intent.CATEGORY_OPENABLE)
+                putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            }
+            startActivityForResult(intent, REQUEST_NOTE_WALLPAPER)
+        }
+        if (model.wallpaperName.isNotBlank()) {
+            action(R.string.wallpaper_remove, R.drawable.delete) {
+                model.wallpaperName = ""
+                markNoteEdited()
+                applyNoteAppearance(model.color.value)
+            }
+        }
         action(R.string.notebook_move, R.drawable.notas_nav_folder) { moveToNotebook() }
         if (PinSecurity.noteLocked(this, model.id)) {
             action(R.string.remove_note_pin, R.drawable.notas_lock) {
@@ -1003,6 +1088,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     }
 
     companion object {
+        private const val REQUEST_NOTE_WALLPAPER = 74
         private const val REQUEST_ADD_IMAGES = 30
         private const val REQUEST_VIEW_IMAGES = 31
         private const val REQUEST_NOTIFICATION_PERMISSION = 32
