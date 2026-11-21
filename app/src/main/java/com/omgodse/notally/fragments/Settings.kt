@@ -107,6 +107,8 @@ class Settings : Fragment() {
                 getString(R.string.google_drive_needs_auth)
             RoseDriveState.isUploading(context) ->
                 getString(R.string.google_drive_uploading)
+            RoseDriveState.isWaitingForConnection(context) ->
+                getString(R.string.google_drive_waiting_connection)
             RoseDriveState.lastFailure(context) != null ->
                 getString(R.string.google_drive_upload_error, RoseDriveState.lastFailure(context))
             RoseDriveState.isQueued(context) ->
@@ -377,6 +379,9 @@ class Settings : Fragment() {
         }
         binding.Website.setOnClickListener {
             openLink("https://notas.roclahy.com/")
+        }
+        binding.SourceCode.setOnClickListener {
+            openLink("https://github.com/Roclahy/Notas")
         }
         binding.PrivacyPolicy.setOnClickListener {
             openLink("https://notas.roclahy.com/privacidad/")

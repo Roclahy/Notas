@@ -288,6 +288,11 @@
     <string name="notebook_without_password">Without password</string>
     <string name="telegram_channel">Telegram channel</string>
     <string name="google_drive_queued">Backup pending · sending shortly</string>
+    <string name="google_drive_waiting_connection">No Internet connection · Backup pending. Will retry automatically.</string>
+    <string name="google_drive_unreachable">Could not connect to Google Drive</string>
+    <string name="google_drive_network_error">Network error connecting to Google Drive</string>
+    <string name="google_drive_play_services_error">Google Play Services error (%1$d)</string>
+    <string name="google_drive_internal_error">Unable to complete backup</string>
     <string name="link_to_note">Link note</string>
     <string name="link_to_folder">Link folder</string>
     <string name="link_open_note">Open the linked note?</string>

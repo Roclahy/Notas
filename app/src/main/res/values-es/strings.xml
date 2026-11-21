@@ -275,6 +275,11 @@
     <string name="notebook_without_password">Sin contraseña</string>
     <string name="telegram_channel">Canal de Telegram</string>
     <string name="google_drive_queued">Copia pendiente · se enviará en breve</string>
+    <string name="google_drive_waiting_connection">Sin conexión a Internet · Copia pendiente. Se reintentará automáticamente.</string>
+    <string name="google_drive_unreachable">No se pudo conectar con Google Drive</string>
+    <string name="google_drive_network_error">Error de red al conectar con Google Drive</string>
+    <string name="google_drive_play_services_error">Error de Google Play Services (%1$d)</string>
+    <string name="google_drive_internal_error">No se pudo completar la copia</string>
     <string name="link_to_note">Enlazar nota</string>
     <string name="link_to_folder">Enlazar carpeta</string>
     <string name="link_open_note">¿Abrir la nota enlazada?</string>
