@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="Default">#121212</color>
+    <color name="NotasMuted">#98989D</color>
+    <color name="NotasDivider">#343438</color>
     <color name="Coral">#76172D</color>
     <color name="Orange">#692A18</color>
     <color name="Sand">#7C4A03</color>

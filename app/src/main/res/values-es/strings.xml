@@ -180,4 +180,10 @@
     <string name="creator_name" translatable="false">Rosanna Moreno</string>
     <string name="source_code">Código fuente</string>
     <string name="version_label">Versión</string>
+    <string name="more_options">Más opciones</string>
+    <string name="note_actions">Opciones de la nota</string>
+    <plurals name="notas_character_count">
+        <item quantity="one">%d carácter</item>
+        <item quantity="other">%d caracteres</item>
+    </plurals>
 </resources>

@@ -9,6 +9,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.ImageView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -191,7 +197,19 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     open fun setupListeners() {
         binding.EnterTitle.doAfterTextChanged { text ->
             model.title = requireNotNull(text).trim().toString()
+            updateCharacterCount()
         }
+        if (model.type == Type.NOTE) {
+            binding.EnterBody.doAfterTextChanged { updateCharacterCount() }
+        }
+    }
+
+    private fun updateCharacterCount() {
+        if (model.type != Type.NOTE) return
+        val title = binding.EnterTitle.text?.toString().orEmpty()
+        val body = model.body.toString()
+        val count = title.codePointCount(0, title.length) + body.codePointCount(0, body.length)
+        binding.CharacterCount.text = resources.getQuantityString(R.plurals.notas_character_count, count, count)
     }
 
     open fun setStateFromModel() {
@@ -199,6 +217,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         binding.DateCreated.text = formatter.format(model.timestamp)
 
         binding.EnterTitle.setText(model.title)
+        updateCharacterCount()
 
         binding.EnterBody.setEditableFactory(object : Editable.Factory() {
 
@@ -359,7 +378,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     private fun setupColor() {
         model.color.observe(this, Observer { color ->
-            val colorInt = Operations.extractColor(color, this)
+            // Las notas heredan negro puro en AMOLED, incluso si tenían color previo.
+            val colorInt = if (com.omgodse.notally.preferences.Preferences.getInstance(application).isAmoledTheme()) Color.BLACK else Operations.extractColor(color, this)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 window.statusBarColor = colorInt
             }
@@ -367,6 +387,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             binding.RecyclerView.setBackgroundColor(colorInt)
             binding.Toolbar.backgroundTintList = ColorStateList.valueOf(colorInt)
             binding.Search.backgroundTintList = ColorStateList.valueOf(colorInt)
+            binding.ToolbarContainer.setBackgroundColor(colorInt)
         })
     }
 
@@ -636,41 +657,85 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     private fun setupToolbar() {
         binding.Toolbar.setNavigationOnClickListener { finish() }
-
         val menu = binding.Toolbar.menu
-
+        menu.clear()
         val pin = menu.add(R.string.pin, R.drawable.pin) { model.togglePin() }
-        model.pinned.observe(this, Observer { pinned ->
-            bindPinned(pin, pinned)
-        })
-
+        pin.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        model.pinned.observe(this, Observer { pinned -> bindPinned(pin, pinned) })
         menu.add(R.string.share, R.drawable.share) { share() }
-        menu.add(R.string.labels, R.drawable.label) { label() }
-        if (model.type == Type.NOTE) {
-            menu.add(R.string.search, R.drawable.search) { model.searchEnabled.value = true }
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        menu.add(R.string.more_options, R.drawable.notas_more) { showActionsSheet() }
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+    }
+
+    private fun showActionsSheet() {
+        val dialog = BottomSheetDialog(this)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = (20 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad + (12 * resources.displayMetrics.density).toInt())
+            background = GradientDrawable().apply {
+                setColor(if (com.omgodse.notally.preferences.Preferences.getInstance(application).isAmoledTheme()) 0xFF1C1C1E.toInt() else 0xFF303034.toInt())
+                val radius = 28f * resources.displayMetrics.density
+                cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+            }
         }
-        menu.add(R.string.add_images, R.drawable.add_images) { selectImages() }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            menu.add(R.string.record_audio, R.drawable.record_audio) { checkAudioPermission() }
+        val title = TextView(this).apply {
+            text = getString(R.string.note_actions)
+            setTextColor(0xFFF5F5F7.toInt())
+            textSize = 19f
+            setPadding(12, 0, 0, (12 * resources.displayMetrics.density).toInt())
         }
-
-        menu.add(R.string.set_reminder, R.drawable.reminder) { checkNotificationPermission() }
-
+        container.addView(title)
+        fun action(titleId: Int, iconId: Int, handler: () -> Unit) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                minimumHeight = (55 * resources.displayMetrics.density).toInt()
+                background = android.graphics.drawable.RippleDrawable(
+                    android.content.res.ColorStateList.valueOf(0x33F1C45B), null, null
+                )
+            }
+            val icon = ImageView(this).apply {
+                setImageResource(iconId)
+                imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+            }
+            row.addView(icon, LinearLayout.LayoutParams((25 * resources.displayMetrics.density).toInt(), (25 * resources.displayMetrics.density).toInt()).apply {
+                marginStart = (10 * resources.displayMetrics.density).toInt()
+                marginEnd = (16 * resources.displayMetrics.density).toInt()
+            })
+            val label = TextView(this).apply {
+                setText(titleId)
+                setTextColor(0xFFF5F5F7.toInt())
+                textSize = 15f
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@NotallyActivity, R.font.notas_sans)
+            }
+            row.addView(label)
+            row.setOnClickListener { dialog.dismiss(); handler() }
+            container.addView(row)
+        }
+        action(R.string.labels, R.drawable.label) { label() }
+        if (model.type == Type.NOTE) action(R.string.search, R.drawable.search) { model.searchEnabled.value = true }
+        action(R.string.add_images, R.drawable.add_images) { selectImages() }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) action(R.string.record_audio, R.drawable.record_audio) { checkAudioPermission() }
+        action(R.string.set_reminder, R.drawable.reminder) { checkNotificationPermission() }
         when (model.folder) {
             Folder.NOTES -> {
-                menu.add(R.string.delete, R.drawable.delete) { delete() }
-                menu.add(R.string.archive, R.drawable.archive) { archive() }
+                action(R.string.archive, R.drawable.archive) { archive() }
+                action(R.string.delete, R.drawable.delete) { delete() }
             }
             Folder.DELETED -> {
-                menu.add(R.string.restore, R.drawable.restore) { restore() }
-                menu.add(R.string.delete_forever, R.drawable.delete) { deleteForever() }
+                action(R.string.restore, R.drawable.restore) { restore() }
+                action(R.string.delete_forever, R.drawable.delete) { deleteForever() }
             }
             Folder.ARCHIVED -> {
-                menu.add(R.string.delete, R.drawable.delete) { delete() }
-                menu.add(R.string.unarchive, R.drawable.unarchive) { restore() }
+                action(R.string.unarchive, R.drawable.unarchive) { restore() }
+                action(R.string.delete, R.drawable.delete) { delete() }
             }
         }
+        dialog.setContentView(container)
+        dialog.show()
+        dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private fun initialiseBinding() {
@@ -679,6 +744,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             Type.NOTE -> {
                 binding.AddItem.visibility = View.GONE
                 binding.RecyclerView.visibility = View.GONE
+                binding.CharacterCount.visibility = View.VISIBLE
             }
             Type.LIST -> {
                 binding.EnterBody.visibility = View.GONE
@@ -702,6 +768,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         setupReminder()
         setupToolbar()
         setupSearch()
+        updateCharacterCount()
 
         binding.root.isSaveFromParentEnabled = false
     }

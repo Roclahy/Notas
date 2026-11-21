@@ -191,4 +191,10 @@
     <string name="creator_name" translatable="false">Rosanna Moreno</string>
     <string name="source_code">Source code</string>
     <string name="version_label">Version</string>
+    <string name="more_options">More options</string>
+    <string name="note_actions">Note actions</string>
+    <plurals name="notas_character_count">
+        <item quantity="one">%d character</item>
+        <item quantity="other">%d characters</item>
+    </plurals>
 </resources>

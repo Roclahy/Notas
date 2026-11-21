@@ -10,18 +10,21 @@
         android:id="@+id/ToolbarContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:elevation="4dp">
+        android:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/Toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?android:attr/colorBackground"
+            android:minHeight="64dp"
             app:navigationIcon="?attr/homeAsUpIndicator" />
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/Search"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?android:attr/colorBackground"
             android:outlineProvider="none"
             app:navigationIcon="?attr/homeAsUpIndicator">
 
@@ -72,8 +75,10 @@
                 android:imeOptions="actionNext"
                 android:inputType="textMultiLine|textCapSentences"
                 android:paddingStart="24dp"
-                android:paddingTop="16dp"
+                android:paddingTop="22dp"
                 android:paddingEnd="24dp"
+                android:fontFamily="@font/notas_sans"
+                android:textSize="26sp"
                 android:textAppearance="?attr/textAppearanceHeadline6" />
 
             <TextView
@@ -81,8 +86,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingStart="24dp"
-                android:paddingTop="16dp"
+                android:paddingTop="10dp"
                 android:paddingEnd="24dp"
+                android:textSize="12sp"
                 android:text="@string/date"
                 android:textAppearance="?attr/textAppearanceBody2"
                 android:textColor="?android:textColorHint" />
@@ -101,10 +107,7 @@
                 android:textAppearance="?attr/textAppearanceBody2"
                 app:drawableStartCompat="@drawable/reminder_20" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider" />
+            <!-- Sin línea divisoria: el contenido fluye desde la fecha. -->
 
             <com.omgodse.notally.view.OverflowEditText
                 android:id="@+id/EnterBody"
@@ -114,8 +117,9 @@
                 android:hint="@string/note"
                 android:inputType="textMultiLine|textCapSentences"
                 android:paddingStart="24dp"
-                android:paddingTop="16dp"
+                android:paddingTop="24dp"
                 android:paddingEnd="24dp"
+                android:fontFamily="@font/notas_sans"
                 android:textAppearance="?attr/textAppearanceBody1" />
 
             <androidx.recyclerview.widget.RecyclerView
@@ -175,5 +179,24 @@
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Contador contextual: queda encima del teclado con adjustResize. -->
+    <TextView
+        android:id="@+id/CharacterCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/notas_counter_pill"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="7dp"
+        android:fontFamily="@font/notas_sans"
+        android:textColor="@color/NotasMuted"
+        android:textSize="11sp"
+        android:visibility="gone" />
 
 </RelativeLayout>
