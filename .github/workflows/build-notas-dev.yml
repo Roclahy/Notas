@@ -7,7 +7,6 @@ on:
       - work/notas-apple-amoled-v1
     paths:
       - .github/workflows/build-notas-dev.yml
-      - app/**
 
 permissions:
   contents: read
