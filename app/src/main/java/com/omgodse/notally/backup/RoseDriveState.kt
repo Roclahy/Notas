@@ -1,6 +1,7 @@
 package com.omgodse.notally.backup
 
 import android.content.Context
+import android.preference.PreferenceManager
 import androidx.lifecycle.MutableLiveData
 import com.omgodse.notally.room.BaseNote
 import org.json.JSONObject
@@ -16,6 +17,8 @@ import java.security.MessageDigest
 object RoseDriveState {
     private const val PREFS = "rose_google_drive"
     private const val BACKED_UP = "uploaded_note_hashes"
+    private const val BACKED_UP_SETTINGS = "uploaded_settings_hash"
+    val trackedSettings = setOf("theme", "view", "dateFormat", "textSize", "maxItems", "maxLines", "maxTitle")
     val revision = MutableLiveData(0L)
 
     private fun prefs(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -24,7 +27,7 @@ object RoseDriveState {
     fun setEnabled(c: Context, enabled: Boolean) {
         val editor = prefs(c).edit().putBoolean("enabled", enabled)
         if (!enabled) {
-            editor.remove(BACKED_UP).remove("last_upload").remove("needs_authorization")
+            editor.remove(BACKED_UP).remove(BACKED_UP_SETTINGS).remove("last_upload").remove("needs_authorization")
         }
         editor.apply()
         invalidate()
@@ -40,6 +43,16 @@ object RoseDriveState {
 
     fun snapshot(notes: List<BaseNote>): Map<Long, String> =
         notes.associate { it.id to fingerprint(it) }
+
+    fun settingsFingerprint(c: Context): String {
+        val values = PreferenceManager.getDefaultSharedPreferences(c).all
+        val canonical = trackedSettings.sorted().joinToString("\\n") { key ->
+            key + "=" + (values[key]?.toString() ?: "")
+        }
+        return MessageDigest.getInstance("SHA-256")
+            .digest(canonical.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+    }
 
     private fun previous(c: Context): Map<Long, String> {
         val encoded = prefs(c).getString(BACKED_UP, null) ?: return emptyMap()
@@ -61,13 +74,15 @@ object RoseDriveState {
 
     fun allSynced(c: Context, notes: List<BaseNote>): Boolean =
         enabled(c) && !needsAuthorization(c) && lastUpload(c) > 0 &&
-            previous(c) == snapshot(notes)
+            previous(c) == snapshot(notes) &&
+            prefs(c).getString(BACKED_UP_SETTINGS, null) == settingsFingerprint(c)
 
-    fun markUploaded(c: Context, recorded: Map<Long, String>) {
+    fun markUploaded(c: Context, recorded: Map<Long, String>, settingsHash: String) {
         val json = JSONObject()
         for ((id, hash) in recorded) json.put(id.toString(), hash)
         // Se confirma SOLO después de completar la carga cifrada a Drive.
         prefs(c).edit().putString(BACKED_UP, json.toString())
+            .putString(BACKED_UP_SETTINGS, settingsHash)
             .putLong("last_upload", System.currentTimeMillis())
             .putBoolean("needs_authorization", false).commit()
         invalidate()

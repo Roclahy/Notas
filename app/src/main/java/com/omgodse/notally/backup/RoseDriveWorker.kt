@@ -41,12 +41,13 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
                 return Result.failure() // No abrir consentimiento desde un Worker.
             }
             val recorded = RoseDriveState.snapshot(NotallyDatabase.getDatabase(app).getBaseNoteDao().getAllForSync())
+            val settingsHash = RoseDriveState.settingsFingerprint(app)
             file = File.createTempFile("rose_backup_",".rnotas",app.cacheDir)
             file.outputStream().use { output -> EncryptedBackups.write(app,output,passphrase) }
             val name = "Notas-" +
                 SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(Date()) + ".rnotas"
             RoseDriveApi.backup(requireNotNull(authorization.accessToken),file,name)
-            RoseDriveState.markUploaded(app, recorded)
+            RoseDriveState.markUploaded(app, recorded, settingsHash)
             return Result.success()
         } catch (_: Exception) {
             return Result.retry() // WorkManager reintenta al regresar Internet.

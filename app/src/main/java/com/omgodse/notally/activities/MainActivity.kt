@@ -90,7 +90,7 @@ class MainActivity : NotasBaseActivity() {
 
     private fun setupSyncStatus() {
         fun refresh() {
-            val complete = RoseDriveState.allSynced(this, model.allNotes.value.orEmpty())
+            val complete = model.allNotes.value?.let { RoseDriveState.allSynced(this, it) } ?: false
             binding.SyncStatus.setImageResource(if (complete) R.drawable.refresh_cw else R.drawable.refresh_cw_off)
             binding.SyncStatus.imageTintList = ColorStateList.valueOf(
                 if (complete) 0xFFF1C45B.toInt() else 0xFF98989D.toInt())

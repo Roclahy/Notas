@@ -1,6 +1,8 @@
 package com.omgodse.notally
 
 import android.app.Application
+import android.content.SharedPreferences
+import android.preference.PreferenceManager
 import android.app.Activity
 import android.os.Bundle
 import com.omgodse.notally.security.PinSecurity
@@ -16,6 +18,7 @@ import com.omgodse.notally.preferences.Theme
 import java.util.concurrent.TimeUnit
 
 class NotallyApplication : Application() {
+    private var settingsListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -45,6 +48,16 @@ class NotallyApplication : Application() {
         }
 
         BackupScheduler.schedule(this)
+
+        val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key in RoseDriveState.trackedSettings) {
+                RoseDriveState.invalidate()
+                if (RoseDriveState.enabled(this)) BackupScheduler.changed(this)
+            }
+        }
+        settingsListener = prefListener // Mantiene viva la referencia del listener.
+        PreferenceManager.getDefaultSharedPreferences(this)
+            .registerOnSharedPreferenceChangeListener(prefListener)
 
         // Centraliza cambios de notas, tareas, fijados, eliminaciones y medios.
         // El estado solo pasa a sincronizado después de que Drive acepte
