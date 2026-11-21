@@ -209,8 +209,7 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                     db.getBaseNoteDao().getAllForSync()
                         .filter { it.folder == Folder.NOTES && it.id != model.id }
                         .map { it.id to it.title.ifBlank {
-                            it.body.lineSequence().firstOrNull()?.take(70).orEmpty()
-                                .ifBlank { getString(R.string.untitled_note_link) }
+                            getString(R.string.untitled_note_link)
                         } }
                 } else {
                     db.getNotebookFolderDao().listOnce().map { it.id to it.name }

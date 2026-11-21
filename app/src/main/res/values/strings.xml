@@ -288,4 +288,12 @@
     <string name="notebook_without_password">Without password</string>
     <string name="telegram_channel">Telegram channel</string>
     <string name="google_drive_queued">Backup queued · uploads when connected</string>
+    <string name="link_to_note">Link note</string>
+    <string name="link_to_folder">Link folder</string>
+    <string name="link_open_note">Open the linked note?</string>
+    <string name="link_open_folder">Open the linked folder?</string>
+    <string name="link_no_results">No notes or folders found</string>
+    <string name="untitled_note_link">Untitled note</string>
+    <string name="invalid_link">Enter a valid web, email, or phone link</string>
+    <string name="link_target_missing">This link no longer has a valid target</string>
 </resources>

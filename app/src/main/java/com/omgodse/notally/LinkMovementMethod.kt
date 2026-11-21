@@ -75,8 +75,9 @@ class LinkMovementMethod(private val onClick: (span: URLSpan) -> Unit) : ArrowKe
         touchX += textView.scrollX
         touchY += textView.scrollY
 
-        val touchedLine = textView.layout.getLineForVertical(touchY)
-        val touchOffset = textView.layout.getOffsetForHorizontal(touchedLine, touchX.toFloat())
+        val layout = textView.layout ?: return null
+        val touchedLine = layout.getLineForVertical(touchY)
+        val touchOffset = layout.getOffsetForHorizontal(touchedLine, touchX.toFloat())
 
         touchedLineBounds.left = textView.layout.getLineLeft(touchedLine)
         touchedLineBounds.top = textView.layout.getLineTop(touchedLine).toFloat()
