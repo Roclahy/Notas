@@ -88,21 +88,8 @@ class Settings : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentSettingsBinding.bind(view)
         setupBinding(binding)
-        // Usar el layout base de cada tema: el material se aplica solo a
-        // superficies de ajustes, nunca al fondo completo de AMOLED.
-        if (LiquidGlass.enabled(requireContext())) {
-            val content = binding.root.getChildAt(0) as? ViewGroup
-            if (content != null) {
-                for (i in 0 until content.childCount) {
-                    val child = content.getChildAt(i)
-                    if (child is LinearLayout) {
-                        child.background = LiquidGlass.surface(
-                            requireContext(), LiquidGlass.Role.GROUP)
-                        child.clipToOutline = true
-                    }
-                }
-            }
-        }
+        // En Liquid Glass el contenido permanece en superficies mates.
+        // Las lentes se reservan a controles flotantes, no a todo Ajustes.
         RoseDriveState.revision.observe(viewLifecycleOwner) { refreshDriveLabel?.invoke() }
     }
 
