@@ -114,10 +114,9 @@ class BaseNoteVH(
         if (locked) {
             binding.ImageView.visibility = View.GONE
             binding.Message.visibility = View.GONE
-            binding.Title.text = baseNote.title.ifBlank { binding.root.context.getString(R.string.task_list) }
+            binding.Title.text = binding.root.context.getString(R.string.locked_note)
             binding.Title.visibility = View.VISIBLE
-            setDate(baseNote.timestamp)
-            binding.Date.visibility = View.VISIBLE
+            binding.Date.visibility = View.GONE
             binding.Note.visibility = View.GONE
             binding.LinearLayout.visibility = View.GONE
             binding.Reminder.visibility = View.GONE

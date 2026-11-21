@@ -23,6 +23,9 @@ interface NotebookFolderDao {
     @Query("SELECT * FROM NotebookFolder WHERE id = :id LIMIT 1")
     suspend fun get(id: Long): NotebookFolder?
 
+    @Query("SELECT * FROM NotebookFolder WHERE id = :id LIMIT 1")
+    fun getNow(id: Long): NotebookFolder?
+
     @Query("DELETE FROM NotebookFolder WHERE id = :id")
     suspend fun delete(id: Long)
 

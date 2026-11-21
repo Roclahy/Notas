@@ -61,7 +61,10 @@ interface BaseNoteDao {
     @Query("UPDATE BaseNote SET notebookId = :notebookId WHERE id = :id")
     suspend fun moveToNotebook(id: Long, notebookId: Long)
 
-    @Query("SELECT * FROM BaseNote WHERE folder = :folder ORDER BY pinned DESC, timestamp DESC")
+    @Query("""SELECT * FROM BaseNote WHERE folder = :folder AND
+        (notebookId = 0 OR notebookId NOT IN
+            (SELECT id FROM NotebookFolder WHERE passwordHash != ''))
+        ORDER BY pinned DESC, timestamp DESC""")
     fun getFrom(folder: Folder): LiveData<List<BaseNote>>
 
     @Query("SELECT * FROM BaseNote WHERE folder = 'NOTES' ORDER BY pinned DESC, timestamp DESC")
@@ -170,7 +173,11 @@ interface BaseNoteDao {
         return Transformations.map(result) { list -> list.filter { baseNote -> baseNote.labels.contains(label) } }
     }
 
-    @Query("SELECT * FROM BaseNote WHERE folder = :folder AND labels LIKE '%' || :label || '%' ORDER BY pinned DESC, timestamp DESC")
+    @Query("""SELECT * FROM BaseNote WHERE folder = :folder
+        AND labels LIKE '%' || :label || '%'
+        AND (notebookId = 0 OR notebookId NOT IN
+            (SELECT id FROM NotebookFolder WHERE passwordHash != ''))
+        ORDER BY pinned DESC, timestamp DESC""")
     fun getBaseNotesByLabel(label: String, folder: Folder): LiveData<List<BaseNote>>
 
 
@@ -188,7 +195,12 @@ interface BaseNoteDao {
         return Transformations.map(result) { list -> list.filter { baseNote -> matchesKeyword(baseNote, keyword) } }
     }
 
-    @Query("SELECT * FROM BaseNote WHERE folder = :folder AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%' OR items LIKE '%' || :keyword || '%' OR labels LIKE '%' || :keyword || '%') ORDER BY pinned DESC, timestamp DESC")
+    @Query("""SELECT * FROM BaseNote WHERE folder = :folder
+        AND (notebookId = 0 OR notebookId NOT IN
+            (SELECT id FROM NotebookFolder WHERE passwordHash != ''))
+        AND (title LIKE '%' || :keyword || '%' OR body LIKE '%' || :keyword || '%'
+            OR items LIKE '%' || :keyword || '%' OR labels LIKE '%' || :keyword || '%')
+        ORDER BY pinned DESC, timestamp DESC""")
     fun getBaseNotesByKeywordImpl(keyword: String, folder: Folder): LiveData<List<BaseNote>>
 
 

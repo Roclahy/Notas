@@ -153,11 +153,55 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             ?: intent.getLongExtra(Constants.SelectedBaseNote, 0L)
         if (id == 0L) model.notebookId =
             intent.getLongExtra(Constants.SelectedNotebookId, 0L)
-        if (id > 0 && PinSecurity.noteLocked(this, id)) {
-            PinDialogs.check(this, PinSecurity.noteKey(id), onVerified = {
-                loadAuthorizedNote(id)
-            }, onCancel = { finish() })
+        if (id > 0L) {
+            requestFolderAccess(id) {
+                if (PinSecurity.noteLocked(this, id)) {
+                    PinDialogs.check(this, PinSecurity.noteKey(id), onVerified = {
+                        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                        loadAuthorizedNote(id)
+                    }, onCancel = { finish() })
+                } else loadAuthorizedNote(id)
+            }
         } else loadAuthorizedNote(id)
+    }
+
+    private fun requestFolderAccess(noteId: Long, onGranted: () -> Unit) {
+        val note = NotallyDatabase.getDatabase(application).getBaseNoteDao().get(noteId)
+        val folder = note?.notebookId?.takeIf { it > 0L }?.let {
+            NotallyDatabase.getDatabase(application).getNotebookFolderDao().getNow(it)
+        }
+        if (folder == null || folder.passwordHash.isBlank()) {
+            onGranted()
+            return
+        }
+        val entry = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            hint = getString(R.string.notebook_password)
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(folder.name)
+            .setView(entry)
+            .setNegativeButton(R.string.cancel) { _, _ -> finish() }
+            .setPositiveButton(R.string.continue_, null).create()
+        dialog.setOnCancelListener { finish() }
+        dialog.setOnShowListener {
+            dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE)
+                .setOnClickListener {
+                    val secret = entry.text.toString().toCharArray()
+                    lifecycleScope.launch {
+                        val accepted = withContext(Dispatchers.Default) {
+                            try { NotebookPassword.verify(secret, folder.passwordHash) }
+                            finally { secret.fill('\u0000') }
+                        }
+                        if (accepted) {
+                            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                            dialog.dismiss()
+                            onGranted()
+                        } else entry.error = getString(R.string.notebook_wrong_password)
+                    }
+                }
+        }
+        dialog.show()
     }
 
     private fun loadAuthorizedNote(id: Long) {
