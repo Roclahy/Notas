@@ -283,4 +283,6 @@
     <string name="untitled_note_link">Nota sin título</string>
     <string name="invalid_link">Introduce un enlace web, de correo o teléfono válido</string>
     <string name="link_target_missing">Este vínculo ya no tiene un destino válido</string>
+    <string name="backlinks">Notas que enlazan aquí</string>
+    <string name="backlinks_empty">Todavía no hay notas que enlacen a esta nota.</string>
 </resources>

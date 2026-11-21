@@ -975,6 +975,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         }
     }
 
+    /** Proporcionada por el editor de notas; no existe en las listas de tareas. */
+    protected open fun showIncomingLinks() {}
+
     private fun showActionsSheet() {
         val dialog = BottomSheetDialog(this)
         val sheetSurface = com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface, 0xFFF5F5F7.toInt())
@@ -1024,7 +1027,10 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             container.addView(row)
         }
         action(R.string.labels, R.drawable.label) { label() }
-        if (model.type == Type.NOTE) action(R.string.search, R.drawable.search) { model.searchEnabled.value = true }
+        if (model.type == Type.NOTE) {
+            action(R.string.search, R.drawable.search) { model.searchEnabled.value = true }
+            action(R.string.backlinks, R.drawable.search) { showIncomingLinks() }
+        }
         action(R.string.add_images, R.drawable.add_images) { selectImages() }
         action(R.string.draw_with_finger, R.drawable.notas_draw) {
             startActivityForResult(Intent(this, DrawingActivity::class.java), REQUEST_ADD_IMAGES)

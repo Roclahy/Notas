@@ -285,6 +285,40 @@ class TakeNote : NotallyActivity(Type.NOTE) {
         }
     }
 
+    override fun showIncomingLinks() {
+        lifecycleScope.launch {
+            val target = RoseInternalLinks.note(model.id)
+            val sources = withContext(Dispatchers.IO) {
+                NotallyDatabase.getDatabase(application).getBaseNoteDao()
+                    .getAllForSync().filter { note ->
+                        note.id != model.id && note.folder == Folder.NOTES &&
+                            note.spans.any { it.link && it.url == target }
+                    }
+            }
+            if (sources.isEmpty()) {
+                MaterialAlertDialogBuilder(this@TakeNote)
+                    .setTitle(R.string.backlinks)
+                    .setMessage(R.string.backlinks_empty)
+                    .setPositiveButton(android.R.string.ok, null).show()
+                return@launch
+            }
+            val titles = sources.map { it.title.ifBlank {
+                getString(R.string.untitled_note_link)
+            } }.toTypedArray()
+            MaterialAlertDialogBuilder(this@TakeNote)
+                .setTitle(R.string.backlinks)
+                .setItems(titles) { _, which ->
+                    val linked = sources.getOrNull(which) ?: return@setItems
+                    lifecycleScope.launch {
+                        model.saveNote()
+                        startActivity(Intent(this@TakeNote, TakeNote::class.java)
+                            .putExtra(Constants.SelectedBaseNote, linked.id))
+                    }
+                }
+                .setNegativeButton(R.string.cancel, null).show()
+        }
+    }
+
     private fun showWebLinkEditor(start: Int, end: Int) {
         val selected = binding.EnterBody.text?.subSequence(start, end)?.toString().orEmpty()
         val input = EditText(this).apply {

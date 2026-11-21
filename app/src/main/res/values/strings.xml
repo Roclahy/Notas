@@ -296,4 +296,6 @@
     <string name="untitled_note_link">Untitled note</string>
     <string name="invalid_link">Enter a valid web, email, or phone link</string>
     <string name="link_target_missing">This link no longer has a valid target</string>
+    <string name="backlinks">Notes linking here</string>
+    <string name="backlinks_empty">No notes link to this note yet.</string>
 </resources>
