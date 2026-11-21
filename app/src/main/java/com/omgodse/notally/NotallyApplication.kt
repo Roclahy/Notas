@@ -1,6 +1,9 @@
 package com.omgodse.notally
 
 import android.app.Application
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.content.Context
 import com.omgodse.notally.preferences.RoseLanguage
 import android.content.SharedPreferences
@@ -72,6 +75,25 @@ class NotallyApplication : Application() {
         }
 
         BackupScheduler.schedule(this)
+
+        // Solicitar el envío pendiente cuando Android confirme una conexión útil.
+        // VALIDATED no es un requisito para subir, porque puede fallar con VPN.
+        (getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)
+            ?.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+                override fun onCapabilitiesChanged(
+                    network: Network, capabilities: NetworkCapabilities
+                ) {
+                    if (capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) &&
+                        RoseDriveState.enabled(this@NotallyApplication) &&
+                        RoseDriveState.isWaitingForConnection(this@NotallyApplication)) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            if (RoseDriveState.isWaitingForConnection(this@NotallyApplication)) {
+                                BackupScheduler.changed(this@NotallyApplication, urgent = true)
+                            }
+                        }
+                    }
+                }
+            })
 
         PinSecurity.noteChanges.observeForever {
             RoseDriveState.invalidate()

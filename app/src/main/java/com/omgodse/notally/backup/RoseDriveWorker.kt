@@ -2,6 +2,7 @@ package com.omgodse.notally.backup
 
 import android.app.Application
 import android.content.Context
+import com.omgodse.notally.R
 import com.omgodse.notally.room.NotallyDatabase
 import androidx.work.Worker
 import androidx.work.WorkerParameters
@@ -37,6 +38,10 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
         var passphrase: CharArray? = null
         return try {
             if (!RoseDriveState.enabled(app)) return androidx.work.ListenableWorker.Result.success()
+            if (!RoseDriveNetwork.hasNetwork(app)) {
+                RoseDriveState.markWaitingForConnection(app)
+                return androidx.work.ListenableWorker.Result.retry()
+            }
             passphrase = BackupSecrets.read(app) ?: run {
                 RoseDriveState.markFailed(app, "Contraseña local inaccesible")
                 return androidx.work.ListenableWorker.Result.failure()
@@ -89,24 +94,39 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             // que puedan incluir detalles de la cuenta, tokens o contenido privado.
             val http = Regex("""(?:Google Drive HTTP|Drive session HTTP|Drive HTTP) (\d{3})""")
                 .find(error.message.orEmpty())?.groupValues?.get(1)?.toIntOrNull()
-            if (http == 401) {
-                RoseDriveState.markNeedsAuthorization(app)
-                androidx.work.ListenableWorker.Result.failure()
-            } else {
-                val reason = when {
-                    http != null -> "HTTP $http"
-                    error is com.google.android.gms.common.api.ApiException ->
-                        "Google Play Services: ${error.statusCode}"
-                    error is java.net.UnknownHostException -> "Servidor inaccesible"
-                    error is java.net.SocketTimeoutException -> "Tiempo de espera agotado"
-                    error is java.net.ConnectException -> "Conexión fallida"
-                    error is java.io.IOException -> "Error de red"
-                    else -> "Error interno"
-                }
-                RoseDriveState.markFailed(app, reason)
-                if (http != null && http in 400..499 && http != 408 && http != 429)
+            val lostInternet = !RoseDriveNetwork.hasNetwork(app) ||
+                (error is java.net.UnknownHostException &&
+                 !RoseDriveNetwork.hasValidatedInternet(app)) ||
+                (error is com.google.android.gms.common.api.ApiException &&
+                 error.statusCode == com.google.android.gms.common.api.CommonStatusCodes.NETWORK_ERROR &&
+                 !RoseDriveNetwork.hasValidatedInternet(app))
+            when {
+                http == 401 -> {
+                    RoseDriveState.markNeedsAuthorization(app)
                     androidx.work.ListenableWorker.Result.failure()
-                else androidx.work.ListenableWorker.Result.retry()
+                }
+                lostInternet -> {
+                    RoseDriveState.markWaitingForConnection(app)
+                    androidx.work.ListenableWorker.Result.retry()
+                }
+                else -> {
+                    val reason = when {
+                        http != null -> "HTTP $http"
+                        error is java.net.UnknownHostException ||
+                            error is java.net.ConnectException ||
+                            error is java.net.SocketTimeoutException ->
+                            app.getString(R.string.google_drive_unreachable)
+                        error is com.google.android.gms.common.api.ApiException ->
+                            app.getString(R.string.google_drive_play_services_error, error.statusCode)
+                        error is java.io.IOException ->
+                            app.getString(R.string.google_drive_network_error)
+                        else -> app.getString(R.string.google_drive_internal_error)
+                    }
+                    RoseDriveState.markFailed(app, reason)
+                    if (http != null && http in 400..499 && http != 408 && http != 429)
+                        androidx.work.ListenableWorker.Result.failure()
+                    else androidx.work.ListenableWorker.Result.retry()
+                }
             }
         } finally {
             file?.delete()

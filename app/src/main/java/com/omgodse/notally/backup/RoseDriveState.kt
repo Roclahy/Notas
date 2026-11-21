@@ -35,6 +35,7 @@ object RoseDriveState {
             editor.remove(BACKED_UP).remove(BACKED_UP_SETTINGS).remove("last_upload")
                 .remove("needs_authorization").remove("last_failure").remove("uploading")
                 .remove("queued").remove("changes_during_upload")
+                .remove("waiting_for_connection")
         }
         editor.apply()
         invalidate()
@@ -101,20 +102,21 @@ object RoseDriveState {
             .putLong("last_upload", System.currentTimeMillis())
             .putBoolean("needs_authorization", false)
             .putBoolean("uploading", false).putBoolean("queued", false)
-            .remove("last_failure").commit()
+            .remove("last_failure").remove("waiting_for_connection").commit()
         invalidate()
     }
 
     /** Trabajo redundante: no modificar la fecha del último respaldo real. */
     fun markAlreadyCurrent(c: Context) {
         prefs(c).edit().putBoolean("uploading", false).putBoolean("queued", false)
-            .remove("last_failure").apply()
+            .remove("last_failure").remove("waiting_for_connection").apply()
         invalidate()
     }
 
     fun markNeedsAuthorization(c: Context) {
         prefs(c).edit().putBoolean("needs_authorization", true)
-            .putBoolean("uploading", false).putBoolean("queued", false).apply()
+            .putBoolean("uploading", false).putBoolean("queued", false)
+            .remove("waiting_for_connection").apply()
         invalidate()
     }
 
@@ -124,7 +126,8 @@ object RoseDriveState {
     /** Autorización OAuth obtenida: NO significa que exista una copia subida. */
     fun markAuthorized(c: Context) {
         prefs(c).edit().putBoolean("needs_authorization", false)
-            .putBoolean("uploading", false).remove("last_failure").apply()
+            .putBoolean("uploading", false).remove("last_failure")
+            .remove("waiting_for_connection").apply()
         invalidate()
     }
 
@@ -159,14 +162,30 @@ object RoseDriveState {
     fun isQueued(c: Context): Boolean = prefs(c).getBoolean("queued", false)
 
     fun markStarted(c: Context) {
-        prefs(c).edit().putBoolean("uploading", true).remove("last_failure").apply()
+        prefs(c).edit().putBoolean("uploading", true)
+            .remove("waiting_for_connection").remove("last_failure").apply()
         invalidate()
     }
+
+    /**
+     * La copia pendiente permanece sin marcarse como completada.
+     * Una interrupción de red no se registra como fallo del servidor.
+     */
+    fun markWaitingForConnection(c: Context) {
+        prefs(c).edit().putBoolean("uploading", false)
+            .putBoolean("queued", true).putBoolean("waiting_for_connection", true)
+            .remove("last_failure").apply()
+        invalidate()
+    }
+
+    fun isWaitingForConnection(c: Context): Boolean =
+        prefs(c).getBoolean("waiting_for_connection", false)
 
     /** Solo diagnósticos genéricos, sin tokens ni contenido de las notas. */
     fun markFailed(c: Context, reason: String) {
         prefs(c).edit().putBoolean("uploading", false)
-            .putString("last_failure", reason).putBoolean("queued", false).apply()
+            .putString("last_failure", reason).putBoolean("queued", false)
+            .remove("waiting_for_connection").apply()
         invalidate()
     }
 
