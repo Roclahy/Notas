@@ -1,6 +1,11 @@
 name: Build rNotas 1.4.0 R8 release
 
 on:
+  push:
+    branches:
+      - work/notas-apple-amoled-v1
+    paths:
+      - .github/rnotas-v140-build-request.txt
   workflow_dispatch:
 
 permissions:

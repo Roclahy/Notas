@@ -1,0 +1,1 @@
+Build rNotas 1.4.0 (104) explicitly authorized by owner on 2026-11-21.
