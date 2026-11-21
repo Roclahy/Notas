@@ -15,7 +15,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
- * Rose funciona completamente offline para notas y tareas.
+ * Notas funciona completamente offline para notas y tareas.
  * Este trabajador solo se ejecuta si el usuario autorizó Google Drive.
  */
 class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(context,params) {
@@ -37,7 +37,7 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             }
             file = File.createTempFile("rose_backup_",".rnotas",app.cacheDir)
             file.outputStream().use { output -> EncryptedBackups.write(app,output,passphrase) }
-            val name = "Rose-" +
+            val name = "Notas-" +
                 SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(Date()) + ".rnotas"
             RoseDriveApi.backup(requireNotNull(authorization.accessToken),file,name)
             RoseDriveState.markUploaded(app)
