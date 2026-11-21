@@ -42,7 +42,8 @@ object EncryptedBackups {
         val prefix = ByteArray(magic.size)
         return try {
             app.contentResolver.openInputStream(uri)?.use { input ->
-                input.read(prefix) == prefix.size && prefix.contentEquals(magic)
+                DataInputStream(input).readFully(prefix)
+                prefix.contentEquals(magic)
             } ?: false
         } catch (_: Exception) { false }
     }

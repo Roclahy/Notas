@@ -258,7 +258,6 @@ class Settings : Fragment() {
                                 EncryptedBackups.decryptToCache(app,input,password)
                             }
                         }
-                        withContext(Dispatchers.IO) { EncryptedBackups.restoreSettings(app,requireNotNull(file)) }
                         val restored = requireNotNull(file)
                         var started = false
                         val observer = object : Observer<Progress> {
@@ -266,8 +265,9 @@ class Settings : Fragment() {
                                 if (progress.inProgress) started = true
                                 else if (started) {
                                     model.importingBackup.removeObserver(this)
+                                    // La importación puede haber fallado; el propio modelo muestra
+                                    // su error. No restaurar preferencias antes de verificar éxito.
                                     restored.delete()
-                                    Toast.makeText(app,R.string.encrypted_restore_complete,Toast.LENGTH_LONG).show()
                                 }
                             }
                         }

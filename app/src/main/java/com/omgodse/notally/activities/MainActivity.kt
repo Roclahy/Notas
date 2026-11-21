@@ -385,6 +385,7 @@ class MainActivity : NotasBaseActivity() {
         binding.DrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         binding.Toolbar.navigationIcon = null
         binding.Toolbar.title = ""
+        binding.Toolbar.setNavigationOnClickListener { onSupportNavigateUp() }
         binding.SectionTitle.setOnClickListener {
             val top = setOf(R.id.Notes, R.id.Labels, R.id.Deleted, R.id.Archived, R.id.Settings)
             if (navController.currentDestination?.id in top) showNavigationSheet()
