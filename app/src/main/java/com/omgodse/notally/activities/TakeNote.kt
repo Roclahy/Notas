@@ -206,8 +206,8 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             val entries: List<Pair<Long, String>> = withContext(Dispatchers.IO) {
                 val db = NotallyDatabase.getDatabase(application)
                 if (kind == "note") {
-                    db.getBaseNoteDao().getAllForSync()
-                        .filter { it.folder == Folder.NOTES && it.id != model.id }
+                    db.getBaseNoteDao().getLinkIndex()
+                        .filter { it.id != model.id }
                         .map { it.id to it.title.ifBlank {
                             getString(R.string.untitled_note_link)
                         } }
@@ -290,8 +290,8 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             val target = RoseInternalLinks.note(model.id)
             val sources = withContext(Dispatchers.IO) {
                 NotallyDatabase.getDatabase(application).getBaseNoteDao()
-                    .getAllForSync().filter { note ->
-                        note.id != model.id && note.folder == Folder.NOTES &&
+                    .getLinkIndex().filter { note ->
+                        note.id != model.id &&
                             note.spans.any { it.link && it.url == target }
                     }
             }

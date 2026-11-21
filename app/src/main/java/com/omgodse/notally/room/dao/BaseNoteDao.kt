@@ -16,7 +16,19 @@ import com.omgodse.notally.room.IdReminder
 import com.omgodse.notally.room.Image
 import com.omgodse.notally.room.ListItem
 import com.omgodse.notally.room.Reminder
+import com.omgodse.notally.room.SpanRepresentation
 import com.omgodse.notally.security.SecureFields
+
+/**
+ * Índice local de vínculos: evita descifrar el cuerpo y los adjuntos de
+ * todas las notas para mostrar el selector o las referencias entrantes.
+ */
+data class NoteLinkIndexRow(
+    val id: Long,
+    val title: String,
+    val spans: List<SpanRepresentation>
+)
+
 
 @Dao
 abstract class BaseNoteDao {
@@ -28,6 +40,12 @@ abstract class BaseNoteDao {
         body = SecureFields.open(body, "body"))
     private fun List<BaseNote>.opened() = map { it.opened() }
 
+
+    @Query("SELECT id,title,spans FROM BaseNote WHERE folder = 'NOTES' ORDER BY timestamp DESC")
+    abstract fun getLinkIndexStored(): List<NoteLinkIndexRow>
+
+    fun getLinkIndex(): List<NoteLinkIndexRow> =
+        getLinkIndexStored().map { it.copy(title = SecureFields.open(it.title, "title")) }
 
     @RawQuery
     abstract fun query(query: SupportSQLiteQuery): Int
