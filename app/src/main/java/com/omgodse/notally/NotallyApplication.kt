@@ -1,6 +1,9 @@
 package com.omgodse.notally
 
 import android.app.Application
+import android.app.Activity
+import android.os.Bundle
+import com.omgodse.notally.security.PinSecurity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
@@ -13,6 +16,19 @@ class NotallyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            private var visibleActivities = 0
+            override fun onActivityCreated(activity: Activity, state: Bundle?) {}
+            override fun onActivityStarted(activity: Activity) { visibleActivities++ }
+            override fun onActivityResumed(activity: Activity) {}
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityStopped(activity: Activity) {
+                visibleActivities = (visibleActivities - 1).coerceAtLeast(0)
+                if (visibleActivities == 0) PinSecurity.appUnlocked = false
+            }
+            override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) {}
+            override fun onActivityDestroyed(activity: Activity) {}
+        })
 
         val preferences = Preferences.getInstance(this)
         preferences.theme.observeForever { theme ->

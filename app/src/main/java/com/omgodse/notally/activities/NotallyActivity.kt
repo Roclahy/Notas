@@ -6,6 +6,8 @@ import android.app.AlarmManager
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
+import com.omgodse.notally.security.PinSecurity
+import com.omgodse.notally.security.PinDialogs
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -76,6 +78,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     internal lateinit var binding: ActivityNotallyBinding
     internal val model: NotallyModel by viewModels()
+    private var permittedToSave = false
+    private var noteLoadStarted = false
+    private var pendingState: Bundle? = null
 
     override fun onBackPressed() {
         if (model.searchEnabled.value) {
@@ -85,6 +90,10 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
 
     override fun finish() {
+        if (!permittedToSave) {
+            super.finish()
+            return
+        }
         lifecycleScope.launch {
             model.saveNote()
             WidgetProvider.sendBroadcast(application, model.id)
@@ -95,9 +104,11 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putLong("id", model.id)
-        lifecycleScope.launch {
-            model.saveNote()
-            WidgetProvider.sendBroadcast(application, model.id)
+        if (permittedToSave) {
+            lifecycleScope.launch {
+                model.saveNote()
+                WidgetProvider.sendBroadcast(application, model.id)
+            }
         }
     }
 
@@ -108,24 +119,34 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         model.marker.color = ContextCompat.getColor(this, R.color.highlight)
         initialiseBinding()
         setContentView(binding.root)
+        pendingState = savedInstanceState
+        binding.ScrollView.visibility = View.GONE
+    }
 
+    override fun onAppAccessGranted() {
+        if (noteLoadStarted) return
+        noteLoadStarted = true
+        val id = pendingState?.getLong("id")
+            ?: intent.getLongExtra(Constants.SelectedBaseNote, 0L)
+        if (id > 0 && PinSecurity.noteLocked(this, id)) {
+            PinDialogs.check(this, PinSecurity.noteKey(id), onVerified = {
+                loadAuthorizedNote(id)
+            }, onCancel = { finish() })
+        } else loadAuthorizedNote(id)
+    }
+
+    private fun loadAuthorizedNote(id: Long) {
         lifecycleScope.launch {
             if (model.isFirstInstance) {
-                val persistedId = savedInstanceState?.getLong("id")
-                val selectedId = intent.getLongExtra(Constants.SelectedBaseNote, 0L)
-                val id = persistedId ?: selectedId
                 model.setState(id)
-
                 if (model.isNewNote && intent.action == Intent.ACTION_SEND) {
                     handleSharedNote()
                 }
-
                 model.isFirstInstance = false
             }
-
+            permittedToSave = true
             setupListeners()
             setStateFromModel()
-
             configureUI()
             binding.ScrollView.visibility = View.VISIBLE
         }
@@ -739,6 +760,19 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         if (model.type == Type.NOTE) action(R.string.search, R.drawable.search) { model.searchEnabled.value = true }
         action(R.string.add_images, R.drawable.add_images) { selectImages() }
         action(R.string.change_color, R.drawable.change_color) { showNoteColorPicker() }
+        if (PinSecurity.noteLocked(this, model.id)) {
+            action(R.string.remove_note_pin, R.drawable.notas_lock) {
+                PinDialogs.check(this, PinSecurity.noteKey(model.id), onVerified = {
+                    PinSecurity.removeNotePin(this, model.id)
+                })
+            }
+        } else {
+            action(R.string.lock_note, R.drawable.notas_lock) {
+                PinDialogs.setup(this) { pin ->
+                    PinSecurity.setNotePin(this, model.id, pin)
+                }
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) action(R.string.record_audio, R.drawable.record_audio) { checkAudioPermission() }
         action(R.string.set_reminder, R.drawable.reminder) { checkNotificationPermission() }
         when (model.folder) {

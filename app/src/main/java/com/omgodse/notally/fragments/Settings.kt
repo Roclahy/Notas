@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import com.omgodse.notally.security.PinSecurity
+import com.omgodse.notally.security.PinDialogs
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -71,6 +73,24 @@ class Settings : Fragment() {
 
         setupProgressDialog(R.string.exporting_backup, model.exportingBackup)
         setupProgressDialog(R.string.importing_backup, model.importingBackup)
+
+        fun updatePinLabel() {
+            binding.AppPin.setText(if (PinSecurity.appEnabled(requireContext())) R.string.disable_app_pin else R.string.enable_app_pin)
+        }
+        updatePinLabel()
+        binding.AppPin.setOnClickListener {
+            if (PinSecurity.appEnabled(requireContext())) {
+                PinDialogs.check(requireActivity(), "pin:app", onVerified = {
+                    PinSecurity.removeAppPin(requireContext())
+                    updatePinLabel()
+                })
+            } else {
+                PinDialogs.setup(requireActivity()) { pin ->
+                    PinSecurity.setAppPin(requireContext(), pin)
+                    updatePinLabel()
+                }
+            }
+        }
 
         binding.Creator.setOnClickListener {
             openLink("https://roclahy.me")

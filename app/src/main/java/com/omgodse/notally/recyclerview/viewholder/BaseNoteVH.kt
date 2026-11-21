@@ -4,6 +4,7 @@ import android.graphics.drawable.Drawable
 import android.app.Application
 import android.view.ViewGroup
 import com.omgodse.notally.preferences.Preferences
+import com.omgodse.notally.security.PinSecurity
 import android.util.TypedValue
 import android.view.View
 import android.widget.TextView
@@ -101,6 +102,21 @@ class BaseNoteVH(
 
     fun bind(baseNote: BaseNote, mediaRoot: File?, checked: Boolean) {
         updateCheck(checked)
+        val locked = PinSecurity.noteLocked(binding.root.context, baseNote.id)
+        binding.LockIndicator.isVisible = locked
+        binding.Space.isVisible = !locked
+        binding.LabelGroup.isVisible = !locked
+        if (locked) {
+            binding.ImageView.visibility = View.GONE
+            binding.Message.visibility = View.GONE
+            binding.Title.visibility = View.GONE
+            binding.Date.visibility = View.GONE
+            binding.Note.visibility = View.GONE
+            binding.LinearLayout.visibility = View.GONE
+            binding.Reminder.visibility = View.GONE
+            setColor(Color.DEFAULT)
+            return
+        }
 
         when (baseNote.type) {
             Type.NOTE -> bindNote(baseNote.body, baseNote.spans)

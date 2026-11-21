@@ -37,6 +37,16 @@
 
         </FrameLayout>
 
+        <ImageView
+            android:id="@+id/LockIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="86dp"
+            android:padding="27dp"
+            android:contentDescription="@string/locked_note"
+            android:visibility="gone"
+            app:srcCompat="@drawable/notas_lock"
+            app:tint="@color/NotasGold" />
+
         <Space
             android:id="@+id/Space"
             android:layout_width="match_parent"

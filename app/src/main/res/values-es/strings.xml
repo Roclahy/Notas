@@ -189,4 +189,16 @@
     <string name="explore_sections">Explorar secciones</string>
     <string name="task_list">Lista de tareas</string>
     <plurals name="task_items_summary"><item quantity="one">%d tarea pendiente</item><item quantity="other">%d tareas pendientes</item></plurals>
+    <string name="privacy">Privacidad</string>
+    <string name="enable_app_pin">Activar PIN de la aplicación</string>
+    <string name="disable_app_pin">Desactivar PIN de la aplicación</string>
+    <string name="create_pin">Crear PIN de 4 dígitos</string>
+    <string name="confirm_pin">Confirmar PIN</string>
+    <string name="enter_pin">Introducir PIN</string>
+    <string name="four_digit_pin">Introduce exactamente 4 dígitos</string>
+    <string name="pin_mismatch">Los PIN no coinciden</string>
+    <string name="invalid_pin">PIN incorrecto o temporalmente bloqueado</string>
+    <string name="lock_note">Bloquear nota con PIN</string>
+    <string name="remove_note_pin">Quitar bloqueo de nota</string>
+    <string name="locked_note">Nota bloqueada</string>
 </resources>
