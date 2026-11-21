@@ -12,8 +12,8 @@ import com.omgodse.notally.room.dao.BaseNoteDao
 import com.omgodse.notally.room.dao.CommonDao
 import com.omgodse.notally.room.dao.LabelDao
 import com.omgodse.notally.room.dao.NotebookFolderDao
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import com.omgodse.notally.security.SecureDatabase
+import com.omgodse.notally.security.SecureFields
 
 @TypeConverters(Converters::class)
 @Database(entities = [BaseNote::class, Label::class, NotebookFolder::class], version = 7)
@@ -41,24 +41,17 @@ abstract class NotallyDatabase : RoomDatabase() {
          */
         fun getDatabase(app: Application): NotallyDatabase {
             return instance ?: synchronized(this) {
-                System.loadLibrary("sqlcipher")
-                val passphrase = SecureDatabase.databasePassphrase(app)
-                SecureDatabase.migrateLegacy(app, DatabaseName, passphrase)
-                try {
-                    val instance = Room.databaseBuilder(app, NotallyDatabase::class.java, DatabaseName)
-                        .openHelperFactory(SupportOpenHelperFactory(passphrase.toByteArray(Charsets.UTF_8)))
-                        .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6, Migration7)
-                        .allowMainThreadQueries()
-                        .build()
-                    // No borrar la versión anterior hasta validar completamente Room.
-                    instance.openHelper.readableDatabase
-                    SecureDatabase.finishMigration(app, DatabaseName)
-                    this.instance = instance
-                    return instance
-                } catch (error: Exception) {
-                    SecureDatabase.rollbackFailedMigration(app, DatabaseName)
-                    throw error
-                }
+                // En una instalación nueva: Room + Android Keystore, sin JNI.
+                SecureFields.initialize(app)
+                SecureDatabase.verifyCompatibleHeader(app, DatabaseName)
+                val opened = Room.databaseBuilder(app, NotallyDatabase::class.java, DatabaseName)
+                    .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6, Migration7)
+                    .allowMainThreadQueries()
+                    .build()
+                opened.openHelper.writableDatabase // Validar Room antes de usarla.
+                SecureDatabase.encryptExistingPlaintext(app, opened)
+                this.instance = opened
+                return opened
             }
         }
 

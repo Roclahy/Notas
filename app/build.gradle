@@ -62,9 +62,7 @@ dependencies {
     ksp "androidx.room:room-compiler:$roomVersion"
     implementation "androidx.room:room-ktx:$roomVersion"
     implementation "androidx.room:room-runtime:$roomVersion"
-    // SQLCipher de Zetetic: base de datos local cifrada, incluida Room.
-    implementation "net.zetetic:sqlcipher-android:4.20.0@aar"
-    implementation "androidx.sqlite:sqlite:2.7.0"
+    // Cifrado nativo mediante Android Keystore y javax.crypto (sin SQLCipher).
 
     implementation "androidx.work:work-runtime:2.9.0"
     implementation "com.google.android.gms:play-services-auth:22.0.0"
