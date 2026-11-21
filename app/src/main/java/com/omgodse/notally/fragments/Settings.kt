@@ -20,6 +20,12 @@ import java.io.File
 import com.omgodse.notally.backup.BackupScheduler
 import com.omgodse.notally.backup.BackupSecrets
 import com.omgodse.notally.backup.EncryptedBackups
+import com.omgodse.notally.backup.RoseDriveState
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.Scope
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.PinDialogs
 import android.view.View
@@ -45,6 +51,119 @@ import com.omgodse.notally.viewmodels.BaseNoteModel
 class Settings : Fragment() {
 
     private val model: BaseNoteModel by activityViewModels()
+    private var refreshDriveLabel: (() -> Unit)? = null
+
+    private val driveAuthorizationLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { response ->
+        if (response.resultCode != Activity.RESULT_OK) {
+            BackupSecrets.clear(requireContext())
+            Toast.makeText(requireContext(),R.string.google_drive_authorization_failed,Toast.LENGTH_LONG).show()
+            return@registerForActivityResult
+        }
+        try {
+            val token = Identity.getAuthorizationClient(requireContext())
+                .getAuthorizationResultFromIntent(response.data)
+            if (token.accessToken.isNullOrEmpty()) {
+                BackupSecrets.clear(requireContext())
+                Toast.makeText(requireContext(),R.string.google_drive_authorization_failed,Toast.LENGTH_LONG).show()
+            } else enableDriveBackups()
+        } catch (_: Exception) {
+            BackupSecrets.clear(requireContext())
+            Toast.makeText(requireContext(),R.string.google_drive_authorization_failed,Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshDriveLabel?.invoke()
+    }
+
+    override fun onDestroyView() {
+        refreshDriveLabel = null
+        super.onDestroyView()
+    }
+
+    private fun updateDriveRow(binding: FragmentSettingsBinding) {
+        val enabled = RoseDriveState.enabled(requireContext())
+        binding.AutoBackup.Title.setText(R.string.google_drive_backup)
+        binding.AutoBackup.Value.setText(
+            if (!enabled) R.string.google_drive_connect
+            else if (RoseDriveState.needsAuthorization(requireContext())) R.string.google_drive_needs_auth
+            else R.string.google_drive_connected
+        )
+        binding.AutoBackup.root.setOnClickListener {
+            if (!enabled || RoseDriveState.needsAuthorization(requireContext())) {
+                connectGoogleDrive()
+            } else {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.google_drive_backup)
+                    .setItems(arrayOf(
+                        getString(R.string.google_drive_backup_now),
+                        getString(R.string.google_drive_disconnect)
+                    )) { _, choice ->
+                        if (choice == 0) {
+                            BackupScheduler.schedule(requireActivity().application, refresh = true)
+                        } else {
+                            RoseDriveState.setEnabled(requireContext(), false)
+                            BackupScheduler.disable(requireActivity().application)
+                            BackupSecrets.clear(requireContext())
+                            updateDriveRow(binding)
+                        }
+                    }.show()
+            }
+        }
+    }
+
+    private fun enableDriveBackups() {
+        RoseDriveState.setEnabled(requireContext(), true)
+        BackupScheduler.schedule(requireActivity().application, refresh = true)
+        refreshDriveLabel?.invoke()
+        Toast.makeText(requireContext(),R.string.google_drive_authorized,Toast.LENGTH_LONG).show()
+    }
+
+    private fun connectGoogleDrive() {
+        if (!BackupSecrets.supported()) {
+            Toast.makeText(requireContext(),R.string.backup_requires_android_6,Toast.LENGTH_LONG).show()
+            return
+        }
+        requestBackupPassword(confirm = true) { passphrase ->
+            try {
+                BackupSecrets.save(requireContext(), passphrase)
+                val request = AuthorizationRequest.builder().setRequestedScopes(
+                    listOf(Scope("https://www.googleapis.com/auth/drive.file"))
+                ).build()
+                Identity.getAuthorizationClient(requireContext()).authorize(request)
+                    .addOnSuccessListener { result ->
+                        if (result.hasResolution()) {
+                            val pending = result.pendingIntent
+                            if (pending == null) {
+                                BackupSecrets.clear(requireContext())
+                                Toast.makeText(requireContext(),R.string.google_drive_authorization_failed,Toast.LENGTH_LONG).show()
+                            } else {
+                                driveAuthorizationLauncher.launch(
+                                    IntentSenderRequest.Builder(pending.intentSender).build()
+                                )
+                            }
+                        } else if (!result.accessToken.isNullOrBlank()) {
+                            enableDriveBackups()
+                        } else {
+                            BackupSecrets.clear(requireContext())
+                            Toast.makeText(requireContext(),R.string.google_drive_authorization_failed,Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    .addOnFailureListener {
+                        BackupSecrets.clear(requireContext())
+                        Toast.makeText(requireContext(),R.string.google_drive_authorization_failed,Toast.LENGTH_LONG).show()
+                    }
+            } catch (_: Exception) {
+                BackupSecrets.clear(requireContext())
+                Toast.makeText(requireContext(),R.string.google_drive_require_google,Toast.LENGTH_LONG).show()
+            } finally {
+                passphrase.fill('\u0000')
+            }
+        }
+    }
 
     private fun setupBinding(binding: FragmentSettingsBinding) {
         model.preferences.view.observe(viewLifecycleOwner) { value ->
@@ -71,29 +190,10 @@ class Settings : Fragment() {
         binding.MaxTitle.setup(MaxTitle, model.preferences.maxTitle)
 
 
-        model.preferences.autoBackup.observe(viewLifecycleOwner) { value ->
-            binding.AutoBackup.setup(AutoBackup, value)
-            binding.AutoBackup.Title.setText(R.string.encrypted_auto_backup)
-            binding.AutoBackup.Value.setText(
-                if (value == AutoBackup.emptyPath) R.string.backup_not_configured
-                else R.string.daily_encrypted_backup
-            )
-            binding.AutoBackup.root.setOnClickListener {
-                if (value == AutoBackup.emptyPath) displayChooseFolderDialog()
-                else {
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(R.string.encrypted_auto_backup)
-                        .setItems(arrayOf(getString(R.string.change_backup_folder), getString(R.string.disable_auto_backup))) { _, which ->
-                            if (which == 0) displayChooseFolderDialog()
-                            else {
-                                model.disableAutoBackup()
-                                BackupSecrets.clear(requireContext())
-                                BackupScheduler.disable(requireActivity().application)
-                            }
-                        }.show()
-                }
-            }
-        }
+        // Drive es el único destino del respaldo automático.
+        // El selector SAF se conserva exclusivamente para importación/exportación manual.
+        refreshDriveLabel = { updateDriveRow(binding) }
+        updateDriveRow(binding)
 
         binding.ImportBackup.setOnClickListener {
             importBackup()
@@ -360,23 +460,7 @@ class Settings : Fragment() {
     }
 
     private fun displayChooseFolderDialog() {
-        if (!BackupSecrets.supported()) {
-            Toast.makeText(requireContext(),R.string.backup_requires_android_6,Toast.LENGTH_LONG).show()
-            return
-        }
-        requestBackupPassword(confirm = true) { password ->
-            try {
-                BackupSecrets.save(requireContext(),password)
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-                }
-                startActivityForResult(intent,REQUEST_CHOOSE_FOLDER)
-            } catch (_: Exception) {
-                Toast.makeText(requireContext(),R.string.encrypted_backup_error,Toast.LENGTH_LONG).show()
-            } finally { password.fill('\u0000') }
-        }
+        connectGoogleDrive() // Compatibilidad con el manejador de preferencias anterior.
     }
 
     private fun PreferenceBinding.setup(info: ListInfo, value: String) {
