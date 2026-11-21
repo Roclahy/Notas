@@ -103,7 +103,8 @@ object SecureDatabase {
             val escaped = original.absolutePath.replace("'", "''")
             cipher.rawExecSQL("ATTACH DATABASE '$escaped' AS plaintext KEY ''")
             try {
-                cipher.rawExecSQL("SELECT sqlcipher_export('main', 'plaintext')")
+                cipher.rawQuery("SELECT sqlcipher_export('main', 'plaintext')", null)
+                    .use { require(it.moveToFirst()) }
                 val version = android.database.sqlite.SQLiteDatabase.openDatabase(
                     original.path, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY)
                     .use { db -> db.version }

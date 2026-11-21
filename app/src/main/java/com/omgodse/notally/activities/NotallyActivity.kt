@@ -876,8 +876,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         val dp = resources.displayMetrics.density
         val sync = ImageButton(this).apply {
             layoutParams = android.view.ViewGroup.LayoutParams((44 * dp).toInt(), (42 * dp).toInt())
-            background = androidx.appcompat.content.res.AppCompatResources.getDrawable(
-                this@NotallyActivity, android.R.drawable.list_selector_background)
+            background = android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(0x33F1C45B), null, null)
             setPadding((10 * dp).toInt(), (10 * dp).toInt(), (10 * dp).toInt(), (10 * dp).toInt())
             scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
             setOnClickListener { forceCurrentNoteSync() }
@@ -948,7 +948,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                                     lifecycleScope.launch {
                                         val verified = withContext(Dispatchers.Default) {
                                             try { NotebookPassword.verify(secret, folder.passwordHash) }
-                                            finally { secret.fill('\\u0000') }
+                                            finally { secret.fill('\u0000') }
                                         }
                                         if (verified) {
                                             model.notebookId = folder.id
