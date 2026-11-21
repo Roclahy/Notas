@@ -52,6 +52,7 @@ class BaseNoteVH(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     val bodySize = TextSize.getDisplayBodySize(textSize)
+    private var showingLockedNote = false
 
     init {
         binding.Title.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getDisplayTitleSize(textSize))
@@ -72,7 +73,9 @@ class BaseNoteVH(
         }
 
         binding.root.setOnLongClickListener {
-            listener.onLongClick(adapterPosition)
+            // La selección múltiple podría exportar una nota protegida sin PIN.
+            if (showingLockedNote) listener.onClick(adapterPosition)
+            else listener.onLongClick(adapterPosition)
             return@setOnLongClickListener true
         }
     }
@@ -103,6 +106,7 @@ class BaseNoteVH(
     fun bind(baseNote: BaseNote, mediaRoot: File?, checked: Boolean) {
         updateCheck(checked)
         val locked = PinSecurity.noteLocked(binding.root.context, baseNote.id)
+        showingLockedNote = locked
         binding.LockIndicator.isVisible = locked
         binding.Space.isVisible = !locked
         binding.LabelGroup.isVisible = !locked
