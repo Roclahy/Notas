@@ -64,7 +64,7 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
         } catch (error: Exception) {
             // Conservar un diagnóstico seguro: nunca registrar mensajes arbitrarios
             // que puedan incluir detalles de la cuenta, tokens o contenido privado.
-            val http = Regex("""(?:Google Drive HTTP|Drive session HTTP|Drive HTTP) (\\d{3})""")
+            val http = Regex("""(?:Google Drive HTTP|Drive session HTTP|Drive HTTP) (\d{3})""")
                 .find(error.message.orEmpty())?.groupValues?.get(1)?.toIntOrNull()
             if (http == 401) {
                 RoseDriveState.markNeedsAuthorization(app)
