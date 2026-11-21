@@ -214,7 +214,6 @@ class MainActivity : NotasBaseActivity() {
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     target.animate().cancel()
-                    target.bringToFront()
                     target.animate()
                         .translationZ(front).scaleX(1.12f).scaleY(1.12f)
                         .setDuration(110L)
