@@ -51,6 +51,8 @@ import com.omgodse.notally.room.Type
 import com.omgodse.notally.widget.WidgetProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
@@ -65,6 +67,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     var isNewNote = true
     var isFirstInstance = true
+    private val saveMutex = Mutex()
 
     var type = Type.NOTE
 
@@ -305,9 +308,8 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     fun deleteReminder() {
         viewModelScope.launch {
-            val copy = reminder.value
-            if (copy != null) {
-                ReminderReceiver.deleteReminders(app, manager, listOf(id))
+            if (reminder.value != null) {
+                if (id > 0L) ReminderReceiver.deleteReminders(app, manager, listOf(id))
                 reminder.value = null
                 updateReminder()
             }
@@ -316,9 +318,14 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
 
     fun setReminder(reminder: Reminder) {
         viewModelScope.launch {
-            ReminderReceiver.setReminder(app, manager, id, reminder.timestamp)
+            val alreadyPersisted = id > 0L
             this@NotallyModel.reminder.value = reminder
-            updateReminder()
+            val savedId = saveNote()
+            // saveNote schedules the reminder on the initial insert.
+            // Never schedule an orphan reminder against id 0.
+            if (alreadyPersisted && savedId > 0L) {
+                ReminderReceiver.setReminder(app, manager, savedId, reminder.timestamp)
+            }
         }
     }
 
@@ -358,8 +365,10 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         } else createBaseNote()
     }
 
-    private suspend fun createBaseNote() {
-        id = withContext(Dispatchers.IO) { baseNoteDao.insert(getBaseNote()) }
+    private fun createBaseNote() {
+        // New notes and tasks start in memory; there is no empty Room row.
+        id = 0L
+        isNewNote = true
     }
 
 
@@ -376,27 +385,62 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
-    suspend fun saveNote(): Long {
-        return withContext(Dispatchers.IO) { baseNoteDao.insert(getBaseNote()) }
+    /** A title, visible body text, a written checklist item or an attached
+     * photo, drawing or audio is content. An untouched empty checklist row,
+     * whitespace, colors, tags and reminders alone do not create a note. */
+    private fun hasMeaningfulContent(): Boolean =
+        title.isNotBlank() ||
+            (type == Type.NOTE && body.toString().replace("\uFFFC", "").isNotBlank()) ||
+            (type == Type.LIST && items.any { it.body.isNotBlank() }) ||
+            images.value.isNotEmpty() ||
+            audios.value.isNotEmpty()
+
+    suspend fun saveNote(): Long = saveMutex.withLock {
+        if (!hasMeaningfulContent() && isNewNote) {
+            // Only discard a newly-created draft from this editor session.
+            // Previously existing notes are never deleted automatically.
+            if (id > 0L) {
+                val oldId = id
+                withContext(Dispatchers.IO) { baseNoteDao.delete(oldId) }
+                id = 0L
+                if (reminder.value != null) {
+                    ReminderReceiver.deleteReminders(app, manager, listOf(oldId))
+                }
+                WidgetProvider.sendBroadcast(app, oldId)
+            }
+            return@withLock 0L
+        }
+
+        val firstSave = id == 0L
+        val savedId = withContext(Dispatchers.IO) { baseNoteDao.insert(getBaseNote()) }
+        if (firstSave) {
+            id = savedId
+            reminder.value?.let {
+                ReminderReceiver.setReminder(app, manager, savedId, it.timestamp)
+            }
+        }
+        savedId
     }
 
     private suspend fun updateImages() {
-        withContext(Dispatchers.IO) { baseNoteDao.updateImages(id, images.value) }
+        // The first successful image import is meaningful content.
+        saveNote()
     }
 
     private suspend fun updateAudios() {
-        withContext(Dispatchers.IO) { baseNoteDao.updateAudios(id, audios.value) }
+        saveNote()
     }
 
     private suspend fun updateReminder() {
-        withContext(Dispatchers.IO) { baseNoteDao.updateReminder(id, reminder.value) }
+        if (id > 0L) {
+            withContext(Dispatchers.IO) { baseNoteDao.updateReminder(id, reminder.value) }
+        }
     }
-
 
     private fun getBaseNote(): BaseNote {
         val spans = getFilteredSpans(body)
         val body = this.body.trimEnd().toString()
-        val items = this.items.filter { item -> item.body.isNotEmpty() }
+        val items = this.items.filter { item -> item.body.isNotBlank() }
         return BaseNote(id, type, folder, color.value, title, pinned.value, timestamp, labels.value, body, spans, items, images.value, audios.value, reminder.value, notebookId, wallpaperName)
     }
 

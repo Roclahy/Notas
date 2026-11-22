@@ -119,8 +119,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             return
         }
         lifecycleScope.launch {
-            model.saveNote()
-            WidgetProvider.sendBroadcast(application, model.id)
+            val savedId = model.saveNote()
+            if (savedId > 0L) WidgetProvider.sendBroadcast(application, savedId)
             super.finish()
         }
     }
@@ -131,8 +131,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             else intent.getLongExtra(Constants.SelectedBaseNote, 0L))
         if (permittedToSave) {
             lifecycleScope.launch {
-                model.saveNote()
-                WidgetProvider.sendBroadcast(application, model.id)
+                val savedId = model.saveNote()
+                if (savedId > 0L) WidgetProvider.sendBroadcast(application, savedId)
             }
         }
     }
@@ -878,8 +878,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         lifecycleScope.launch {
             // Guarda el contenido actual antes de crear la copia cifrada.
             if (permittedToSave) {
-                model.saveNote()
-                editorDirty = false
+                val savedId = model.saveNote()
+                if (savedId > 0L) editorDirty = false
             }
             if (BackupScheduler.force(application)) {
                 Toast.makeText(this@NotallyActivity, R.string.sync_queued, Toast.LENGTH_SHORT).show()
