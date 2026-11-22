@@ -1,4 +1,4 @@
-name: Build Notas 1.4.20 (124) - durable links verified build
+name: Build Notas 1.4.21 (125) - private link diagnostics
 
 on:
   workflow_dispatch:
@@ -22,6 +22,7 @@ on:
       - work/notas-158-safe-links-bulk-smart-color
       - work/notas-link-persistence-fix
       - work/notas-120-durable-links
+      - work/notas-1421-link-diagnostics
     paths:
       - .github/workflows/build-notas-dev.yml
       - app/**
@@ -63,7 +64,7 @@ jobs:
       - name: Upload signed debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-1420-debug-installable
+          name: notas-1421-debug-installable
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -73,7 +74,7 @@ jobs:
       - name: Upload unsigned optimized Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-1420-r8-unsigned
+          name: notas-1421-r8-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
