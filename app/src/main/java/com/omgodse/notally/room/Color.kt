@@ -12,5 +12,6 @@ enum class Color {
     DUSK,
     FLOWER,
     BLOSSOM,
-    CLAY
+    CLAY,
+    INTELLIGENT
 }

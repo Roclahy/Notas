@@ -74,6 +74,9 @@ object Operations {
             Color.FLOWER -> R.color.Flower
             Color.BLOSSOM -> R.color.Blossom
             Color.CLAY -> R.color.Clay
+            // Se obtiene dinámicamente de una imagen y nunca se persiste
+            // un RGB fijo. Si no hay imagen, fondo predeterminado.
+            Color.INTELLIGENT -> R.color.Default
         }
         return ContextCompat.getColor(context, id)
     }

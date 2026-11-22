@@ -366,4 +366,5 @@
         <item quantity="other">%d completed</item>
     </plurals>
     <string name="notas_notes_moved">Notes moved to folder</string>
+    <string name="notas_color_intelligent">Intelligent · Photo’s dominant color</string>
 </resources>

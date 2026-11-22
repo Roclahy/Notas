@@ -1,4 +1,4 @@
-name: Build Notas 1.4.16 (120) - signed release preparation
+name: Build Notas 1.4.17 (121) - signed release preparation
 
 on:
   workflow_dispatch:
@@ -19,6 +19,7 @@ on:
       - work/notas-154-grid-spacing
       - work/notas-155-creation-time-metadata
       - work/notas-157-critical-link-recovery
+      - work/notas-158-safe-links-bulk-smart-color
     paths:
       - .github/workflows/build-notas-dev.yml
       - app/**
@@ -60,7 +61,7 @@ jobs:
       - name: Upload signed debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-157-debug-installable
+          name: notas-158-debug-installable
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -70,7 +71,7 @@ jobs:
       - name: Upload unsigned optimized Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-157-r8-unsigned
+          name: notas-158-r8-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
