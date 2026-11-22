@@ -9,11 +9,13 @@ data class SpanRepresentation(
     var start: Int,
     var end: Int,
     /** URL externa o referencia interna rose://note/id o rose://folder/id. */
-    var url: String? = null
+    var url: String? = null,
+    var highlighted: Boolean = false,
+    var imageName: String? = null
 ) {
 
     fun isNotUseless(): Boolean {
-        return bold || link || italic || monospace || strikethrough
+        return bold || link || italic || monospace || strikethrough || highlighted || imageName != null
     }
 
     fun isEqualInSize(representation: SpanRepresentation): Boolean {

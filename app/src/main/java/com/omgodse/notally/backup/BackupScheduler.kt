@@ -52,13 +52,13 @@ object BackupScheduler {
             .build()
 
     @Synchronized
-    private fun queueImmediate(app: Application, delaySeconds: Long, manual: Boolean) {
+    private fun queueImmediate(app: Application, delaySeconds: Long, manual: Boolean, includeImages: Boolean = manual || BackupMediaPolicy.includeAutomaticImages(app)) {
         pendingImmediate?.cancel(false) // solo una petición pendiente; nunca interrumpe la que corre
         pendingImmediate = immediate.schedule({
             if (ready(app)) {
                 // Worker y subida inmediata comparten el mismo candado y la misma
                 // confirmación de Drive. El fallback ya está programado si falla.
-                RoseDriveWorker.perform(app, manual)
+                RoseDriveWorker.perform(app, manual, includeImages)
             }
         }, delaySeconds, TimeUnit.SECONDS)
     }
@@ -108,7 +108,7 @@ object BackupScheduler {
 
     /** El toque manual inicia directamente en E/S, sin retraso de WorkManager. */
     @Synchronized
-    fun force(app: Application): Boolean {
+    fun force(app: Application, includeImages: Boolean = true): Boolean {
         if (!ready(app)) return false
         if (RoseDriveState.isUploading(app)) {
             RoseDriveState.markDirty(app)
@@ -117,7 +117,7 @@ object BackupScheduler {
         }
         RoseDriveState.markQueued(app)
         queueFallback(app)
-        queueImmediate(app, 0, true)
+        queueImmediate(app, 0, true, includeImages)
         return true
     }
 

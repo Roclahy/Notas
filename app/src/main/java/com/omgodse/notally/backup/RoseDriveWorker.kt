@@ -25,7 +25,9 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
         private val lock = java.util.concurrent.locks.ReentrantLock()
 
         /** Único motor compartido por la ejecución directa y la periódica. */
-        fun perform(app: Application, manual: Boolean): androidx.work.ListenableWorker.Result {
+        fun perform(app: Application, manual: Boolean,
+                    includeImages: Boolean = manual || BackupMediaPolicy.includeAutomaticImages(app)):
+                    androidx.work.ListenableWorker.Result {
         // El trabajo periódico puede coincidir con la cola por cambios.
         // No bloquear el hilo: la otra subida confirmará o reintentará.
         if (!lock.tryLock()) {
@@ -74,14 +76,14 @@ class RoseDriveWorker(context: Context, params: WorkerParameters) : Worker(conte
             val settingsHash = RoseDriveState.settingsFingerprint(app)
             file = File.createTempFile("notas_backup_", ".rnotas", app.cacheDir)
             file.outputStream().use { output ->
-                EncryptedBackups.write(app, output, requireNotNull(passphrase))
+                EncryptedBackups.write(app, output, requireNotNull(passphrase), includeImages)
             }
             val name = "Notas-" +
                 SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".rnotas"
             RoseDriveApi.backup(app, requireNotNull(authorization.accessToken),
                 requireNotNull(file), name)
             // Únicamente después de obtener éxito HTTP en Google Drive.
-            RoseDriveState.markUploaded(app, recorded, settingsHash)
+            RoseDriveState.markUploaded(app, recorded, settingsHash, requireNotNull(file).length())
             // Si una nota cambió durante la transferencia, guardar un
             // sucesor en la cola, SIN cancelar el Worker que acaba de subir.
             val changesDuringUpload = RoseDriveState.consumeDirty(app)

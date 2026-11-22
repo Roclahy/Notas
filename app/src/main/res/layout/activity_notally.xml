@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipChildren="false"
+    android:orientation="vertical"
     android:fitsSystemWindows="false">
 
     <FrameLayout
@@ -48,8 +49,8 @@
     <androidx.core.widget.NestedScrollView
         android:id="@+id/ScrollView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/ToolbarContainer"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:fillViewport="true"
         android:visibility="gone">
 
@@ -75,7 +76,7 @@
                 android:inputType="textMultiLine|textCapSentences"
                 android:paddingStart="24dp"
                 android:paddingTop="22dp"
-                android:paddingEnd="24dp"
+                android:paddingEnd="16dp"
                 android:fontFamily="@font/notas_sans"
                 android:textSize="26sp"
                 android:textAppearance="?attr/textAppearanceHeadline6" />
@@ -140,10 +141,10 @@
                 android:layout_height="wrap_content"
                 android:background="@null"
                 android:hint="@string/note"
-                android:inputType="textMultiLine|textCapSentences"
+                android:inputType="textMultiLine|textCapSentences|textAutoCorrect"
                 android:paddingStart="24dp"
                 android:paddingTop="24dp"
-                android:paddingEnd="24dp"
+                android:paddingEnd="16dp"
                 android:fontFamily="@font/notas_sans"
                 android:textAppearance="?attr/textAppearanceBody1" />
 
@@ -206,4 +207,4 @@
     </androidx.core.widget.NestedScrollView>
 
 
-</RelativeLayout>
+</LinearLayout>

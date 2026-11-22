@@ -124,12 +124,13 @@ class ViewImage : NotasBaseActivity() {
                 saveToDevice(image)
             }
         }
-        binding.Toolbar.menu.add(R.string.delete, R.drawable.delete) {
+        val deleteAction = binding.Toolbar.menu.add(R.string.delete, R.drawable.delete) {
             val position = layoutManager.findFirstCompletelyVisibleItemPosition()
             if (position != -1) {
                 delete(position, adapter)
             }
         }
+        deleteAction.icon?.mutate()?.setTint(0xFFFF453A.toInt())
     }
 
 

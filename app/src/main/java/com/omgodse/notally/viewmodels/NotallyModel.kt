@@ -24,6 +24,9 @@ import androidx.lifecycle.viewModelScope
 import com.omgodse.notally.AttachmentDeleteService
 import com.omgodse.notally.Cache
 import com.omgodse.notally.MarkerSpan
+import com.omgodse.notally.view.InlineImageRefSpan
+import com.omgodse.notally.view.InlineNoteImageSpan
+import android.text.style.BackgroundColorSpan
 import com.omgodse.notally.Progress
 import com.omgodse.notally.R
 import com.omgodse.notally.ReminderReceiver
@@ -417,6 +420,9 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                     }
                     is TypefaceSpan -> representation.monospace = span.family == "monospace"
                     is StrikethroughSpan -> representation.strikethrough = true
+                    is BackgroundColorSpan -> representation.highlighted = true
+                    is InlineNoteImageSpan -> representation.imageName = span.imageName
+                    is InlineImageRefSpan -> representation.imageName = span.imageName
                 }
 
                 if (representation.isNotUseless()) {
@@ -449,6 +455,8 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                 if (match.strikethrough) {
                     representation.strikethrough = true
                 }
+                if (match.highlighted) representation.highlighted = true
+                if (match.imageName != null) representation.imageName = match.imageName
                 val copy = ArrayList(representations)
                 copy[index] = representation
                 copy.remove(match)

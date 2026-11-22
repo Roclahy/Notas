@@ -88,7 +88,9 @@ object Converters {
             val start = jsonObject.getInt("start")
             val end = jsonObject.getInt("end")
             val url = jsonObject.optString("url").takeIf { it.isNotBlank() }
-            SpanRepresentation(bold, link, italic, monospace, strikethrough, start, end, url)
+            SpanRepresentation(bold, link, italic, monospace, strikethrough, start, end, url,
+                jsonObject.optBoolean("highlighted", false),
+                jsonObject.optString("imageName").takeIf { it.isNotBlank() })
         }
     }
 
@@ -130,6 +132,8 @@ object Converters {
             jsonObject.put("start", representation.start)
             jsonObject.put("end", representation.end)
             representation.url?.let { jsonObject.put("url", it) }
+            if (representation.highlighted) jsonObject.put("highlighted", true)
+            representation.imageName?.let { jsonObject.put("imageName", it) }
         }
         return JSONArray(objects)
     }

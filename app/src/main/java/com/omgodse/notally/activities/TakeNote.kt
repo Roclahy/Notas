@@ -23,6 +23,15 @@ import kotlinx.coroutines.withContext
 import java.util.Locale
 import android.text.style.CharacterStyle
 import android.text.style.StrikethroughSpan
+import android.text.style.BackgroundColorSpan
+import android.text.style.SuggestionSpan
+import com.omgodse.notally.view.InlineImageRefSpan
+import com.omgodse.notally.view.InlineNoteImageSpan
+import com.omgodse.notally.view.InlineNoteImages
+import android.app.Activity
+import android.text.Selection
+import android.content.Intent
+import android.text.Spannable
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
@@ -41,6 +50,50 @@ import com.omgodse.notally.miscellaneous.setOnNextAction
 import com.omgodse.notally.room.Type
 
 class TakeNote : NotallyActivity(Type.NOTE) {
+    private var pendingInline: Pair<Int, Set<String>>? = null
+    private val inlineRequestCode = 241
+
+    override fun insertInlineImage() {
+        val at = binding.EnterBody.selectionEnd.coerceAtLeast(0)
+        pendingInline = at to model.images.value.map { it.name }.toSet()
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "image/*"
+            addCategory(Intent.CATEGORY_OPENABLE)
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+        }
+        startActivityForResult(intent, inlineRequestCode)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == inlineRequestCode) {
+            if (resultCode == Activity.RESULT_OK && data?.data != null) {
+                model.addImages(arrayOf(requireNotNull(data.data)))
+            } else pendingInline = null
+        }
+    }
+
+    private fun renderInlineImages() {
+        val editable = binding.EnterBody.text ?: return
+        val references = editable.getSpans<InlineImageRefSpan>(0, editable.length).toList()
+        for (reference in references) {
+            val start = editable.getSpanStart(reference)
+            val end = editable.getSpanEnd(reference)
+            if (start < 0 || end <= start) continue
+            lifecycleScope.launch {
+                val loaded = withContext(Dispatchers.IO) {
+                    InlineNoteImages.load(application, reference.imageName, model.imageRoot)
+                }
+                if (editable.getSpanStart(reference) == start &&
+                    editable.getSpanEnd(reference) == end) {
+                    editable.removeSpan(reference)
+                    editable.setSpan(loaded, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    binding.EnterBody.invalidate()
+                }
+            }
+        }
+    }
+
 
     override fun configureUI() {
         binding.EnterTitle.setOnNextAction {
@@ -70,6 +123,21 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             override fun afterTextChanged(s: Editable?) {}
         })
         binding.EnterBody.post(autoLink)
+        renderInlineImages()
+        model.images.observe(this) { images ->
+            val pending = pendingInline ?: return@observe
+            val added = images.firstOrNull { it.name !in pending.second }
+            if (added != null) {
+                pendingInline = null
+                val editable = binding.EnterBody.text ?: return@observe
+                val at = pending.first.coerceIn(0, editable.length)
+                editable.insert(at, "\uFFFC")
+                editable.setSpan(InlineImageRefSpan(added.name), at, at + 1,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                binding.EnterBody.setSelection(at + 1)
+                renderInlineImages()
+            }
+        }
 
         binding.EnterBody.customSelectionActionModeCallback = object : ActionMode.Callback {
             override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?) = false
@@ -82,35 +150,42 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                 try {
                     if (menu != null) {
                         menu.add(R.string.bold, 0) {
-                            applySpan(StyleSpan(Typeface.BOLD))
-                            mode?.finish()
+                            applySpan(StyleSpan(Typeface.BOLD)); mode?.finish()
                         }
-                        menu.add(R.string.link, 0) {
-                            val range = selectedRange()
-                            mode?.finish()
-                            if (range != null) showWebLinkEditor(range.first, range.second)
+                        menu.add(R.string.italic, 0) {
+                            applySpan(StyleSpan(Typeface.ITALIC)); mode?.finish()
+                        }
+                        menu.add(R.string.monospace, 0) {
+                            applySpan(TypefaceSpan("monospace")); mode?.finish()
+                        }
+                        menu.add(R.string.strikethrough, 0) {
+                            applySpan(StrikethroughSpan()); mode?.finish()
                         }
                         menu.add(R.string.link_to_note, 0) {
-                            val range = selectedRange()
-                            mode?.finish()
+                            val range = selectedRange(); mode?.finish()
                             if (range != null) showLinkPicker("note", range.first, range.second)
                         }
                         menu.add(R.string.link_to_folder, 0) {
-                            val range = selectedRange()
-                            mode?.finish()
+                            val range = selectedRange(); mode?.finish()
                             if (range != null) showLinkPicker("folder", range.first, range.second)
                         }
-                        menu.add(R.string.italic, 0) {
-                            applySpan(StyleSpan(Typeface.ITALIC))
-                            mode?.finish()
+                        menu.add(R.string.link, 0) {
+                            val range = selectedRange(); mode?.finish()
+                            if (range != null) showWebLinkEditor(range.first, range.second)
                         }
-                        menu.add(R.string.monospace, 0) {
-                            applySpan(TypefaceSpan("monospace"))
-                            mode?.finish()
+                        menu.add(R.string.notas_highlight, 0) {
+                            applySpan(BackgroundColorSpan(0x77F1C45B)); mode?.finish()
                         }
-                        menu.add(R.string.strikethrough, 0) {
-                            applySpan(StrikethroughSpan())
-                            mode?.finish()
+                        val range = selectedRange()
+                        if (range != null &&
+                            binding.EnterBody.text?.getSpans<SuggestionSpan>(range.first, range.second)
+                                ?.isNotEmpty() == true) {
+                            menu.add(R.string.notas_ignore_spelling, 0) {
+                                val text = binding.EnterBody.text
+                                text?.getSpans<SuggestionSpan>(range.first, range.second)
+                                    ?.forEach(text::removeSpan)
+                                mode?.finish()
+                            }
                         }
                         menu.add(R.string.clear_formatting, 0) {
                             removeSpans()

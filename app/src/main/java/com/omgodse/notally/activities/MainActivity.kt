@@ -650,6 +650,8 @@ class MainActivity : NotasBaseActivity() {
         val restore = menu.add(R.string.restore, R.drawable.restore) { model.moveBaseNotes(Folder.NOTES) }
         val unarchive = menu.add(R.string.unarchive, R.drawable.unarchive) { model.moveBaseNotes(Folder.NOTES) }
         val deleteForever = menu.add(R.string.delete_forever, R.drawable.delete) { deleteForever() }
+        delete.icon?.mutate()?.setTint(0xFFFF453A.toInt())
+        deleteForever.icon?.mutate()?.setTint(0xFFFF453A.toInt())
 
         model.actionMode.count.observe(this) { count ->
             if (count == 0) {
@@ -918,7 +920,7 @@ class MainActivity : NotasBaseActivity() {
             }
             R.id.Deleted -> {
                 binding.SyncStatus.setImageResource(R.drawable.delete_all)
-                binding.SyncStatus.imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+                binding.SyncStatus.imageTintList = ColorStateList.valueOf(0xFFFF453A.toInt())
                 binding.SyncStatus.contentDescription = getString(R.string.delete_all)
                 binding.SyncStatus.setOnClickListener {
                     activeScreen()?.let { screen ->

@@ -169,12 +169,12 @@ internal object RoseDriveApi {
         }
     }
 
-    data class RemoteBackup(val id: String, val name: String, val createdTime: String)
+    data class RemoteBackup(val id: String, val name: String, val createdTime: String, val bytes: Long)
 
     fun listBackups(token: String): List<RemoteBackup> {
         val parent = lookupFolder(token) ?: return emptyList()
         val q = "'$parent' in parents and trashed = false"
-        val url = "$API?spaces=drive&pageSize=100&fields=files(id,name,createdTime)" +
+        val url = "$API?spaces=drive&pageSize=100&fields=files(id,name,createdTime,size)" +
             "&orderBy=createdTime%20desc&q=" + URLEncoder.encode(q, "UTF-8")
         val items = getJson(url, token).optJSONArray("files") ?: return emptyList()
         return buildList {
@@ -184,7 +184,7 @@ internal object RoseDriveApi {
                 val id = item.optString("id")
                 if (id.isNotBlank() && name.matches(
                         Regex("Notas-[0-9]{8}-[0-9]{6}\\.rnotas"))) {
-                    add(RemoteBackup(id, name, item.optString("createdTime")))
+                    add(RemoteBackup(id, name, item.optString("createdTime"), item.optLong("size", 0L)))
                 }
             }
         }

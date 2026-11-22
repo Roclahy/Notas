@@ -332,4 +332,16 @@
     <string name="notebook_delete_error">No se pudo eliminar la carpeta.</string>
     <string name="notebook_name_required">Escribe el nombre de la carpeta.</string>
     <string name="notebook_password_optional">Puedes proteger esta carpeta con una contraseña, o continuar sin ella.</string>
+    <plurals name="notas_word_count">
+        <item quantity="one">%d palabra</item>
+        <item quantity="other">%d palabras</item>
+    </plurals>
+    <string name="notas_highlight">Resaltar en dorado</string>
+    <string name="notas_insert_inline_image">Insertar imagen en el texto</string>
+    <string name="notas_ignore_spelling">Ignorar corrección</string>
+    <string name="notas_auto_images">Incluir imágenes en copias automáticas</string>
+    <string name="notas_backup_manual_images">Copia ahora (con imágenes)</string>
+    <string name="notas_backup_manual_no_images">Copia ahora (sin imágenes)</string>
+    <string name="notas_backup_size">Última copia: %1$s</string>
+    <string name="notas_missing_inline_image">Imagen no incluida en esta copia</string>
 </resources>

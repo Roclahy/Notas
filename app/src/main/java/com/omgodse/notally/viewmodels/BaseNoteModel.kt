@@ -342,6 +342,9 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 }
                 var current = wallpaperNames.size + 1
 
+                // La importación cambia los nombres cifrados: los spans incrustados
+                // deben actualizarse con el nuevo nombre, sin perder su posición.
+                val imageNameMap = HashMap<String, String>()
                 // Don't let a single image bring down the entire backup
                 baseNotes.forEach { baseNote ->
                     baseNote.images.forEach { image ->
@@ -352,6 +355,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                                 val name = "${UUID.randomUUID()}.$extension"
                                 val file = File(mediaRoot, name)
                                 image.name = name
+                                imageNameMap[entry.name.substringAfterLast('/')] = name
                                 val imageStream = zipFile.getInputStream(entry)
                                 SecureMedia.encryptFromStream(app, imageStream, file)
                             }
@@ -391,9 +395,13 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 for ((index, note) in resolvedNotes.withIndex()) {
                     val localId = importedIds.getOrNull(index) ?: continue
                     val converted = note.spans.map { span ->
-                        if (span.link && RoseInternalLinks.parse(span.url) != null)
-                            span.copy(url = RoseInternalLinks.remap(span.url, noteIdMap, remap))
-                        else span
+                        when {
+                            span.link && RoseInternalLinks.parse(span.url) != null ->
+                                span.copy(url = RoseInternalLinks.remap(span.url, noteIdMap, remap))
+                            span.imageName != null && imageNameMap.containsKey(span.imageName) ->
+                                span.copy(imageName = imageNameMap[span.imageName])
+                            else -> span
+                        }
                     }
                     if (converted != note.spans) {
                         baseNoteDao.insert(note.copy(id = localId,

@@ -22,7 +22,7 @@ object RoseDriveState {
     val trackedSettings = setOf(
         "theme", "view", "dateFormat", "textSize",
         "maxItemsToDisplayInList.v1", "maxLinesToDisplayInNote.v1",
-        "maxLinesToDisplayInTitle", "uiLanguage"
+        "maxLinesToDisplayInTitle", "uiLanguage", BackupMediaPolicy.INCLUDE_AUTO_IMAGES
     )
     val revision = MutableLiveData(0L)
 
@@ -35,7 +35,7 @@ object RoseDriveState {
             editor.remove(BACKED_UP).remove(BACKED_UP_SETTINGS).remove("last_upload")
                 .remove("needs_authorization").remove("last_failure").remove("uploading")
                 .remove("queued").remove("changes_during_upload")
-                .remove("waiting_for_connection")
+                .remove("waiting_for_connection").remove("last_backup_bytes")
         }
         editor.apply()
         invalidate()
@@ -93,13 +93,16 @@ object RoseDriveState {
             previous(c) == snapshot(notes) &&
             prefs(c).getString(BACKED_UP_SETTINGS, null) == settingsFingerprint(c)
 
-    fun markUploaded(c: Context, recorded: Map<Long, String>, settingsHash: String) {
+    fun lastBackupBytes(c: Context): Long = prefs(c).getLong("last_backup_bytes", 0L)
+
+    fun markUploaded(c: Context, recorded: Map<Long, String>, settingsHash: String, bytes: Long) {
         val json = JSONObject()
         for ((id, hash) in recorded) json.put(id.toString(), hash)
         // Se confirma SOLO después de completar la carga cifrada a Drive.
         prefs(c).edit().putString(BACKED_UP, json.toString())
             .putString(BACKED_UP_SETTINGS, settingsHash)
             .putLong("last_upload", System.currentTimeMillis())
+            .putLong("last_backup_bytes", bytes)
             .putBoolean("needs_authorization", false)
             .putBoolean("uploading", false).putBoolean("queued", false)
             .remove("last_failure").remove("waiting_for_connection").commit()

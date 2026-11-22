@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import com.omgodse.notally.backup.BackupScheduler
+import com.omgodse.notally.backup.BackupMediaPolicy
 import com.omgodse.notally.backup.BackupSecrets
 import com.omgodse.notally.backup.EncryptedBackups
 import com.omgodse.notally.backup.RoseDriveState
@@ -102,7 +103,7 @@ class Settings : Fragment() {
         val enabled = RoseDriveState.enabled(requireContext())
         binding.AutoBackup.Title.setText(R.string.google_drive_backup)
         val context = requireContext()
-        binding.AutoBackup.Value.text = when {
+        val status = when {
             !enabled -> getString(R.string.google_drive_connect)
             RoseDriveState.needsAuthorization(context) ->
                 getString(R.string.google_drive_needs_auth)
@@ -122,6 +123,10 @@ class Settings : Fragment() {
             }
             else -> getString(R.string.google_drive_pending)
         }
+        val bytes = RoseDriveState.lastBackupBytes(context)
+        binding.AutoBackup.Value.text = if (bytes > 0L) {
+            status + " · " + android.text.format.Formatter.formatShortFileSize(context, bytes)
+        } else status
         binding.AutoBackup.root.setOnClickListener {
             if (!enabled || RoseDriveState.needsAuthorization(requireContext())) {
                 connectGoogleDrive()
@@ -129,21 +134,34 @@ class Settings : Fragment() {
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.google_drive_backup)
                     .setItems(arrayOf(
-                        getString(R.string.google_drive_backup_now),
+                        getString(R.string.notas_backup_manual_images),
+                        getString(R.string.notas_backup_manual_no_images),
+                        getString(R.string.notas_auto_images) + ": " +
+                            (if (BackupMediaPolicy.includeAutomaticImages(requireContext())) "✓" else "—"),
                         getString(R.string.google_drive_restore),
                         getString(R.string.google_drive_disconnect)
                     )) { _, choice ->
-                        if (choice == 0) {
-                            if (BackupScheduler.force(requireActivity().application)) {
-                                Toast.makeText(requireContext(), R.string.sync_queued, Toast.LENGTH_SHORT).show()
+                        when (choice) {
+                            0, 1 -> {
+                                if (BackupScheduler.force(requireActivity().application,
+                                        includeImages = choice == 0)) {
+                                    Toast.makeText(requireContext(), R.string.sync_queued,
+                                        Toast.LENGTH_SHORT).show()
+                                }
                             }
-                        } else if (choice == 1) {
-                            restoreFromGoogleDrive()
-                        } else {
-                            RoseDriveState.setEnabled(requireContext(), false)
-                            BackupScheduler.disable(requireActivity().application)
-                            BackupSecrets.clear(requireContext())
-                            updateDriveRow(binding)
+                            2 -> {
+                                val now = BackupMediaPolicy.includeAutomaticImages(requireContext())
+                                BackupMediaPolicy.setAutomaticImages(requireContext(), !now)
+                                BackupScheduler.changed(requireActivity().application)
+                                updateDriveRow(binding)
+                            }
+                            3 -> restoreFromGoogleDrive()
+                            else -> {
+                                RoseDriveState.setEnabled(requireContext(), false)
+                                BackupScheduler.disable(requireActivity().application)
+                                BackupSecrets.clear(requireContext())
+                                updateDriveRow(binding)
+                            }
                         }
                     }.show()
             }
@@ -174,7 +192,11 @@ class Settings : Fragment() {
                         Toast.LENGTH_LONG).show()
                     return@launch
                 }
-                val labels = backups.map { it.name }.toTypedArray()
+                val labels = backups.map {
+                    if (it.bytes > 0L) it.name + " · " +
+                        android.text.format.Formatter.formatShortFileSize(requireContext(), it.bytes)
+                    else it.name
+                }.toTypedArray()
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.google_drive_restore)
                     .setItems(labels) { _, selected ->

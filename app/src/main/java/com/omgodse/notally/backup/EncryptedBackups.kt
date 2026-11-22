@@ -73,7 +73,7 @@ object EncryptedBackups {
         return key
     }
 
-    fun write(app: Application, output: OutputStream, password: CharArray) {
+    fun write(app: Application, output: OutputStream, password: CharArray, includeImages: Boolean = true) {
         require(password.size >= 12) { "Backup password requires at least 12 characters" }
         val salt = ByteArray(16).also(random::nextBytes)
         val iv = ByteArray(12).also(random::nextBytes)
@@ -88,7 +88,7 @@ object EncryptedBackups {
         cipher.init(Cipher.ENCRYPT_MODE, key(password, salt, kdf), GCMParameterSpec(128,iv))
         cipher.updateAAD(magic)
         ZipOutputStream(CipherOutputStream(output, cipher)).use { zip ->
-            populateZip(app, zip)
+            populateZip(app, zip, includeImages)
         }
     }
 
@@ -120,15 +120,17 @@ object EncryptedBackups {
         }
     }
 
-    private fun populateZip(app: Application, zip: ZipOutputStream) {
+    private fun populateZip(app: Application, zip: ZipOutputStream, includeImages: Boolean) {
         val database = NotallyDatabase.getDatabase(app)
         database.checkpoint()
         SecureDatabase.writePortableBackup(app, database, zip)
         val images = IO.getExternalImagesDirectory(app)
         val audios = IO.getExternalAudioDirectory(app)
-        database.getBaseNoteDao().getAllImages().asSequence()
-            .flatMap { Converters.jsonToImages(it) }.distinctBy { it.name }
-            .forEach { SecureMedia.backupFile(app, zip, images,"Images",it.name) }
+        if (includeImages) {
+            database.getBaseNoteDao().getAllImages().asSequence()
+                .flatMap { Converters.jsonToImages(it) }.distinctBy { it.name }
+                .forEach { SecureMedia.backupFile(app, zip, images,"Images",it.name) }
+        }
         database.getBaseNoteDao().getAllAudios().asSequence()
             .flatMap { Converters.jsonToAudios(it) }.distinctBy { it.name }
             .forEach { SecureMedia.backupFile(app, zip, audios,"Audios",it.name) }
@@ -144,6 +146,8 @@ object EncryptedBackups {
         for (setting in settingKeys) {
             prefs.all[setting]?.let { settings.setProperty(setting, it.toString()) }
         }
+        // A reader can distinguish an intentional lightweight copy from a damaged archive.
+        settings.setProperty("imagesIncluded", includeImages.toString())
         zip.putNextEntry(ZipEntry("Notas/settings.properties"))
         settings.store(zip, "Notas settings (no PIN or backup credentials)")
         zip.closeEntry()

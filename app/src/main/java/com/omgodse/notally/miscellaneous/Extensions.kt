@@ -5,6 +5,8 @@ import android.text.Editable
 import android.text.InputType
 import android.text.Spannable
 import android.text.Spanned
+import android.text.style.BackgroundColorSpan
+import com.omgodse.notally.view.InlineImageRefSpan
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
@@ -43,6 +45,12 @@ fun String.applySpans(representations: List<SpanRepresentation>): Editable {
             }
             if (strikethrough) {
                 editable.setSpan(StrikethroughSpan(), start, end)
+            }
+            if (representation.highlighted) {
+                editable.setSpan(BackgroundColorSpan(0x77F1C45B), start, end)
+            }
+            representation.imageName?.let { name ->
+                editable.setSpan(InlineImageRefSpan(name), start, end)
             }
         } catch (exception: Exception) {
             exception.printStackTrace()

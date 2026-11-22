@@ -310,7 +310,6 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     open fun setupListeners() {
         binding.EnterTitle.doAfterTextChanged { text ->
             model.title = requireNotNull(text).trim().toString()
-            updateCharacterCount()
             markNoteEdited()
         }
         if (model.type == Type.NOTE) {
@@ -323,10 +322,13 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     private fun updateCharacterCount() {
         if (model.type != Type.NOTE) return
-        val title = binding.EnterTitle.text?.toString().orEmpty()
-        val body = model.body.toString()
-        val count = title.codePointCount(0, title.length) + body.codePointCount(0, body.length)
-        binding.CharacterCount.text = resources.getQuantityString(R.plurals.notas_character_count, count, count)
+        val body = model.body.toString().replace("\uFFFC", "")
+        val characters = body.codePointCount(0, body.length)
+        val words = Regex("""[\p{L}\p{N}]+(?:['’_-][\p{L}\p{N}]+)*""")
+            .findAll(body).count()
+        binding.CharacterCount.text = resources.getQuantityString(
+            R.plurals.notas_character_count, characters, characters) + " · " +
+            resources.getQuantityString(R.plurals.notas_word_count, words, words)
     }
 
     open fun setStateFromModel() {
@@ -990,6 +992,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     /** Proporcionada por el editor de notas; no existe en las listas de tareas. */
     protected open fun showIncomingLinks() {}
+    protected open fun insertInlineImage() {}
 
     private fun showActionsSheet() {
         val dialog = BottomSheetDialog(this)
@@ -1012,7 +1015,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             setPadding(12, 0, 0, (12 * resources.displayMetrics.density).toInt())
         }
         container.addView(title)
-        fun action(titleId: Int, iconId: Int, handler: () -> Unit) {
+        fun action(titleId: Int, iconId: Int, destructive: Boolean = false, handler: () -> Unit) {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
@@ -1023,7 +1026,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             }
             val icon = ImageView(this).apply {
                 setImageResource(iconId)
-                imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+                imageTintList = ColorStateList.valueOf(if (destructive) 0xFFFF453A.toInt() else 0xFFF1C45B.toInt())
             }
             row.addView(icon, LinearLayout.LayoutParams((25 * resources.displayMetrics.density).toInt(), (25 * resources.displayMetrics.density).toInt()).apply {
                 marginStart = (10 * resources.displayMetrics.density).toInt()
@@ -1045,6 +1048,11 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             action(R.string.backlinks, R.drawable.search) { showIncomingLinks() }
         }
         action(R.string.add_images, R.drawable.add_images) { selectImages() }
+        if (model.type == Type.NOTE) {
+            action(R.string.notas_insert_inline_image, R.drawable.add_images) {
+                insertInlineImage()
+            }
+        }
         action(R.string.draw_with_finger, R.drawable.notas_draw) {
             startActivityForResult(Intent(this, DrawingActivity::class.java), REQUEST_ADD_IMAGES)
         }
@@ -1058,7 +1066,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             startActivityForResult(intent, REQUEST_NOTE_WALLPAPER)
         }
         if (model.wallpaperName.isNotBlank()) {
-            action(R.string.wallpaper_remove, R.drawable.delete) {
+            action(R.string.wallpaper_remove, R.drawable.delete, destructive = true) {
                 model.wallpaperName = ""
                 markNoteEdited()
                 applyNoteAppearance(model.color.value)
@@ -1101,15 +1109,15 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         when (model.folder) {
             Folder.NOTES -> {
                 action(R.string.archive, R.drawable.archive) { archive() }
-                action(R.string.delete, R.drawable.delete) { delete() }
+                action(R.string.delete, R.drawable.delete, destructive = true) { delete() }
             }
             Folder.DELETED -> {
                 action(R.string.restore, R.drawable.restore) { restore() }
-                action(R.string.delete_forever, R.drawable.delete) { deleteForever() }
+                action(R.string.delete_forever, R.drawable.delete, destructive = true) { deleteForever() }
             }
             Folder.ARCHIVED -> {
                 action(R.string.unarchive, R.drawable.unarchive) { restore() }
-                action(R.string.delete, R.drawable.delete) { delete() }
+                action(R.string.delete, R.drawable.delete, destructive = true) { delete() }
             }
         }
         // Las acciones aumentaron con los backlinks; mantenerlas desplazables
@@ -1144,6 +1152,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
         val bodySize = TextSize.getDisplayBodySize(model.textSize)
 
+        binding.EnterTitle.typeface = androidx.core.content.res.ResourcesCompat.getFont(
+            this, R.font.notas_sans)
         binding.EnterTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getEditTitleSize(model.textSize))
         binding.DateCreated.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
         binding.Reminder.setTextSize(TypedValue.COMPLEX_UNIT_SP, bodySize)

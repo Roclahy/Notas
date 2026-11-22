@@ -97,6 +97,7 @@ class PlayAudio : NotasBaseActivity() {
         binding.Toolbar.menu.add(R.string.share, R.drawable.share) { share() }
         binding.Toolbar.menu.add(R.string.save_to_device, R.drawable.save) { saveToDevice() }
         binding.Toolbar.menu.add(R.string.delete, R.drawable.delete) { delete() }
+            .icon?.mutate()?.setTint(0xFFFF453A.toInt())
     }
 
     private fun share() {

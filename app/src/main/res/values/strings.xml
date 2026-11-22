@@ -343,4 +343,16 @@
     <string name="notebook_delete_error">Could not delete the folder.</string>
     <string name="notebook_name_required">Enter a name for the folder.</string>
     <string name="notebook_password_optional">You can protect this folder with a password or continue without one.</string>
+    <plurals name="notas_word_count">
+        <item quantity="one">%d word</item>
+        <item quantity="other">%d words</item>
+    </plurals>
+    <string name="notas_highlight">Highlight gold</string>
+    <string name="notas_insert_inline_image">Insert image in text</string>
+    <string name="notas_ignore_spelling">Ignore spelling</string>
+    <string name="notas_auto_images">Include images in automatic backups</string>
+    <string name="notas_backup_manual_images">Back up now (with images)</string>
+    <string name="notas_backup_manual_no_images">Back up now (without images)</string>
+    <string name="notas_backup_size">Last backup: %1$s</string>
+    <string name="notas_missing_inline_image">Image not included in this backup</string>
 </resources>
