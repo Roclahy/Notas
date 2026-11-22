@@ -370,7 +370,10 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             markNoteEdited()
         }
         if (model.type == Type.NOTE) {
-            binding.EnterBody.doAfterTextChanged {
+            binding.EnterBody.doAfterTextChanged { editable ->
+                // Always keep the model synchronized with the actual editor.
+                // Link-only changes are also bound explicitly in TakeNote.
+                if (editable != null) model.body = editable
                 updateCharacterCount()
                 markNoteEdited()
             }
