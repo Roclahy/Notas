@@ -333,8 +333,13 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     }
 
     open fun setStateFromModel() {
-        val formatter = DateFormat.getDateInstance(DateFormat.MEDIUM)
-        binding.DateCreated.text = formatter.format(model.timestamp)
+        // Guardamos timestamp original: no usar la hora del dispositivo
+        // en cada apertura ni reemplazarlo por la última modificación.
+        val dateFormatter = DateFormat.getDateInstance(DateFormat.MEDIUM)
+        val timeFormatter = android.text.format.DateFormat.getTimeFormat(this)
+        val createdAt = java.util.Date(model.timestamp)
+        binding.DateCreated.text =
+            "${dateFormatter.format(createdAt)} · ${timeFormatter.format(createdAt)}"
 
         binding.EnterTitle.setText(model.title)
         updateCharacterCount()
