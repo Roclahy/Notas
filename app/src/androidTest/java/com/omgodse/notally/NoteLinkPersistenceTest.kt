@@ -20,6 +20,10 @@ import com.omgodse.notally.room.Type
 import com.omgodse.notally.security.RoseInternalLinks
 import com.omgodse.notally.viewmodels.NotallyModel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.omgodse.notally.room.Converters
+import com.omgodse.notally.room.SpanRepresentation
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,6 +53,21 @@ class NoteLinkPersistenceTest {
         requireNotNull(dao.get(id)).spans.filter { it.link }.mapNotNull { it.url }.sorted()
 
     @Test
+    fun spansJsonContainsObjectsWhenImageNameIsMissing() {
+        val link = SpanRepresentation(
+            bold = false, link = true, italic = false, monospace = false,
+            strikethrough = false, start = 0, end = 5,
+            url = "rose://note/123"
+        )
+        val json = Converters.spansToJSONArray(listOf(link))
+        assertEquals(1, json.length())
+        val item = json.getJSONObject(0)
+        assertEquals("rose://note/123", item.getString("url"))
+        assertEquals(0, item.getInt("start"))
+        assertEquals(5, item.getInt("end"))
+    }
+
+    @Test
     fun modelRoundTripPersistsTwoDistinctLinksAfterReopen() {
         val a = makeNote("Destination A")
         val b = makeNote("Destination B")
@@ -60,17 +79,21 @@ class NoteLinkPersistenceTest {
             runBlocking {
                 val model = NotallyModel(app)
                 model.type = Type.NOTE
-                model.setState(source)
-                model.body = links
-                model.saveNote()
+                withContext(Dispatchers.Main) {
+                    model.setState(source)
+                    model.body = links
+                    model.saveNote()
+                }
             }
             val expected = listOf(RoseInternalLinks.note(a), RoseInternalLinks.note(b)).sorted()
             assertEquals("DB write lost internal URL metadata", expected, storedUrls(source))
             runBlocking {
                 val reopened = NotallyModel(app)
                 reopened.type = Type.NOTE
-                reopened.setState(source)
-                assertEquals("DB read lost internal URLSpan", expected, urls(reopened.body))
+                withContext(Dispatchers.Main) {
+                    reopened.setState(source)
+                    assertEquals("DB read lost internal URLSpan", expected, urls(reopened.body))
+                }
             }
         } finally {
             runBlocking { dao.delete(longArrayOf(a, b, source)) }
