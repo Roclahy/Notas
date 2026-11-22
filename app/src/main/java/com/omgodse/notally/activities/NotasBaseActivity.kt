@@ -19,6 +19,8 @@ import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.PinDialogs
 import com.omgodse.notally.security.BiometricSecurity
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import com.omgodse.notally.R
 import com.omgodse.notally.preferences.Preferences
 
@@ -51,6 +53,7 @@ open class NotasBaseActivity : AppCompatActivity() {
                 content = safeContent,
                 includeKeyboard = this is NotallyActivity
             )
+            NotasStretchOverscroll.install(root)
         }
     }
 
@@ -110,6 +113,17 @@ open class NotasBaseActivity : AppCompatActivity() {
             appearance.isAmoledTheme() -> setTheme(R.style.AppThemeAmoled)
         }
         super.onCreate(savedInstanceState)
+        // Los fragments se inflan despues de setContentView.
+        supportFragmentManager.registerFragmentLifecycleCallbacks(
+            object : FragmentManager.FragmentLifecycleCallbacks() {
+                override fun onFragmentViewCreated(
+                    fm: FragmentManager, f: Fragment, v: View,
+                    savedInstanceState: Bundle?
+                ) {
+                    NotasStretchOverscroll.install(v)
+                }
+            }, true
+        )
         // Edge-to-edge también en Android 7-14: dibujo por detrás de las
         // barras del sistema; cada pantalla aplicará sus propios insets.
         WindowCompat.setDecorFitsSystemWindows(window, false)

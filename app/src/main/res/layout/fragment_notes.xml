@@ -16,6 +16,7 @@
         android:id="@+id/RecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:overScrollMode="always"
         android:layout_below="@id/RadioGroup"
         android:clipToPadding="false"
         android:paddingStart="8dp"

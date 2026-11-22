@@ -56,7 +56,7 @@
         android:fillViewport="true"
         android:clipChildren="true"
         android:clipToPadding="true"
-        android:overScrollMode="never"
+        android:overScrollMode="always"
         android:visibility="gone">
 
         <LinearLayout
