@@ -12,7 +12,6 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
-import com.omgodse.notally.diagnostics.NoteLinkTrace
 import com.omgodse.notally.room.NotallyDatabase
 import com.omgodse.notally.room.Folder
 import com.omgodse.notally.security.RoseInternalLinks
@@ -248,72 +247,44 @@ class TakeNote : NotallyActivity(Type.NOTE) {
 
     private fun installLink(start: Int, end: Int, title: String, target: String) {
         val text = binding.EnterBody.text ?: return
-        val targetId = RoseInternalLinks.parse(target)?.second ?: -1L
-        NoteLinkTrace.record(application, "link.install.begin",
-            "sourceId=${model.id} targetId=$targetId start=$start end=$end bodyLength=${text.length} existingLinks=${text.getSpans<URLSpan>(0, text.length).size}")
-        if (start !in 0..text.length || end !in start..text.length) {
-            NoteLinkTrace.record(application, "link.install.invalidRange",
-                "sourceId=${model.id} start=$start end=$end bodyLength=${text.length}")
-            return
-        }
+        if (start !in 0..text.length || end !in start..text.length) return
         val last = if (start == end) {
             text.insert(start, title)
             start + title.length
         } else end
-        // getSpans() can also return spans touching the selection boundary.
-        // Remove only real overlaps; adjacent links must stay intact.
+        // Preserve adjacent links; only remove spans really overlapping this range.
         text.getSpans<URLSpan>(start, last)
             .filter { text.getSpanStart(it) < last && text.getSpanEnd(it) > start }
             .toList()
             .forEach(text::removeSpan)
         text.setSpan(URLSpan(target), start, last, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        // Span-only changes do not trigger TextWatcher; save the actual
-        // Editable containing the internal destination immediately.
+        // Span-only changes do not trigger TextWatcher.
         model.body = text
         binding.EnterBody.setSelection(last)
         markNoteEdited()
-        NoteLinkTrace.record(application, "link.installed",
-            "sourceId=${model.id} targetId=$targetId start=$start end=$last spansInEditor=${text.getSpans<URLSpan>(0, text.length).size} editorIsModel=${model.body === text}")
-        // A link is a span-only edit: Android does not necessarily invoke the
-        // text change/autosave path. Persist it at the moment the user chooses
-        // the target, before the activity can be backgrounded or reclaimed.
+        // Keep the immediate save and readback verification introduced in 1.4.20.
         lifecycleScope.launch {
-            NoteLinkTrace.record(application, "link.save.begin",
-                "sourceId=${model.id} targetId=$targetId start=$start end=$last")
             try {
                 val savedId = model.saveNote()
-                NoteLinkTrace.record(application, "link.save.return",
-                    "sourceId=${model.id} savedId=$savedId targetId=$targetId")
-                if (savedId > 0L) {
-                    val persisted = withContext(Dispatchers.IO) {
-                        NotallyDatabase.getDatabase(application).getBaseNoteDao().get(savedId)
+                val verified = if (savedId > 0L) {
+                    withContext(Dispatchers.IO) {
+                        NotallyDatabase.getDatabase(application).getBaseNoteDao()
+                            .get(savedId)?.spans?.any { rep ->
+                                rep.link && rep.start == start &&
+                                    rep.end == last && rep.url == target
+                            } == true
                     }
-                    val verified = persisted?.spans?.any { rep ->
-                        rep.link && rep.start == start &&
-                            rep.end == last && rep.url == target
-                    } == true
-                    NoteLinkTrace.record(application,
-                        if (verified) "link.readback.ok" else "link.readback.MISSING",
-                        "sourceId=$savedId targetId=$targetId start=$start end=$last dbExists=${persisted != null} dbLinkCount=${persisted?.spans?.count { it.link } ?: -1} dbSpanCount=${persisted?.spans?.size ?: -1} editorLinkCount=${text.getSpans<URLSpan>(0, text.length).size}")
-                    if (!verified && !isFinishing && !isDestroyed) {
-                        Toast.makeText(this@TakeNote, R.string.link_trace_save_failed,
-                            Toast.LENGTH_LONG).show()
-                    }
-                } else {
-                    NoteLinkTrace.record(application, "link.save.INVALID_ID",
-                        "sourceId=${model.id} targetId=$targetId")
-                    if (!isFinishing && !isDestroyed) {
-                        Toast.makeText(this@TakeNote, R.string.link_trace_save_failed,
-                            Toast.LENGTH_LONG).show()
-                    }
+                } else false
+                if (!verified && !isFinishing && !isDestroyed) {
+                    Toast.makeText(this@TakeNote, R.string.link_save_failed,
+                        Toast.LENGTH_LONG).show()
                 }
             } catch (error: Exception) {
                 if (error is kotlinx.coroutines.CancellationException) throw error
-                NoteLinkTrace.record(application, "link.save.EXCEPTION",
-                    "sourceId=${model.id} targetId=$targetId start=$start end=$last", error)
-                android.util.Log.e("NotasLinkRecovery", "Immediate link save failed: ${error.javaClass.simpleName}")
+                android.util.Log.e("NotasLinkRecovery",
+                    "Immediate link save failed: " + error.javaClass.simpleName)
                 if (!isFinishing && !isDestroyed) {
-                    Toast.makeText(this@TakeNote, R.string.link_trace_save_failed,
+                    Toast.makeText(this@TakeNote, R.string.link_save_failed,
                         Toast.LENGTH_LONG).show()
                 }
             }
@@ -322,8 +293,6 @@ class TakeNote : NotallyActivity(Type.NOTE) {
 
     /** Enlaces con ID estable, independientes del nombre de la nota. */
     private fun showLinkPicker(start: Int, end: Int) {
-        NoteLinkTrace.record(application, "picker.open",
-            "sourceId=${model.id} start=$start end=$end")
         lifecycleScope.launch {
             val entries: List<Pair<Long, String>> = withContext(Dispatchers.IO) {
                 val db = NotallyDatabase.getDatabase(application)
@@ -331,8 +300,6 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                     .filter { it.id > 0L && it.id != model.id }
                     .map { it.id to it.title.ifBlank { getString(R.string.untitled_note_link) } }
             }
-            NoteLinkTrace.record(application, "picker.loaded",
-                "sourceId=${model.id} candidateCount=${entries.size}")
             val density = resources.displayMetrics.density
             fun dp(n: Int) = (n * density).toInt()
             val column = LinearLayout(this@TakeNote).apply {
@@ -382,8 +349,6 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                             ColorStateList.valueOf(0x33F1C45B), null, null)
                         setOnClickListener {
                             dialog.dismiss()
-                            NoteLinkTrace.record(application, "picker.selected",
-                                "sourceId=${model.id} targetId=$id start=$start end=$end")
                             installLink(start, end, name, RoseInternalLinks.note(id))
                         }
                     }
