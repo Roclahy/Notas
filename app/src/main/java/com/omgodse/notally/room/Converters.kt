@@ -91,7 +91,25 @@ object Converters {
         val result = ArrayList<SpanRepresentation>(minOf(array.length(), 8192))
         for (index in 0 until minOf(array.length(), 8192)) {
             try {
-                val item = array.getJSONObject(index)
+                val raw = array.opt(index)
+                val item = when (raw) {
+                    is JSONObject -> raw
+                    // Support a legacy JSON-string object if one was produced by
+                    // a previous build; no note content is logged.
+                    is String -> {
+                        if (raw.length > 16_384) throw JSONException("Oversized legacy span")
+                        val recovered = JSONObject(raw)
+                        NoteLinkTrace.recordIfReady("spans.legacyString.recovered", "index=$index")
+                        recovered
+                    }
+                    else -> {
+                        // Old spansToJSONArray() returned null when imageName was
+                        // absent because the last expression was a nullable let.
+                        // A null has no link destination that can be recovered.
+                        NoteLinkTrace.recordIfReady("spans.legacyNull.unrecoverable", "index=$index")
+                        continue
+                    }
+                }
                 val start = item.getInt("start")
                 val end = item.getInt("end")
                 if (start < 0 || end <= start || end > 1_000_000) continue
@@ -115,7 +133,18 @@ object Converters {
     }
 
     @TypeConverter
-    fun spansToJson(list: List<SpanRepresentation>) = SecureFields.seal(spansToJSONArray(list).toString(), "spans")
+    fun spansToJson(list: List<SpanRepresentation>): String {
+        val array = spansToJSONArray(list)
+        // Fail the save rather than silently replace links with a JSON null.
+        // Verify the actual encoded representation, not just the in-memory list.
+        val encoded = array.toString()
+        val decoded = JSONArray(encoded)
+        check(decoded.length() == list.size &&
+            (0 until decoded.length()).all { decoded.optJSONObject(it) != null }) {
+            "The note spans could not be serialized as JSON objects"
+        }
+        return SecureFields.seal(encoded, "spans")
+    }
 
 
     @TypeConverter
@@ -142,7 +171,10 @@ object Converters {
     }
 
     fun spansToJSONArray(list: List<SpanRepresentation>): JSONArray {
-        val objects = list.map { representation ->
+        // NEVER use list.map { ... last nullable expression ... } here.
+        // It used to produce a list of nulls for every span without imageName.
+        val array = JSONArray()
+        for (representation in list) {
             val jsonObject = JSONObject()
             jsonObject.put("bold", representation.bold)
             jsonObject.put("link", representation.link)
@@ -154,8 +186,9 @@ object Converters {
             representation.url?.let { jsonObject.put("url", it) }
             if (representation.highlighted) jsonObject.put("highlighted", true)
             representation.imageName?.let { jsonObject.put("imageName", it) }
+            array.put(jsonObject)
         }
-        return JSONArray(objects)
+        return array
     }
 
     private fun JSONObject.getSafeBoolean(name: String): Boolean {
