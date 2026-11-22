@@ -215,7 +215,9 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                 .setPositiveButton(R.string.open_link) { _, _ ->
                     if (internal != null) {
                         lifecycleScope.launch {
-                            // Guardar la nota original antes de abrir otra.
+                            // Guardar el Editable visible con todos sus enlaces
+                            // antes de navegar a la nota de destino.
+                            captureCurrentEditorBody()
                             model.saveNote()
                             val existing = withContext(Dispatchers.IO) {
                                 NotallyDatabase.getDatabase(application).getBaseNoteDao().get(internal.second)
@@ -379,6 +381,7 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                 .setItems(titles) { _, which ->
                     val linked = sources.getOrNull(which) ?: return@setItems
                     lifecycleScope.launch {
+                        captureCurrentEditorBody()
                         model.saveNote()
                         startActivity(Intent(this@TakeNote, TakeNote::class.java)
                             .putExtra(Constants.SelectedBaseNote, linked.id))

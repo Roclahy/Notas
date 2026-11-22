@@ -176,6 +176,24 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         }
     }
 
+    override fun onPause() {
+        // Guardado de seguridad al cambiar de actividad o bloquear Android.
+        // Solo notas realmente modificadas; los borradores vacíos siguen
+        // excluidos por NotallyModel.hasMeaningfulContent().
+        if (permittedToSave && editorDirty) {
+            captureCurrentEditorBody()
+            lifecycleScope.launch {
+                try {
+                    model.saveNote()
+                } catch (error: Exception) {
+                    if (error is kotlinx.coroutines.CancellationException) throw error
+                    android.util.Log.e("NotasLinks", "Autosave on pause failed", error)
+                }
+            }
+        }
+        super.onPause()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putLong("id", if (permittedToSave) model.id
@@ -990,6 +1008,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         lifecycleScope.launch {
             // Guarda el contenido actual antes de crear la copia cifrada.
             if (permittedToSave) {
+                captureCurrentEditorBody()
                 val savedId = model.saveNote()
                 if (savedId > 0L) editorDirty = false
             }

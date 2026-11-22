@@ -412,7 +412,10 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         }
 
         val firstSave = id == 0L
-        val savedId = withContext(Dispatchers.IO) { baseNoteDao.insert(getBaseNote()) }
+        // Capturar el texto enriquecido en el hilo del editor antes de pasar
+        // a IO; un teclado no debe mutar los spans mientras se serializan.
+        val snapshot = getBaseNote()
+        val savedId = withContext(Dispatchers.IO) { baseNoteDao.insert(snapshot) }
         if (firstSave) {
             id = savedId
             reminder.value?.let {
@@ -450,6 +453,8 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
             if (span !is MarkerSpan) {
                 val end = spanned.getSpanEnd(span)
                 val start = spanned.getSpanStart(span)
+                // No serializar rangos temporales/inválidos del IME.
+                if (start < 0 || end <= start || end > spanned.length) return@forEach
                 val representation = SpanRepresentation(false, false, false, false, false, start, end)
 
                 when (span) {
