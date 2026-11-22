@@ -56,6 +56,7 @@ import com.google.android.material.transition.MaterialFade
 import com.omgodse.notally.R
 import com.omgodse.notally.backup.RoseDriveState
 import com.omgodse.notally.backup.BackupScheduler
+import com.omgodse.notally.diagnostics.NoteLinkTrace
 import com.omgodse.notally.room.NotallyDatabase
 import com.omgodse.notally.security.NotebookPassword
 import com.omgodse.notally.security.NoteWallpaperStore
@@ -156,7 +157,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                 super.finish()
             } catch (error: Exception) {
                 if (error is kotlinx.coroutines.CancellationException) throw error
-                android.util.Log.e("NotasLinkRecovery", "Failed to save note while exiting", error)
+                NoteLinkTrace.record(application, "note.exitSave.EXCEPTION",
+                    "noteId=${model.id}", error)
+                android.util.Log.e("NotasLinkRecovery", "Failed to save note while exiting: ${error.javaClass.simpleName}")
                 Toast.makeText(this@NotallyActivity, R.string.something_went_wrong,
                     Toast.LENGTH_LONG).show()
                 // No cerrar sin un guardado correcto, ni eliminar el borrador.
@@ -173,7 +176,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                     model.saveNote()
                 } catch (error: Exception) {
                     if (error is kotlinx.coroutines.CancellationException) throw error
-                    android.util.Log.e("NotasLinkRecovery", "Failed to save note onStop", error)
+                    NoteLinkTrace.record(application, "note.onStop.EXCEPTION",
+                        "noteId=${model.id}", error)
+                    android.util.Log.e("NotasLinkRecovery", "Failed to save note onStop: ${error.javaClass.simpleName}")
                 }
             }
         }
@@ -435,6 +440,11 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                 return model.body
             }
         })
+        if (model.type == Type.NOTE) {
+            val visible = binding.EnterBody.text
+            NoteLinkTrace.record(application, "note.render",
+                "noteId=${model.id} editorLinkCount=${visible?.getSpans(0, visible.length, android.text.style.URLSpan::class.java)?.size ?: -1} modelLinkCount=${model.body.getSpans(0, model.body.length, android.text.style.URLSpan::class.java).size} sameEditable=${visible === model.body}")
+        }
         val end = model.body.getSpanEnd(model.marker)
         if (end != -1) {
             binding.EnterBody.requestFocus()
@@ -1115,6 +1125,52 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     /** Proporcionada por el editor de notas; no existe en las listas de tareas. */
     protected open fun showIncomingLinks() {}
 
+    private fun showLinkTrace() {
+        val content = try {
+            NoteLinkTrace.read(application)
+        } catch (error: Exception) {
+            NoteLinkTrace.record(application, "trace.read.EXCEPTION", error = error)
+            getString(R.string.link_trace_read_failed)
+        }
+        val preview = content.ifBlank { getString(R.string.link_trace_empty) }.takeLast(12000)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.link_trace_view)
+            .setMessage(preview)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton(R.string.link_trace_clear) { _, _ ->
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.link_trace_clear)
+                    .setMessage(R.string.link_trace_clear_confirm)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.link_trace_clear) { _, _ ->
+                        NoteLinkTrace.clear(application)
+                    }.show()
+            }
+            .setPositiveButton(R.string.link_trace_share) { _, _ ->
+                try {
+                    val file = NoteLinkTrace.export(application)
+                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                        this, "${packageName}.provider", file)
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        clipData = android.content.ClipData.newUri(
+                            contentResolver, "Notas link diagnostics", uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(
+                        intent, getString(R.string.link_trace_share)).apply {
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    })
+                } catch (error: Exception) {
+                    NoteLinkTrace.record(application, "trace.share.EXCEPTION", error = error)
+                    Toast.makeText(this, R.string.link_trace_read_failed,
+                        Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
+    }
+
     private fun showActionsSheet() {
         val dialog = BottomSheetDialog(this)
         val sheetSurface = com.google.android.material.color.MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface, 0xFFF5F5F7.toInt())
@@ -1167,6 +1223,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         if (model.type == Type.NOTE) {
             action(R.string.search, R.drawable.search) { model.searchEnabled.value = true }
             action(R.string.backlinks, R.drawable.search) { showIncomingLinks() }
+            action(R.string.link_trace_view, R.drawable.notas_more) { showLinkTrace() }
         }
         action(R.string.add_images, R.drawable.add_images) { selectImages() }
         action(R.string.draw_with_finger, R.drawable.notas_draw) {
