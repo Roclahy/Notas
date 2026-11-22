@@ -264,6 +264,38 @@ class TakeNote : NotallyActivity(Type.NOTE) {
         model.body = text
         binding.EnterBody.setSelection(last)
         markNoteEdited()
+        // A link is a span-only edit: Android does not necessarily invoke the
+        // text change/autosave path. Persist it at the moment the user chooses
+        // the target, before the activity can be backgrounded or reclaimed.
+        lifecycleScope.launch {
+            try {
+                val savedId = model.saveNote()
+                if (savedId > 0L) {
+                    val verified = withContext(Dispatchers.IO) {
+                        NotallyDatabase.getDatabase(application).getBaseNoteDao()
+                            .get(savedId)?.spans?.any { rep ->
+                                rep.link && rep.start == start &&
+                                    rep.end == last && rep.url == target
+                            } == true
+                    }
+                    if (!verified) {
+                        android.util.Log.e("NotasLinkRecovery",
+                            "Link was not present after database read-back: note $savedId")
+                        if (!isFinishing && !isDestroyed) {
+                            Toast.makeText(this@TakeNote, R.string.something_went_wrong,
+                                Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                android.util.Log.e("NotasLinkRecovery", "Immediate link save failed", error)
+                if (!isFinishing && !isDestroyed) {
+                    Toast.makeText(this@TakeNote, R.string.something_went_wrong,
+                        Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     /** Enlaces con ID estable, independientes del nombre de la nota. */
