@@ -242,9 +242,9 @@ class MainActivity : NotasBaseActivity() {
         if (navController.currentDestination?.id != R.id.Notes) {
             navController.navigate(R.id.Notes)
         }
-        binding.SectionTitle.text = if (id == -1L) {
-            getString(R.string.internal_app_name)
-        } else title
+        // El encabezado siempre identifica la aplicación, aunque el usuario
+        // cambie de carpeta. El nombre de carpeta solo aparece abajo.
+        binding.SectionTitle.setText(R.string.internal_app_name)
         binding.FoldersLabel.text = if (id == -1L) getString(R.string.notebook_folders) else title
     }
 

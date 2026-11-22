@@ -252,10 +252,30 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             text.insert(start, title)
             start + title.length
         } else end
-        text.getSpans<URLSpan>(start, last).toList().forEach(text::removeSpan)
+        // Android puede incluir en getSpans() otro enlace que sólo toca el
+        // borde de la selección. Eliminar ÚNICAMENTE solapamientos reales.
+        // Así se pueden insertar vínculos consecutivos sin borrar los previos.
+        text.getSpans<URLSpan>(start, last).toList()
+            .filter { span ->
+                text.getSpanStart(span) < last && text.getSpanEnd(span) > start
+            }
+            .forEach(text::removeSpan)
+        if (last <= start) return
         text.setSpan(URLSpan(target), start, last, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         binding.EnterBody.setSelection(last)
         markNoteEdited()
+        captureCurrentEditorBody()
+        // Persistir cada vínculo inmediatamente: otro enlace, navegación
+        // o cierre inesperado ya no debería perder el destino anterior.
+        lifecycleScope.launch {
+            try {
+                model.saveNote()
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                android.util.Log.e("NotasLinks", "Unable to persist note link", error)
+                Toast.makeText(this@TakeNote, R.string.something_went_wrong, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     /** Enlaces con ID estable, independientes del nombre de la nota. */

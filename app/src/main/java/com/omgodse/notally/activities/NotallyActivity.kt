@@ -144,11 +144,23 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     }
 
 
+    /** Leer el Editable REAL del editor antes de persistir los vínculos.
+     *  No confiar en que el Editable.Factory siga apuntando al mismo objeto
+     *  tras selección, teclado, autofill o restauración de estado de Android. */
+    protected fun captureCurrentEditorBody() {
+        if (permittedToSave && model.type == Type.NOTE) {
+            binding.EnterBody.text?.let { current ->
+                model.body = current
+            }
+        }
+    }
+
     override fun finish() {
         if (!permittedToSave) {
             super.finish()
             return
         }
+        captureCurrentEditorBody()
         lifecycleScope.launch {
             try {
                 val savedId = model.saveNote()
@@ -169,6 +181,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         outState.putLong("id", if (permittedToSave) model.id
             else intent.getLongExtra(Constants.SelectedBaseNote, 0L))
         if (permittedToSave) {
+            captureCurrentEditorBody()
             lifecycleScope.launch {
                 try {
                     val savedId = model.saveNote()
