@@ -83,8 +83,8 @@ object NoteLinkTrace {
     }
 
     fun export(context: Context): File = synchronized(lock) {
-        val destination = File(context.cacheDir, "exported").apply { mkdirs() }
-        File(destination, "Notas-registro-enlaces.txt").apply {
+        // Already scoped to FileProvider's existing private files-path "logs".
+        File(directory(context), "Notas-registro-enlaces.txt").apply {
             writeText(read(context).ifBlank { "No link events recorded.\n" }, Charsets.UTF_8)
         }
     }
@@ -92,6 +92,6 @@ object NoteLinkTrace {
     fun clear(context: Context) = synchronized(lock) {
         current(context).delete()
         previous(context).delete()
-        File(File(context.cacheDir, "exported"), "Notas-registro-enlaces.txt").delete()
+        File(directory(context), "Notas-registro-enlaces.txt").delete()
     }
 }
