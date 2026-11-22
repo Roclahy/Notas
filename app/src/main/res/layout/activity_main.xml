@@ -109,6 +109,7 @@
                 android:focusable="true"
                 android:contentDescription="@string/notebook_folders">
                 <ImageView
+                    android:id="@+id/FolderIcon"
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:contentDescription="@null"

@@ -196,6 +196,20 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         database.getNotebookFolderDao().listOnce()
     }
 
+    suspend fun moveSelectedNotesToNotebook(ids: LongArray, notebookId: Long): Boolean {
+        if (ids.isEmpty() || notebookId < 0L) return false
+        val moved = withContext(Dispatchers.IO) {
+            if (notebookId != 0L && database.getNotebookFolderDao().get(notebookId) == null) {
+                false
+            } else {
+                baseNoteDao.moveToNotebook(ids, notebookId)
+                true
+            }
+        }
+        if (moved) actionMode.close(true)
+        return moved
+    }
+
 
     fun savePreference(info: SeekbarInfo, value: Int) = executeAsync { preferences.savePreference(info, value) }
 

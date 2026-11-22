@@ -94,6 +94,10 @@ abstract class BaseNoteDao {
     @Query("UPDATE BaseNote SET notebookId = :notebookId WHERE id = :id")
     abstract suspend fun moveToNotebook(id: Long, notebookId: Long)
 
+    /** Bulk move never changes archived/deleted state or any note contents. */
+    @Query("UPDATE BaseNote SET notebookId = :notebookId WHERE id IN (:ids) AND folder = 'NOTES'")
+    abstract suspend fun moveToNotebook(ids: LongArray, notebookId: Long)
+
     @Query("""SELECT * FROM BaseNote WHERE folder = :folder AND
         (notebookId = 0 OR notebookId NOT IN
             (SELECT id FROM NotebookFolder WHERE passwordHash != ''))

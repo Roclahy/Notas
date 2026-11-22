@@ -354,4 +354,13 @@
         <item quantity="one">%d completada</item>
         <item quantity="other">%d completadas</item>
     </plurals>
+    <string name="notas_folder_icon_color">Color del icono de carpeta</string>
+    <string name="notas_folder_color_default">Dorado (predeterminado)</string>
+    <string name="notas_folder_color_blue">Azul</string>
+    <string name="notas_folder_color_green">Verde</string>
+    <string name="notas_folder_color_red">Rojo</string>
+    <string name="notas_folder_color_purple">Morado</string>
+    <string name="notas_folder_color_cyan">Cian</string>
+    <string name="notas_folder_color_orange">Naranja</string>
+    <string name="notas_notes_moved">Notas movidas a la carpeta</string>
 </resources>

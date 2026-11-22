@@ -11,5 +11,7 @@ data class NotebookFolder(
     val name: String,
     val passwordHash: String = "",
     val createdAt: Long = System.currentTimeMillis(),
-    @ColumnInfo(defaultValue = "''") val wallpaperName: String = ""
+    @ColumnInfo(defaultValue = "''") val wallpaperName: String = "",
+    /** -1 keeps the original gold folder icon. */
+    @ColumnInfo(defaultValue = "-1") val iconColor: Int = -1
 )

@@ -50,6 +50,9 @@ abstract class NotebookFolderDao {
     @Query("UPDATE NotebookFolder SET wallpaperName = :filename WHERE id = :id")
     abstract suspend fun updateWallpaper(id: Long, filename: String)
 
+    @Query("UPDATE NotebookFolder SET iconColor = :color WHERE id = :id")
+    abstract suspend fun updateIconColor(id: Long, color: Int)
+
     @Query("UPDATE BaseNote SET notebookId = 0 WHERE notebookId = :id")
     abstract suspend fun unfile(id: Long)
 }

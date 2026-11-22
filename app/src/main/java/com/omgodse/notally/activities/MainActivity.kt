@@ -246,6 +246,70 @@ class MainActivity : NotasBaseActivity() {
             getString(R.string.internal_app_name)
         } else title
         binding.FoldersLabel.text = if (id == -1L) getString(R.string.notebook_folders) else title
+        val folder = model.notebookFolders.value?.firstOrNull { it.id == id }
+        binding.FolderIcon.imageTintList = ColorStateList.valueOf(
+            folderIconColor(folder?.iconColor ?: -1)
+        )
+    }
+
+    private fun folderIconColor(value: Int): Int =
+        if (value == -1) 0xFFF1C45B.toInt() else value
+
+    private fun showFolderIconColorPicker(folder: NotebookFolder) {
+        val colors = intArrayOf(
+            -1, 0xFF007AFF.toInt(), 0xFF32B56B.toInt(), 0xFFFF5A72.toInt(),
+            0xFFA66BF4.toInt(), 0xFF64BBD6.toInt(), 0xFFFF923C.toInt()
+        )
+        val labels = arrayOf(
+            getString(R.string.notas_folder_color_default),
+            getString(R.string.notas_folder_color_blue),
+            getString(R.string.notas_folder_color_green),
+            getString(R.string.notas_folder_color_red),
+            getString(R.string.notas_folder_color_purple),
+            getString(R.string.notas_folder_color_cyan),
+            getString(R.string.notas_folder_color_orange)
+        )
+        val dp = resources.displayMetrics.density
+        val size = (44 * dp).toInt()
+        val container = android.widget.HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+        }
+        val items = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding((12 * dp).toInt(), (12 * dp).toInt(), (12 * dp).toInt(), (12 * dp).toInt())
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.notas_folder_icon_color)
+            .setView(container)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        for (i in colors.indices) {
+            val color = colors[i]
+            val icon = ImageView(this).apply {
+                setImageResource(R.drawable.notas_nav_folder)
+                imageTintList = ColorStateList.valueOf(folderIconColor(color))
+                contentDescription = labels[i]
+                setPadding((9 * dp).toInt(), (9 * dp).toInt(), (9 * dp).toInt(), (9 * dp).toInt())
+                background = android.graphics.drawable.RippleDrawable(
+                    ColorStateList.valueOf(0x33F1C45B), null, null)
+                setOnClickListener {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            com.omgodse.notally.room.NotallyDatabase.getDatabase(application)
+                                .getNotebookFolderDao().updateIconColor(folder.id, color)
+                        }
+                        if (model.selectedNotebookId.value == folder.id) {
+                            binding.FolderIcon.imageTintList =
+                                ColorStateList.valueOf(folderIconColor(color))
+                        }
+                        dialog.dismiss()
+                    }
+                }
+            }
+            items.addView(icon, LinearLayout.LayoutParams(size, size))
+        }
+        container.addView(items)
+        dialog.show()
     }
 
     /** Selector Apple Notes con carpetas protegidas y acceso principal sin carpetas. */
@@ -286,7 +350,8 @@ class MainActivity : NotasBaseActivity() {
                 }
                 val folderIcon = ImageView(this@MainActivity).apply {
                     setImageResource(R.drawable.notas_nav_folder)
-                    imageTintList = ColorStateList.valueOf(0xFFF1C45B.toInt())
+                    imageTintList = ColorStateList.valueOf(
+                        folderIconColor(folder?.iconColor ?: -1))
                 }
                 item.addView(folderIcon, LinearLayout.LayoutParams(px(27), px(27)).apply {
                     marginEnd = px(16)
@@ -351,6 +416,7 @@ class MainActivity : NotasBaseActivity() {
 
     private fun showNotebookOptions(folder: NotebookFolder) {
         val items = mutableListOf(
+            getString(R.string.notas_folder_icon_color) to "icon_color",
             getString(R.string.notebook_wallpaper) to "wallpaper")
         if (folder.wallpaperName.isNotBlank()) {
             items.add(getString(R.string.notebook_remove_wallpaper) to "remove_wallpaper")
@@ -366,6 +432,7 @@ class MainActivity : NotasBaseActivity() {
             .setTitle(folder.name)
             .setItems(items.map { it.first }.toTypedArray()) { _, selected ->
                 when (items[selected].second) {
+                    "icon_color" -> showFolderIconColorPicker(folder)
                     "wallpaper" -> {
                         pendingWallpaperFolderId = folder.id
                         wallpaperPicker.launch("image/*")
@@ -644,6 +711,9 @@ class MainActivity : NotasBaseActivity() {
         val export = createExportMenu(menu)
 
         val changeColor = menu.add(R.string.change_color, R.drawable.change_color) { changeColor() }
+        val moveToFolder = menu.add(R.string.notebook_move, R.drawable.notas_nav_folder) {
+            moveSelectedToNotebook()
+        }.apply { setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER) }
         val copy = menu.add(R.string.make_a_copy, R.drawable.copy) { model.copyBaseNote() }
         val delete = menu.add(R.string.delete, R.drawable.delete) { model.moveBaseNotes(Folder.DELETED) }
         val archive = menu.add(R.string.archive, R.drawable.archive) { model.moveBaseNotes(Folder.ARCHIVED) }
@@ -676,6 +746,7 @@ class MainActivity : NotasBaseActivity() {
                 labels.setVisible(count == 1)
                 export.setVisible(count == 1)
                 changeColor.setVisible(true)
+                moveToFolder.setVisible(baseNote.folder == Folder.NOTES)
                 copy.setVisible(true)
 
                 val folder = baseNote.folder
@@ -685,6 +756,34 @@ class MainActivity : NotasBaseActivity() {
                 unarchive.setVisible(folder == Folder.ARCHIVED)
                 deleteForever.setVisible(folder == Folder.DELETED)
             }
+        }
+    }
+
+    private fun moveSelectedToNotebook() {
+        val ids = model.actionMode.selectedIds.toLongArray()
+        if (ids.isEmpty()) return
+        lifecycleScope.launch {
+            val folders = model.getNotebookFolders()
+            if (isFinishing || isDestroyed) return@launch
+            val names = listOf(getString(R.string.notebook_unfiled)) + folders.map { it.name }
+            MaterialAlertDialogBuilder(this@MainActivity)
+                .setTitle(R.string.notebook_move)
+                .setItems(names.toTypedArray()) { _, which ->
+                    val destination = folders.getOrNull(which - 1)
+                    val commitMove: () -> Unit = {
+                        lifecycleScope.launch {
+                            if (model.moveSelectedNotesToNotebook(ids, destination?.id ?: 0L)) {
+                                Toast.makeText(this@MainActivity, R.string.notas_notes_moved,
+                                    Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    if (destination != null && destination.passwordHash.isNotEmpty()) {
+                        requestNotebookPassword(destination, commitMove)
+                    } else commitMove()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
         }
     }
 

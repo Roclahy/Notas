@@ -365,4 +365,13 @@
         <item quantity="one">%d completed</item>
         <item quantity="other">%d completed</item>
     </plurals>
+    <string name="notas_folder_icon_color">Folder icon color</string>
+    <string name="notas_folder_color_default">Gold (default)</string>
+    <string name="notas_folder_color_blue">Blue</string>
+    <string name="notas_folder_color_green">Green</string>
+    <string name="notas_folder_color_red">Red</string>
+    <string name="notas_folder_color_purple">Purple</string>
+    <string name="notas_folder_color_cyan">Cyan</string>
+    <string name="notas_folder_color_orange">Orange</string>
+    <string name="notas_notes_moved">Notes moved to folder</string>
 </resources>

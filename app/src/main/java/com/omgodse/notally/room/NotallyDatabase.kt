@@ -16,7 +16,7 @@ import com.omgodse.notally.security.SecureDatabase
 import com.omgodse.notally.security.SecureFields
 
 @TypeConverters(Converters::class)
-@Database(entities = [BaseNote::class, Label::class, NotebookFolder::class], version = 8)
+@Database(entities = [BaseNote::class, Label::class, NotebookFolder::class], version = 9)
 abstract class NotallyDatabase : RoomDatabase() {
 
     abstract fun getLabelDao(): LabelDao
@@ -45,7 +45,7 @@ abstract class NotallyDatabase : RoomDatabase() {
                 SecureFields.initialize(app)
                 SecureDatabase.verifyCompatibleHeader(app, DatabaseName)
                 val opened = Room.databaseBuilder(app, NotallyDatabase::class.java, DatabaseName)
-                    .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6, Migration7, Migration8)
+                    .addMigrations(Migration2, Migration3, Migration4, Migration5, Migration6, Migration7, Migration8, Migration9)
                     .allowMainThreadQueries()
                     .build()
                 opened.openHelper.writableDatabase // Validar Room antes de usarla.
@@ -73,6 +73,12 @@ abstract class NotallyDatabase : RoomDatabase() {
 
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `BaseNote` ADD COLUMN `audios` TEXT NOT NULL DEFAULT `[]`")
+            }
+        }
+
+        object Migration9 : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE NotebookFolder ADD COLUMN iconColor INTEGER NOT NULL DEFAULT -1")
             }
         }
 
