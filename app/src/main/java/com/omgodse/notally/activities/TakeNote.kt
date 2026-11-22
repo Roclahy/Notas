@@ -27,7 +27,6 @@ import android.text.style.SuggestionSpan
 import com.omgodse.notally.view.InlineImageRefSpan
 import com.omgodse.notally.view.InlineNoteImageSpan
 import com.omgodse.notally.view.InlineNoteImages
-import android.app.Activity
 import android.text.Selection
 import android.content.Intent
 import android.text.Spannable
@@ -49,29 +48,8 @@ import com.omgodse.notally.miscellaneous.setOnNextAction
 import com.omgodse.notally.room.Type
 
 class TakeNote : NotallyActivity(Type.NOTE) {
-    private var pendingInline: Pair<Int, Set<String>>? = null
+    // Las notas antiguas con imágenes en el cuerpo siguen siendo legibles.
     private var previousImageNames: Set<String>? = null
-    private val inlineRequestCode = 241
-
-    override fun insertInlineImage() {
-        val at = binding.EnterBody.selectionEnd.coerceAtLeast(0)
-        pendingInline = at to model.images.value.map { it.name }.toSet()
-        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-            type = "image/*"
-            addCategory(Intent.CATEGORY_OPENABLE)
-            putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-        }
-        startActivityForResult(intent, inlineRequestCode)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == inlineRequestCode) {
-            if (resultCode == Activity.RESULT_OK && data?.data != null) {
-                model.addImages(arrayOf(requireNotNull(data.data)))
-            } else pendingInline = null
-        }
-    }
 
     private fun renderInlineImages() {
         val editable = binding.EnterBody.text ?: return
@@ -124,6 +102,7 @@ class TakeNote : NotallyActivity(Type.NOTE) {
         })
         binding.EnterBody.post(autoLink)
         renderInlineImages()
+        // Compatibilidad de lectura y eliminación de referencias heredadas.
         model.images.observe(this) { images ->
             val names = images.map { it.name }.toSet()
             val removed = previousImageNames?.minus(names).orEmpty()
@@ -143,18 +122,6 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                         }
                     }
                 }
-            }
-            val pending = pendingInline ?: return@observe
-            val added = images.firstOrNull { it.name !in pending.second }
-            if (added != null) {
-                pendingInline = null
-                val editable = binding.EnterBody.text ?: return@observe
-                val at = pending.first.coerceIn(0, editable.length)
-                editable.insert(at, "\uFFFC")
-                editable.setSpan(InlineImageRefSpan(added.name), at, at + 1,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                binding.EnterBody.setSelection(at + 1)
-                renderInlineImages()
             }
         }
 

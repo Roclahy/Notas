@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipChildren="false"
+    android:clipChildren="true"
+    android:clipToPadding="true"
     android:orientation="vertical"
     android:fitsSystemWindows="false">
 
@@ -11,7 +12,8 @@
         android:id="@+id/ToolbarContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:elevation="0dp">
+        android:background="?android:attr/colorBackground"
+        android:elevation="8dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/Toolbar"
@@ -52,6 +54,9 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:fillViewport="true"
+        android:clipChildren="true"
+        android:clipToPadding="true"
+        android:overScrollMode="never"
         android:visibility="gone">
 
         <LinearLayout
@@ -81,43 +86,84 @@
                 android:textSize="26sp"
                 android:textAppearance="?attr/textAppearanceHeadline6" />
 
-            <!-- Píldoras discretas bajo el título, integradas en el editor. -->
-            <LinearLayout
+            <!-- Metadatos compactos: fecha y estadísticas se adaptan al ancho. -->
+            <com.omgodse.notally.view.PublicFlowLayout
                 android:id="@+id/InfoPills"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
+                android:paddingTop="10dp"
+                android:paddingBottom="8dp"
+                app:itemSpacing="12dp"
+                app:lineSpacing="6dp">
 
-                <TextView
-                    android:id="@+id/DateCreated"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingHorizontal="11dp"
-                    android:paddingVertical="7dp"
-                    android:text="@string/date"
-                    android:background="@drawable/notas_info_pill"
-                    android:textColor="@color/NotasMuted"
-                    android:fontFamily="@font/notas_sans"
-                    android:textSize="11sp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/CharacterCount"
+                    <ImageView
+                        android:id="@+id/DateIcon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/notas_huge_calendar04"
+                        android:contentDescription="@null"
+                        app:tint="@color/NotasMuted" />
+
+                    <TextView
+                        android:id="@+id/DateCreated"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/date"
+                        android:textColor="@color/NotasMuted"
+                        android:fontFamily="@font/notas_sans"
+                        android:includeFontPadding="false"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/notas_info_pill"
-                    android:paddingHorizontal="11dp"
-                    android:paddingVertical="7dp"
-                    android:fontFamily="@font/notas_sans"
-                    android:textColor="@color/NotasMuted"
-                    android:textSize="11sp"
-                    android:visibility="gone" />
-            </LinearLayout>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/WordCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/notas_sans"
+                        android:includeFontPadding="false"
+                        android:textColor="@color/NotasMuted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/StatsSeparator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:fontFamily="@font/notas_sans"
+                        android:includeFontPadding="false"
+                        android:text="·"
+                        android:textColor="@color/NotasMuted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/CharacterCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/notas_sans"
+                        android:includeFontPadding="false"
+                        android:textColor="@color/NotasMuted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.omgodse.notally.view.PublicFlowLayout>
 
             <TextView
                 android:id="@+id/Reminder"

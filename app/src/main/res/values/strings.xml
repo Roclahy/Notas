@@ -348,7 +348,6 @@
         <item quantity="other">%d words</item>
     </plurals>
     <string name="notas_highlight">Highlight gold</string>
-    <string name="notas_insert_inline_image">Insert image in text</string>
     <string name="notas_ignore_spelling">Ignore spelling</string>
     <string name="notas_auto_images">Include images in automatic backups</string>
     <string name="notas_backup_manual_images">Back up now (with images)</string>

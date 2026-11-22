@@ -326,9 +326,10 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         val characters = body.codePointCount(0, body.length)
         val words = Regex("""[\p{L}\p{N}]+(?:['’_-][\p{L}\p{N}]+)*""")
             .findAll(body).count()
+        binding.WordCount.text = resources.getQuantityString(
+            R.plurals.notas_word_count, words, words)
         binding.CharacterCount.text = resources.getQuantityString(
-            R.plurals.notas_character_count, characters, characters) + " · " +
-            resources.getQuantityString(R.plurals.notas_word_count, words, words)
+            R.plurals.notas_character_count, characters, characters)
     }
 
     open fun setStateFromModel() {
@@ -555,25 +556,25 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         // El lienzo de escritura conserva su color real: en AMOLED se mantiene
         // #000000, sin gradientes ni velos que afecten la legibilidad.
         if (!hasWallpaper) binding.root.setBackgroundColor(colorInt)
-        val surface = if (hasWallpaper) Color.TRANSPARENT else colorInt
-        binding.RecyclerView.setBackgroundColor(surface)
-        binding.Toolbar.setBackgroundColor(surface)
-        binding.Search.setBackgroundColor(surface)
-        binding.ToolbarContainer.setBackgroundColor(surface)
+        // Encabezado opaco: el contenido nunca debe leerse tras los iconos.
+        val headerSurface = if (hasWallpaper) backgroundColor else colorInt
+        binding.RecyclerView.setBackgroundColor(if (hasWallpaper) Color.TRANSPARENT else colorInt)
+        binding.ToolbarContainer.setBackgroundColor(headerSurface)
+        binding.Toolbar.setBackgroundColor(headerSurface)
+        binding.Search.setBackgroundColor(headerSurface)
         binding.EnterTitle.setTextColor(foreground)
         binding.EnterBody.setTextColor(foreground)
         binding.EnterTitle.setHintTextColor(
             androidx.core.graphics.ColorUtils.setAlphaComponent(foreground, 165))
         binding.EnterBody.setHintTextColor(
             androidx.core.graphics.ColorUtils.setAlphaComponent(foreground, 165))
-        val pill = if (foreground == Color.WHITE) 0x4D000000 else 0x44FFFFFF
-        listOf(binding.DateCreated, binding.CharacterCount).forEach { view ->
-            view.background = GradientDrawable().apply {
-                setColor(pill)
-                cornerRadius = 999f * resources.displayMetrics.density
-            }
-            view.setTextColor(foreground)
+        val metadataColor = androidx.core.graphics.ColorUtils.setAlphaComponent(foreground, 180)
+        listOf(binding.DateCreated, binding.WordCount,
+            binding.CharacterCount, binding.StatsSeparator).forEach { view ->
+            view.background = null
+            view.setTextColor(metadataColor)
         }
+        binding.DateIcon.imageTintList = ColorStateList.valueOf(metadataColor)
         for (i in 0 until binding.Toolbar.menu.size()) {
             binding.Toolbar.menu.getItem(i).icon?.mutate()?.setTint(foreground)
         }
@@ -992,7 +993,6 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     /** Proporcionada por el editor de notas; no existe en las listas de tareas. */
     protected open fun showIncomingLinks() {}
-    protected open fun insertInlineImage() {}
 
     private fun showActionsSheet() {
         val dialog = BottomSheetDialog(this)
@@ -1048,11 +1048,6 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             action(R.string.backlinks, R.drawable.search) { showIncomingLinks() }
         }
         action(R.string.add_images, R.drawable.add_images) { selectImages() }
-        if (model.type == Type.NOTE) {
-            action(R.string.notas_insert_inline_image, R.drawable.add_images) {
-                insertInlineImage()
-            }
-        }
         action(R.string.draw_with_finger, R.drawable.notas_draw) {
             startActivityForResult(Intent(this, DrawingActivity::class.java), REQUEST_ADD_IMAGES)
         }
@@ -1143,6 +1138,8 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             Type.NOTE -> {
                 binding.AddItem.visibility = View.GONE
                 binding.RecyclerView.visibility = View.GONE
+                binding.WordCount.visibility = View.VISIBLE
+                binding.StatsSeparator.visibility = View.VISIBLE
                 binding.CharacterCount.visibility = View.VISIBLE
             }
             Type.LIST -> {
@@ -1155,7 +1152,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         binding.EnterTitle.typeface = androidx.core.content.res.ResourcesCompat.getFont(
             this, R.font.notas_sans)
         binding.EnterTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getEditTitleSize(model.textSize))
-        binding.DateCreated.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+        binding.DateCreated.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         binding.Reminder.setTextSize(TypedValue.COMPLEX_UNIT_SP, bodySize)
         binding.EnterBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getEditBodySize(model.textSize))
 

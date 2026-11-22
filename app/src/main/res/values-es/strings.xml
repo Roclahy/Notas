@@ -337,7 +337,6 @@
         <item quantity="other">%d palabras</item>
     </plurals>
     <string name="notas_highlight">Resaltar en dorado</string>
-    <string name="notas_insert_inline_image">Insertar imagen en el texto</string>
     <string name="notas_ignore_spelling">Ignorar corrección</string>
     <string name="notas_auto_images">Incluir imágenes en copias automáticas</string>
     <string name="notas_backup_manual_images">Copia ahora (con imágenes)</string>
