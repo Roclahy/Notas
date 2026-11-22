@@ -39,8 +39,15 @@ fun String.applySpans(representations: List<SpanRepresentation>): Editable {
                 editable.setSpan(StyleSpan(Typeface.ITALIC), start, end)
             }
             if (link) {
-                // No adivinar URL a partir del texto si falta el destino.
-                val url = representation.url?.takeIf { it.isNotBlank() }
+                // Los enlaces a notas usan siempre el ID guardado. Sólo
+                // enlaces WEB legados pueden reconstruirse desde su texto.
+                val saved = representation.url?.takeIf { it.isNotBlank() }
+                val guessed = if (saved == null) getURL(start, end) else null
+                val fallback = guessed?.takeIf {
+                    val uri = android.net.Uri.parse(it)
+                    uri.scheme in setOf("https", "http", "mailto", "tel")
+                }
+                val url = saved ?: fallback
                 if (url != null) editable.setSpan(URLSpan(url), start, end)
             }
             if (monospace) {
