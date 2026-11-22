@@ -14,8 +14,8 @@ android {
         minSdk 24
         targetSdk 35
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        versionCode 125
-        versionName "1.4.21"
+        versionCode 126
+        versionName "1.4.22"
         resourceConfigurations += ['en', 'ca', 'cs', 'da', 'de', 'el', 'es', 'fr', 'hu', 'in', 'it', 'ja', 'ko', 'my', 'nb', 'nl', 'nn', 'pl', 'pt-rBR', 'pt-rPT', 'ro', 'ru', 'sk', 'sl', 'sv', 'tl', 'tr', 'uk', 'vi', 'zh-rCN']
         vectorDrawables.generatedDensities = []
     }
@@ -76,6 +76,8 @@ dependencies {
 
     // AndroidX Palette: la muestra dominante es la de mayor población,
     // no la más saturada. El análisis se realiza solo en el dispositivo.
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.robolectric:robolectric:4.14.1"
     androidTestImplementation "androidx.test:runner:1.6.2"
     androidTestImplementation "androidx.test:core:1.6.1"
     androidTestImplementation "androidx.test.ext:junit:1.2.1"
