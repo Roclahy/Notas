@@ -39,8 +39,9 @@ fun String.applySpans(representations: List<SpanRepresentation>): Editable {
                 editable.setSpan(StyleSpan(Typeface.ITALIC), start, end)
             }
             if (link) {
-                val url = representation.url ?: getURL(start, end)
-                editable.setSpan(URLSpan(url), start, end)
+                // No adivinar URL a partir del texto si falta el destino.
+                val url = representation.url?.takeIf { it.isNotBlank() }
+                if (url != null) editable.setSpan(URLSpan(url), start, end)
             }
             if (monospace) {
                 editable.setSpan(TypefaceSpan("monospace"), start, end)

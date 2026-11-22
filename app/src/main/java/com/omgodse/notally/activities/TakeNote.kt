@@ -149,11 +149,7 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                         }
                         menu.add(R.string.link_to_note, 0) {
                             val range = selectedRange(); mode?.finish()
-                            if (range != null) showLinkPicker("note", range.first, range.second)
-                        }
-                        menu.add(R.string.link_to_folder, 0) {
-                            val range = selectedRange(); mode?.finish()
-                            if (range != null) showLinkPicker("folder", range.first, range.second)
+                            if (range != null) showLinkPicker(range.first, range.second)
                         }
                         menu.add(R.string.link, 0) {
                             val range = selectedRange(); mode?.finish()
@@ -202,7 +198,7 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             val target = stored?.takeIf { it.isNotBlank() } ?: fallback
             if (target.isNullOrBlank()) return@LinkMovementMethod
             val internal = RoseInternalLinks.parse(target)
-            if (target.startsWith("rose://") && internal == null) {
+            if (target.startsWith("rose://") && (internal == null || internal.first != "note")) {
                 Toast.makeText(this, R.string.link_target_missing, Toast.LENGTH_LONG).show()
                 return@LinkMovementMethod
             }
@@ -214,30 +210,22 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.open_link)
                 .setMessage(if (internal == null) target else
-                    getString(if (internal.first == "note") R.string.link_open_note
-                        else R.string.link_open_folder))
+                    getString(R.string.link_open_note))
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.open_link) { _, _ ->
                     if (internal != null) {
                         lifecycleScope.launch {
                             // Guardar la nota original antes de abrir otra.
                             model.saveNote()
-                            if (internal.first == "note") {
-                                val existing = withContext(Dispatchers.IO) {
-                                    NotallyDatabase.getDatabase(application).getBaseNoteDao()
-                                        .get(internal.second)
-                                }
-                                if (existing == null || existing.folder != Folder.NOTES) {
-                                    Toast.makeText(this@TakeNote, R.string.link_target_missing,
-                                        Toast.LENGTH_LONG).show()
-                                    return@launch
-                                }
-                                startActivity(Intent(this@TakeNote, TakeNote::class.java)
-                                    .putExtra(Constants.SelectedBaseNote, internal.second))
-                            } else {
-                                startActivity(Intent(this@TakeNote, MainActivity::class.java)
-                                    .putExtra(MainActivity.EXTRA_LINKED_FOLDER, internal.second))
+                            val existing = withContext(Dispatchers.IO) {
+                                NotallyDatabase.getDatabase(application).getBaseNoteDao().get(internal.second)
                             }
+                            if (existing == null || existing.folder != Folder.NOTES) {
+                                Toast.makeText(this@TakeNote, R.string.link_target_missing, Toast.LENGTH_LONG).show()
+                                return@launch
+                            }
+                            startActivity(Intent(this@TakeNote, TakeNote::class.java)
+                                .putExtra(Constants.SelectedBaseNote, internal.second))
                         }
                     } else {
                         try {
@@ -270,20 +258,14 @@ class TakeNote : NotallyActivity(Type.NOTE) {
         markNoteEdited()
     }
 
-    /** Buscar por el título de la nota o de la carpeta, siempre localmente. */
-    private fun showLinkPicker(kind: String, start: Int, end: Int) {
+    /** Enlaces con ID estable, independientes del nombre de la nota. */
+    private fun showLinkPicker(start: Int, end: Int) {
         lifecycleScope.launch {
             val entries: List<Pair<Long, String>> = withContext(Dispatchers.IO) {
                 val db = NotallyDatabase.getDatabase(application)
-                if (kind == "note") {
-                    db.getBaseNoteDao().getLinkIndex()
-                        .filter { it.id != model.id }
-                        .map { it.id to it.title.ifBlank {
-                            getString(R.string.untitled_note_link)
-                        } }
-                } else {
-                    db.getNotebookFolderDao().listOnce().map { it.id to it.name }
-                }
+                db.getBaseNoteDao().getLinkIndex()
+                    .filter { it.id > 0L && it.id != model.id }
+                    .map { it.id to it.title.ifBlank { getString(R.string.untitled_note_link) } }
             }
             val density = resources.displayMetrics.density
             fun dp(n: Int) = (n * density).toInt()
@@ -307,7 +289,7 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             scroll.addView(results)
             column.addView(scroll, LinearLayout.LayoutParams(-1, dp(285)))
             val dialog = MaterialAlertDialogBuilder(this@TakeNote)
-                .setTitle(if (kind == "note") R.string.link_to_note else R.string.link_to_folder)
+                .setTitle(R.string.link_to_note)
                 .setView(column)
                 .setNegativeButton(R.string.cancel, null)
                 .create()
@@ -328,16 +310,13 @@ class TakeNote : NotallyActivity(Type.NOTE) {
                         maxLines = 2
                         setPadding(dp(12), dp(14), dp(12), dp(14))
                         setCompoundDrawablesWithIntrinsicBounds(
-                            if (kind == "note") android.R.drawable.ic_menu_edit
-                                else android.R.drawable.ic_menu_agenda, 0, 0, 0)
+                            android.R.drawable.ic_menu_edit, 0, 0, 0)
                         compoundDrawablePadding = dp(12)
                         background = android.graphics.drawable.RippleDrawable(
                             ColorStateList.valueOf(0x33F1C45B), null, null)
                         setOnClickListener {
                             dialog.dismiss()
-                            val uri = if (kind == "note") RoseInternalLinks.note(id)
-                                else RoseInternalLinks.folder(id)
-                            installLink(start, end, name, uri)
+                            installLink(start, end, name, RoseInternalLinks.note(id))
                         }
                     }
                     results.addView(row, LinearLayout.LayoutParams(-1, -2))

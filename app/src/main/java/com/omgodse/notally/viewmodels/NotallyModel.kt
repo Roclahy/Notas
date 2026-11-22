@@ -478,35 +478,25 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     private fun getFilteredRepresentations(representations: ArrayList<SpanRepresentation>): ArrayList<SpanRepresentation> {
-        representations.forEachIndexed { index, representation ->
-            val match = representations.find { spanRepresentation ->
-                spanRepresentation.isEqualInSize(representation)
-            }
-            if (match != null && representations.indexOf(match) != index) {
-                if (match.bold) {
-                    representation.bold = true
-                }
-                if (match.link) {
-                    representation.link = true
-                    representation.url = match.url ?: representation.url
-                }
-                if (match.italic) {
-                    representation.italic = true
-                }
-                if (match.monospace) {
-                    representation.monospace = true
-                }
-                if (match.strikethrough) {
-                    representation.strikethrough = true
-                }
-                if (match.highlighted) representation.highlighted = true
-                if (match.imageName != null) representation.imageName = match.imageName
-                val copy = ArrayList(representations)
-                copy[index] = representation
-                copy.remove(match)
-                return getFilteredRepresentations(copy)
+        // Sin recursión, sin mutar claves de hash y sin perder el destino URL.
+        val merged = LinkedHashMap<Pair<Int, Int>, SpanRepresentation>()
+        for (rep in representations) {
+            val key = rep.start to rep.end
+            val current = merged[key]
+            if (current == null) {
+                merged[key] = rep.copy()
+            } else {
+                current.bold = current.bold || rep.bold
+                current.italic = current.italic || rep.italic
+                current.monospace = current.monospace || rep.monospace
+                current.strikethrough = current.strikethrough || rep.strikethrough
+                current.highlighted = current.highlighted || rep.highlighted
+                current.link = current.link || rep.link
+                if (!rep.url.isNullOrBlank()) current.url = rep.url
+                if (rep.imageName != null) current.imageName = rep.imageName
             }
         }
-        return representations
+        return ArrayList(merged.values)
     }
+
 }
