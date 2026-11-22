@@ -89,6 +89,7 @@ class BaseNoteVH(
         showingLockedNote = locked
         binding.PreviewContent.isVisible = !locked
         binding.LockedPreview.isVisible = locked
+        binding.LockedTitle.text = if (locked) binding.root.context.getString(R.string.locked_note) else ""
         binding.ImageView.visibility = View.GONE
         binding.Message.visibility = View.GONE
         Glide.with(binding.ImageView).clear(binding.ImageView)

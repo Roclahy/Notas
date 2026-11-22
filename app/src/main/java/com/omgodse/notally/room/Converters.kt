@@ -97,7 +97,7 @@ object Converters {
                 val imageName = item.optString("imageName").takeIf { it.isNotBlank() }
                 result.add(SpanRepresentation(
                     item.getSafeBoolean("bold"),
-                    item.getSafeBoolean("link") && url != null,
+                    item.getSafeBoolean("link"),
                     item.getSafeBoolean("italic"),
                     item.getSafeBoolean("monospace"),
                     item.getSafeBoolean("strikethrough"),
