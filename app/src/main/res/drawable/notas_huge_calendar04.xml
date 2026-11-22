@@ -1,14 +1,15 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
+    android:width="16dp"
+    android:height="16dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Calendar04Icon, Hugeicons Stroke Rounded, stroke 1.5 -->
+    <!-- Calendar04Icon, Hugeicons Stroke Rounded.
+         Smooth cubic commands are expanded for reliable VectorDrawable parsing. -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="#FFFFFFFF"
         android:strokeWidth="1.5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M16,2v4 M8,2v4 m5,-2h-2 C7.229,4 5.343,4 4.172,5.172 S3,8.229 3,12v2 c0,3.771 0,5.657 1.172,6.828 S7.229,22 11,22h2 c3.771,0 5.657,0 6.828,-1.172 S21,17.771 21,14v-2 c0,-3.771 0,-5.657 -1.172,-6.828 S16.771,4 13,4 M3,10h18" />
+        android:pathData="M16,2 L16,6 M8,2 L8,6 M13,4 L11,4 C7.229,4 5.343,4 4.172,5.172 C3.001,6.344 3,8.229 3,12 L3,14 C3,17.771 3,19.657 4.172,20.828 C5.344,22 7.229,22 11,22 L13,22 C16.771,22 18.657,22 19.828,20.828 C20.999,19.656 21,17.771 21,14 L21,12 C21,8.229 21,6.343 19.828,5.172 C18.656,4.001 16.771,4 13,4 M3,10 L21,10" />
 </vector>

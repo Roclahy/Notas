@@ -104,23 +104,16 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
-                    <!-- Zona interior de 18dp para el glifo y 2dp de margen
-                         físico en cada lado: evita cortar el trazo inferior. -->
-                    <ImageView
-                        android:id="@+id/DateIcon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:padding="2dp"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/notas_huge_calendar04"
-                        android:contentDescription="@null"
-                        app:tint="@color/NotasMuted" />
-
+                    <!-- Icono y fecha se miden juntos para evitar recortes. -->
                     <TextView
                         android:id="@+id/DateCreated"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
+                        android:minHeight="20dp"
+                        android:gravity="center_vertical"
+                        android:drawableStart="@drawable/notas_huge_calendar04"
+                        android:drawableTint="@color/NotasMuted"
+                        android:drawablePadding="6dp"
                         android:text="@string/date"
                         android:textColor="@color/NotasMuted"
                         android:fontFamily="@font/notas_sans"

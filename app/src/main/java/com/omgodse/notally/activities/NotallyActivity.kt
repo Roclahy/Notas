@@ -574,7 +574,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             view.background = null
             view.setTextColor(metadataColor)
         }
-        binding.DateIcon.imageTintList = ColorStateList.valueOf(metadataColor)
+        binding.DateCreated.compoundDrawableTintList = ColorStateList.valueOf(metadataColor)
         for (i in 0 until binding.Toolbar.menu.size()) {
             binding.Toolbar.menu.getItem(i).icon?.mutate()?.setTint(foreground)
         }
