@@ -644,6 +644,10 @@ class MainActivity : NotasBaseActivity() {
         val export = createExportMenu(menu)
 
         val changeColor = menu.add(R.string.change_color, R.drawable.change_color) { changeColor() }
+        // Solo en el menu de 3 puntos de la seleccion multiple.
+        val moveSelected = menu.add(R.string.notebook_move, R.drawable.notas_nav_folder) {
+            moveSelectedToNotebook()
+        }.apply { setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER) }
         val copy = menu.add(R.string.make_a_copy, R.drawable.copy) { model.copyBaseNote() }
         val delete = menu.add(R.string.delete, R.drawable.delete) { model.moveBaseNotes(Folder.DELETED) }
         val archive = menu.add(R.string.archive, R.drawable.archive) { model.moveBaseNotes(Folder.ARCHIVED) }
@@ -676,6 +680,9 @@ class MainActivity : NotasBaseActivity() {
                 labels.setVisible(count == 1)
                 export.setVisible(count == 1)
                 changeColor.setVisible(true)
+                moveSelected.setVisible(model.actionMode.selectedNotes.values.all {
+                    it.folder == Folder.NOTES
+                })
                 copy.setVisible(true)
 
                 val folder = baseNote.folder
@@ -684,6 +691,47 @@ class MainActivity : NotasBaseActivity() {
                 restore.setVisible(folder == Folder.DELETED)
                 unarchive.setVisible(folder == Folder.ARCHIVED)
                 deleteForever.setVisible(folder == Folder.DELETED)
+            }
+        }
+    }
+
+    /** Tras verificar una carpeta protegida se actualizan solo los IDs seleccionados. */
+    private fun moveSelectedToNotebook() {
+        val ids = model.actionMode.selectedIds.toLongArray()
+        if (ids.isEmpty()) return
+        lifecycleScope.launch {
+            try {
+                val folders = model.getNotebookFolders()
+                if (isFinishing || isDestroyed) return@launch
+                val labels = listOf(getString(R.string.notebook_unfiled)) + folders.map { it.name }
+                MaterialAlertDialogBuilder(this@MainActivity)
+                    .setTitle(R.string.notebook_move)
+                    .setItems(labels.toTypedArray()) { _, index ->
+                        val destination = folders.getOrNull(index - 1)
+                        val move: () -> Unit = {
+                            lifecycleScope.launch {
+                                try {
+                                    val changed = model.moveSelectedToNotebook(
+                                        ids, destination?.id ?: 0L)
+                                    if (changed > 0) Toast.makeText(this@MainActivity,
+                                        R.string.notas_notes_moved, Toast.LENGTH_SHORT).show()
+                                } catch (error: Exception) {
+                                    android.util.Log.e("NotasFolders", "Bulk move failed", error)
+                                    Toast.makeText(this@MainActivity,
+                                        R.string.something_went_wrong, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                        if (destination?.passwordHash?.isNotBlank() == true) {
+                            requestNotebookPassword(destination, move)
+                        } else move()
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            } catch (error: Exception) {
+                android.util.Log.e("NotasFolders", "Unable to list destination folders", error)
+                Toast.makeText(this@MainActivity,
+                    R.string.something_went_wrong, Toast.LENGTH_LONG).show()
             }
         }
     }

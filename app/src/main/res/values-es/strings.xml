@@ -354,4 +354,5 @@
         <item quantity="one">%d completada</item>
         <item quantity="other">%d completadas</item>
     </plurals>
+    <string name="notas_notes_moved">Notas movidas a la carpeta</string>
 </resources>

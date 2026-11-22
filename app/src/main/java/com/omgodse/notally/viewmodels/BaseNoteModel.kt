@@ -196,6 +196,19 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
         database.getNotebookFolderDao().listOnce()
     }
 
+    suspend fun moveSelectedToNotebook(ids: LongArray, notebookId: Long): Int {
+        if (ids.isEmpty() || notebookId < 0L) return 0
+        // Revalidar el destino antes de modificar Room. Proteccion de acceso
+        // (PIN) ocurre en MainActivity antes de llegar a esta llamada.
+        val moved = withContext(Dispatchers.IO) {
+            if (notebookId > 0L && database.getNotebookFolderDao().get(notebookId) == null) {
+                0
+            } else baseNoteDao.moveToNotebook(ids, notebookId)
+        }
+        if (moved > 0) actionMode.close(true)
+        return moved
+    }
+
 
     fun savePreference(info: SeekbarInfo, value: Int) = executeAsync { preferences.savePreference(info, value) }
 
