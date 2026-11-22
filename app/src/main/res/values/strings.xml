@@ -367,4 +367,11 @@
     </plurals>
     <string name="notas_notes_moved">Notes moved to folder</string>
     <string name="notas_color_intelligent">Intelligent · Photo’s dominant color</string>
+    <string name="link_trace_view">Link diagnostics</string>
+    <string name="link_trace_share">Share diagnostic log</string>
+    <string name="link_trace_clear">Clear log</string>
+    <string name="link_trace_clear_confirm">Delete local diagnostic records? Your notes will not be affected.</string>
+    <string name="link_trace_empty">No link events recorded yet. Choose a note link and try again.</string>
+    <string name="link_trace_read_failed">Could not open the diagnostic log.</string>
+    <string name="link_trace_save_failed">Could not save the link. Open More options → Link diagnostics to share the error.</string>
 </resources>
