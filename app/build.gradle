@@ -13,8 +13,8 @@ android {
         applicationId 'com.rocla.notas'
         minSdk 24
         targetSdk 35
-        versionCode 121
-        versionName "1.4.17"
+        versionCode 122
+        versionName "1.4.18"
         resourceConfigurations += ['en', 'ca', 'cs', 'da', 'de', 'el', 'es', 'fr', 'hu', 'in', 'it', 'ja', 'ko', 'my', 'nb', 'nl', 'nn', 'pl', 'pt-rBR', 'pt-rPT', 'ro', 'ru', 'sk', 'sl', 'sv', 'tl', 'tr', 'uk', 'vi', 'zh-rCN']
         vectorDrawables.generatedDensities = []
     }
