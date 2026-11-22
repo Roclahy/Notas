@@ -151,6 +151,10 @@ object Converters {
             representation.url?.let { jsonObject.put("url", it) }
             if (representation.highlighted) jsonObject.put("highlighted", true)
             representation.imageName?.let { jsonObject.put("imageName", it) }
+            // IMPORTANT: Kotlin map returns its last expression. The optional
+            // imageName?.let above is null for ordinary text links; without
+            // this explicit return every text URL/format becomes JSON null.
+            jsonObject
         }
         return JSONArray(objects)
     }
