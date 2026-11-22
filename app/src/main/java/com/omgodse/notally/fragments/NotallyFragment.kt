@@ -11,7 +11,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.omgodse.notally.activities.MakeList
 import com.omgodse.notally.activities.TakeNote
 import com.omgodse.notally.databinding.FragmentNotesBinding
@@ -140,7 +140,11 @@ abstract class NotallyFragment : Fragment(), ItemListener {
             adapter?.submitList(list) {
                 if (resetPosition) {
                     resetPosition = false
-                    binding?.RecyclerView?.scrollToPosition(0)
+                    val recycler = binding?.RecyclerView
+                    // Las carpetas no heredan asignaciones de columna previas.
+                    (recycler?.layoutManager as? StaggeredGridLayoutManager)
+                        ?.invalidateSpanAssignments()
+                    recycler?.scrollToPosition(0)
                 }
             }
             binding?.ImageView?.isVisible = list.isEmpty()
@@ -163,13 +167,12 @@ abstract class NotallyFragment : Fragment(), ItemListener {
             isSaveEnabled = false // Nunca restaurar ancla de columna de otra carpeta.
         }
         binding?.RecyclerView?.layoutManager = if (model.preferences.view.value == ViewPref.grid) {
-            GridLayoutManager(requireContext(), 2, RecyclerView.VERTICAL, false).apply {
-                // Orden determinista: primera nota siempre en columna izquierda.
-                // Las cabeceras (Fijadas/Otras) ocupan la fila entera.
-                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                    override fun getSpanSize(position: Int): Int =
-                        if (adapter?.getItemViewType(position) == 0) 2 else 1
-                }
+            // La altura de cada tarjeta depende solo de su propio contenido
+            // y de los limites de densidad: maxTitle, maxLines, maxItems.
+            StaggeredGridLayoutManager(2, RecyclerView.VERTICAL).apply {
+                reverseLayout = false
+                // Evitar recolocaciones que podrian invertir las columnas.
+                gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
             }
         } else LinearLayoutManager(requireContext())
     }

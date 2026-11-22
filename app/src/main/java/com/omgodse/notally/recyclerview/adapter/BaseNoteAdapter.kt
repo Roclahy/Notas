@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.omgodse.notally.databinding.RecyclerBaseNoteBinding
 import com.omgodse.notally.databinding.RecyclerHeaderBinding
 import com.omgodse.notally.recyclerview.ItemListener
@@ -64,6 +65,13 @@ class BaseNoteAdapter(
         return when (viewType) {
             0 -> {
                 val binding = RecyclerHeaderBinding.inflate(inflater, parent, false)
+                if (viewMode == ViewPref.grid) {
+                    // Las cabeceras de Fijadas/Otras abarcan ambas columnas.
+                    binding.root.layoutParams = StaggeredGridLayoutManager.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { isFullSpan = true }
+                }
                 HeaderVH(binding)
             }
             else -> {
@@ -73,6 +81,14 @@ class BaseNoteAdapter(
         }
     }
 
+
+    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        if (holder is HeaderVH) {
+            (holder.itemView.layoutParams as? StaggeredGridLayoutManager.LayoutParams)
+                ?.isFullSpan = true
+        }
+    }
 
     private fun handleCheck(holder: RecyclerView.ViewHolder, position: Int) {
         val baseNote = getItem(position) as BaseNote
