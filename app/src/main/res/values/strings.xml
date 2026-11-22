@@ -79,6 +79,7 @@
     <string name="saved_to_device">Saved to device</string>
     <string name="saved_to_notally">Saved to Notes</string>
     <string name="empty_note">Empty note</string>
+    <string name="notas_add_content_before_lock">Add text or an attachment before locking this note.</string>
     <string name="empty_list">Empty list</string>
     <string name="select_labels">Select labels</string>
 

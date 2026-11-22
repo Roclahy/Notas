@@ -1068,7 +1068,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             }
         }
         action(R.string.notebook_move, R.drawable.notas_nav_folder) { moveToNotebook() }
-        if (PinSecurity.noteLocked(this, model.id)) {
+        if (model.id > 0L && PinSecurity.noteLocked(this, model.id)) {
             val key = PinSecurity.noteKey(model.id)
             action(
                 if (BiometricSecurity.isEnabled(this, key)) R.string.disable_note_biometric
@@ -1093,9 +1093,18 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             }
         } else {
             action(R.string.lock_note, R.drawable.notas_lock) {
-                PinDialogs.setup(this) { pin ->
-                    PinSecurity.setNotePin(this, model.id, pin)
-                    WidgetProvider.sendBroadcast(application, model.id)
+                if (!model.hasMeaningfulContent()) {
+                    Toast.makeText(this, R.string.notas_add_content_before_lock, Toast.LENGTH_SHORT).show()
+                } else {
+                    PinDialogs.setup(this) { pin ->
+                        lifecycleScope.launch {
+                            val savedId = model.saveNote()
+                            if (savedId > 0L) {
+                                PinSecurity.setNotePin(this@NotallyActivity, savedId, pin)
+                                WidgetProvider.sendBroadcast(application, savedId)
+                            }
+                        }
+                    }
                 }
             }
         }

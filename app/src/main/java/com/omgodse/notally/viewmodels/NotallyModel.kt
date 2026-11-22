@@ -388,7 +388,7 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
     /** A title, visible body text, a written checklist item or an attached
      * photo, drawing or audio is content. An untouched empty checklist row,
      * whitespace, colors, tags and reminders alone do not create a note. */
-    private fun hasMeaningfulContent(): Boolean =
+    fun hasMeaningfulContent(): Boolean =
         title.isNotBlank() ||
             (type == Type.NOTE && body.toString().replace("\uFFFC", "").isNotBlank()) ||
             (type == Type.LIST && items.any { it.body.isNotBlank() }) ||
