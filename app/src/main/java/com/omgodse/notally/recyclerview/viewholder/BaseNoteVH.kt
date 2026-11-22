@@ -83,6 +83,23 @@ class BaseNoteVH(
         }
     }
 
+    /** Vista segura cuando falla el formato; no mostrar notas protegidas. */
+    fun bindUnreadable(baseNote: BaseNote) {
+        val locked = PinSecurity.noteLocked(binding.root.context, baseNote.id)
+        showingLockedNote = locked
+        binding.PreviewContent.isVisible = !locked
+        binding.LockedPreview.isVisible = locked
+        binding.ImageView.visibility = View.GONE
+        binding.Message.visibility = View.GONE
+        Glide.with(binding.ImageView).clear(binding.ImageView)
+        binding.LabelGroup.removeAllViews()
+        binding.Title.text = if (locked) binding.root.context.getString(R.string.locked_note)
+            else baseNote.title.ifBlank { binding.root.context.getString(R.string.untitled_note_link) }
+        binding.Note.text = ""
+        binding.Note.visibility = View.GONE
+        setColor(Color.DEFAULT)
+    }
+
     fun applyGroupShape(isGrid: Boolean, hasPrevious: Boolean, hasNext: Boolean) {
         val scale = binding.root.resources.displayMetrics.density
         val round = 18f * scale

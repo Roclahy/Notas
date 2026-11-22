@@ -29,6 +29,8 @@ fun String.applySpans(representations: List<SpanRepresentation>): Editable {
     val editable = Editable.Factory.getInstance().newEditable(this)
     representations.forEach { representation ->
         val (bold, link, italic, monospace, strikethrough, start, end) = representation
+        // Un enlace corrupto nunca debe romper una lista o su editor.
+        if (start < 0 || end <= start || start >= editable.length) return@forEach
         try {
             if (bold) {
                 editable.setSpan(StyleSpan(Typeface.BOLD), start, end)

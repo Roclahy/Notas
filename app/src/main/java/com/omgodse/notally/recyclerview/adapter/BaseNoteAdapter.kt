@@ -49,7 +49,14 @@ class BaseNoteAdapter(
                 val prevNote = position > 0 && getItem(position - 1) is BaseNote
                 val nextNote = position < itemCount - 1 && getItem(position + 1) is BaseNote
                 (holder as BaseNoteVH).applyGroupShape(viewMode == ViewPref.grid, prevNote, nextNote)
-                holder.bind(item, mediaRoot, selectedIds.contains(item.id))
+                try {
+                    holder.bind(item, mediaRoot, selectedIds.contains(item.id))
+                } catch (error: Exception) {
+                    // Un enlace/formato inválido de una nota no debe impedir
+                    // abrir Inicio ni el resto de las notas.
+                    android.util.Log.e("NotasLinkRecovery", "Could not render note preview ID ${item.id}", error)
+                    holder.bindUnreadable(item)
+                }
             }
         }
     }

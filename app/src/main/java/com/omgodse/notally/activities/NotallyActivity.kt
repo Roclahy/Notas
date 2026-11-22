@@ -149,9 +149,17 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             return
         }
         lifecycleScope.launch {
-            val savedId = model.saveNote()
-            if (savedId > 0L) WidgetProvider.sendBroadcast(application, savedId)
-            super.finish()
+            try {
+                val savedId = model.saveNote()
+                if (savedId > 0L) WidgetProvider.sendBroadcast(application, savedId)
+                super.finish()
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                android.util.Log.e("NotasLinkRecovery", "Failed to save note while exiting", error)
+                Toast.makeText(this@NotallyActivity, R.string.something_went_wrong,
+                    Toast.LENGTH_LONG).show()
+                // No cerrar sin un guardado correcto, ni eliminar el borrador.
+            }
         }
     }
 
@@ -161,8 +169,13 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             else intent.getLongExtra(Constants.SelectedBaseNote, 0L))
         if (permittedToSave) {
             lifecycleScope.launch {
-                val savedId = model.saveNote()
-                if (savedId > 0L) WidgetProvider.sendBroadcast(application, savedId)
+                try {
+                    val savedId = model.saveNote()
+                    if (savedId > 0L) WidgetProvider.sendBroadcast(application, savedId)
+                } catch (error: Exception) {
+                    if (error is kotlinx.coroutines.CancellationException) throw error
+                    android.util.Log.e("NotasLinkRecovery", "Failed to save note during state change", error)
+                }
             }
         }
     }
@@ -250,20 +263,33 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
     private fun loadAuthorizedNote(id: Long) {
         lifecycleScope.launch {
-            if (model.isFirstInstance) {
-                model.setState(id)
-                if (model.isNewNote && intent.action == Intent.ACTION_SEND) {
-                    handleSharedNote()
+            try {
+                if (model.isFirstInstance) {
+                    model.setState(id)
+                    if (model.isNewNote && intent.action == Intent.ACTION_SEND) {
+                        handleSharedNote()
+                    }
+                    model.isFirstInstance = false
                 }
-                model.isFirstInstance = false
+                permittedToSave = true
+                setupListeners()
+                setStateFromModel()
+                configureUI()
+                editorDirty = false
+                updateNoteSyncIndicator()
+                binding.ScrollView.visibility = View.VISIBLE
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                // Rescate no destructivo de una nota cuyo formato no se pueda abrir.
+                // El registro y sus adjuntos siguen íntegros en Room.
+                permittedToSave = false
+                android.util.Log.e("NotasLinkRecovery", "Unable to open note ID $id", error)
+                Toast.makeText(this@NotallyActivity, R.string.something_went_wrong,
+                    Toast.LENGTH_LONG).show()
+                startActivity(Intent(this@NotallyActivity, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                finish()
             }
-            permittedToSave = true
-            setupListeners()
-            setStateFromModel()
-            configureUI()
-            editorDirty = false
-            updateNoteSyncIndicator()
-            binding.ScrollView.visibility = View.VISIBLE
         }
     }
 

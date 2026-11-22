@@ -78,20 +78,37 @@ object Converters {
 
     @TypeConverter
     fun jsonToSpans(json: String): List<SpanRepresentation> {
-        val iterable = JSONArray(SecureFields.open(json, "spans")).iterable<JSONObject>()
-        return iterable.map { jsonObject ->
-            val bold = jsonObject.getSafeBoolean("bold")
-            val link = jsonObject.getSafeBoolean("link")
-            val italic = jsonObject.getSafeBoolean("italic")
-            val monospace = jsonObject.getSafeBoolean("monospace")
-            val strikethrough = jsonObject.getSafeBoolean("strikethrough")
-            val start = jsonObject.getInt("start")
-            val end = jsonObject.getInt("end")
-            val url = jsonObject.optString("url").takeIf { it.isNotBlank() }
-            SpanRepresentation(bold, link, italic, monospace, strikethrough, start, end, url,
-                jsonObject.optBoolean("highlighted", false),
-                jsonObject.optString("imageName").takeIf { it.isNotBlank() })
+        // Los vínculos son metadatos de presentación: si uno está dañado,
+        // JAMÁS impedir que se abran las notas, ni borrar el campo de Room.
+        val array = try {
+            JSONArray(SecureFields.open(json, "spans"))
+        } catch (error: Exception) {
+            android.util.Log.e("NotasLinkRecovery", "Unable to read span metadata; original stored data is untouched", error)
+            return emptyList()
         }
+        val result = ArrayList<SpanRepresentation>(minOf(array.length(), 8192))
+        for (index in 0 until minOf(array.length(), 8192)) {
+            try {
+                val item = array.getJSONObject(index)
+                val start = item.getInt("start")
+                val end = item.getInt("end")
+                if (start < 0 || end <= start || end > 1_000_000) continue
+                val url = item.optString("url").takeIf { it.isNotBlank() && it.length <= 4096 }
+                val imageName = item.optString("imageName").takeIf { it.isNotBlank() }
+                result.add(SpanRepresentation(
+                    item.getSafeBoolean("bold"),
+                    item.getSafeBoolean("link") && url != null,
+                    item.getSafeBoolean("italic"),
+                    item.getSafeBoolean("monospace"),
+                    item.getSafeBoolean("strikethrough"),
+                    start, end, url,
+                    item.optBoolean("highlighted", false), imageName
+                ))
+            } catch (error: Exception) {
+                android.util.Log.w("NotasLinkRecovery", "Skipping malformed display span #$index", error)
+            }
+        }
+        return result
     }
 
     @TypeConverter
