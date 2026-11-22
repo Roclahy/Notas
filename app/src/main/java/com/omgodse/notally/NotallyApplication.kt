@@ -10,7 +10,7 @@ import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import android.app.Activity
 import android.os.Bundle
-import com.omgodse.notally.diagnostics.NoteLinkTrace
+import com.omgodse.notally.diagnostics.NotasErrorReport
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.SecureMedia
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +26,7 @@ import androidx.work.WorkManager
 import com.omgodse.notally.preferences.Preferences
 import com.omgodse.notally.preferences.Theme
 import java.util.concurrent.TimeUnit
+import java.io.File
 
 class NotallyApplication : Application() {
     override fun attachBaseContext(base: Context) {
@@ -36,7 +37,11 @@ class NotallyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        NoteLinkTrace.initialize(this)
+        NotasErrorReport.install(this)
+        // Remove obsolete per-link logs. No note contents or databases touched.
+        File(filesDir, "logs/notas-enlaces.log").delete()
+        File(filesDir, "logs/notas-enlaces.log.1").delete()
+        File(filesDir, "logs/Notas-registro-enlaces.txt").delete()
         // Elimina archivos ZIP temporales de restauraciones interrumpidas.
         java.io.File(cacheDir,"encrypted_restore").listFiles()?.forEach { it.delete() }
         // Los temporales legibles de la sesión anterior nunca se conservan.
@@ -57,14 +62,20 @@ class NotallyApplication : Application() {
             private var visibleActivities = 0
             override fun onActivityCreated(activity: Activity, state: Bundle?) {}
             override fun onActivityStarted(activity: Activity) {
-                if (visibleActivities == 0) PinSecurity.onAppReturnedToForeground(this@NotallyApplication)
+                if (visibleActivities == 0) {
+                    PinSecurity.onAppReturnedToForeground(this@NotallyApplication)
+                    NotasErrorReport.setForeground(true)
+                }
                 visibleActivities++
             }
             override fun onActivityResumed(activity: Activity) {}
             override fun onActivityPaused(activity: Activity) {}
             override fun onActivityStopped(activity: Activity) {
                 visibleActivities = (visibleActivities - 1).coerceAtLeast(0)
-                if (visibleActivities == 0) PinSecurity.onAppWentToBackground()
+                if (visibleActivities == 0) {
+                    NotasErrorReport.setForeground(false)
+                    PinSecurity.onAppWentToBackground()
+                }
             }
             override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {}
