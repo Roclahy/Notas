@@ -164,6 +164,22 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         }
     }
 
+    override fun onStop() {
+        // Home gesture and task switching do not call finish(). Preserve
+        // unsaved edits even when the editor remains on the back stack.
+        if (permittedToSave && editorDirty && !isFinishing) {
+            lifecycleScope.launch {
+                try {
+                    model.saveNote()
+                } catch (error: Exception) {
+                    if (error is kotlinx.coroutines.CancellationException) throw error
+                    android.util.Log.e("NotasLinkRecovery", "Failed to save note onStop", error)
+                }
+            }
+        }
+        super.onStop()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putLong("id", if (permittedToSave) model.id
