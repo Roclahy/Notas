@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - work/notas-120-link-test
+      - work/notas-120-durable-links
     paths:
       - app/**
       - .github/workflows/test-notas-links.yml
