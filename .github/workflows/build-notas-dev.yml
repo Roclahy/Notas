@@ -1,4 +1,4 @@
-name: Build Notas 1.4.22 (126) - repaired JSON link spans
+name: Build Notas 1.4.23 (127) - crash and ANR reports
 
 on:
   workflow_dispatch:
@@ -22,8 +22,9 @@ on:
       - work/notas-158-safe-links-bulk-smart-color
       - work/notas-link-persistence-fix
       - work/notas-120-durable-links
-      - work/notas-1422-link-diagnostics
-      - work/notas-1422-json-span-fix
+      - work/notas-1423-link-diagnostics
+      - work/notas-1423-json-span-fix
+      - work/notas-1423-crash-anr-reports
     paths:
       - .github/workflows/build-notas-dev.yml
       - app/**
@@ -59,8 +60,8 @@ jobs:
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run JSON span serializer regression tests (no emulator)
-        run: bash ./gradlew :app:testDebugUnitTest --tests 'com.omgodse.notally.room.SpanJsonCodecTest' --no-daemon --stacktrace
+      - name: Run JSON codec and error-report unit tests (no emulator)
+        run: bash ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Build installable debug APK
         run: bash ./gradlew :app:assembleDebug --no-daemon --stacktrace
@@ -68,7 +69,7 @@ jobs:
       - name: Upload signed debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-1422-debug-installable
+          name: notas-1423-debug-installable
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -78,7 +79,7 @@ jobs:
       - name: Upload unsigned optimized Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-1422-r8-unsigned
+          name: notas-1423-r8-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
