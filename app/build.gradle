@@ -73,9 +73,6 @@ dependencies {
     implementation "androidx.navigation:navigation-ui-ktx:$navVersion"
     implementation "androidx.navigation:navigation-fragment-ktx:$navVersion"
 
-    // AndroidX Palette: la muestra dominante es la de mayor población,
-    // no la más saturada. El análisis se realiza solo en el dispositivo.
-    implementation "androidx.palette:palette:1.0.0"
     implementation "org.ocpsoft.prettytime:prettytime:4.0.6.Final"
     implementation "com.google.android.material:material:1.4.0"
 

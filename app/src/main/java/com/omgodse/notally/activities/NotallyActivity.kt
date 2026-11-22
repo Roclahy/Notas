@@ -615,8 +615,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
                         if (dominant != null && model.color.value == NoteColor.INTELLIGENT &&
                             model.images.value.firstOrNull()?.name == filename) {
                             applyNoteAppearance(noteColor,
-                                com.omgodse.notally.miscellaneous.SmartNoteColor.forTheme(
-                                    dominant, this@NotallyActivity))
+                                com.omgodse.notally.miscellaneous.SmartNoteColor.actualColor(dominant))
                         }
                     }
                 }
@@ -641,7 +640,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
 
         var backgroundColor = colorInt
         var hasWallpaper = false
-        var foreground = if (androidx.core.graphics.ColorUtils.calculateLuminance(colorInt) < 0.48)
+        var foreground = if (smartOverride != null)
+            com.omgodse.notally.miscellaneous.SmartNoteColor.textColor(colorInt)
+        else if (androidx.core.graphics.ColorUtils.calculateLuminance(colorInt) < 0.48)
             Color.WHITE else 0xFF222225.toInt()
         if (wallpaperFile != null && wallpaperFile.exists()) {
             try {
