@@ -252,8 +252,16 @@ class TakeNote : NotallyActivity(Type.NOTE) {
             text.insert(start, title)
             start + title.length
         } else end
-        text.getSpans<URLSpan>(start, last).toList().forEach(text::removeSpan)
+        // getSpans() can also return spans touching the selection boundary.
+        // Remove only real overlaps; adjacent links must stay intact.
+        text.getSpans<URLSpan>(start, last)
+            .filter { text.getSpanStart(it) < last && text.getSpanEnd(it) > start }
+            .toList()
+            .forEach(text::removeSpan)
         text.setSpan(URLSpan(target), start, last, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        // Span-only changes do not trigger TextWatcher; save the actual
+        // Editable containing the internal destination immediately.
+        model.body = text
         binding.EnterBody.setSelection(last)
         markNoteEdited()
     }
