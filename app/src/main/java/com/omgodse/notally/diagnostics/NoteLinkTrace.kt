@@ -18,6 +18,15 @@ import java.util.Locale
 object NoteLinkTrace {
     private const val MAX_LOG_BYTES = 128 * 1024
     private val lock = Any()
+    @Volatile private var contextForConverters: Context? = null
+
+    fun initialize(context: Context) {
+        contextForConverters = context.applicationContext
+    }
+
+    fun recordIfReady(event: String, detail: String = "", error: Throwable? = null) {
+        contextForConverters?.let { record(it, event, detail, error) }
+    }
     private val safeChars = Regex("[^a-zA-Z0-9_.,:;= /\\-]")
     private val clock = ThreadLocal.withInitial {
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US)
