@@ -10,6 +10,7 @@ import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import android.app.Activity
 import android.os.Bundle
+import com.omgodse.notally.diagnostics.NoteLinkTrace
 import com.omgodse.notally.security.PinSecurity
 import com.omgodse.notally.security.SecureMedia
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +36,7 @@ class NotallyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        NoteLinkTrace.initialize(this)
         // Elimina archivos ZIP temporales de restauraciones interrumpidas.
         java.io.File(cacheDir,"encrypted_restore").listFiles()?.forEach { it.delete() }
         // Los temporales legibles de la sesión anterior nunca se conservan.
