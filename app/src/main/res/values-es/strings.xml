@@ -356,4 +356,11 @@
     </plurals>
     <string name="notas_notes_moved">Notas movidas a la carpeta</string>
     <string name="notas_color_intelligent">Inteligente · Color predominante de la foto</string>
+    <string name="link_trace_view">Registro de enlaces</string>
+    <string name="link_trace_share">Compartir registro</string>
+    <string name="link_trace_clear">Borrar registro</string>
+    <string name="link_trace_clear_confirm">¿Borrar los registros locales de diagnóstico? Tus notas no se modificarán.</string>
+    <string name="link_trace_empty">Aún no hay registros. Intenta enlazar una nota y vuelve a entrar aquí.</string>
+    <string name="link_trace_read_failed">No se pudo abrir el registro de diagnóstico.</string>
+    <string name="link_trace_save_failed">No se guardó el enlace. Abre Más opciones → Registro de enlaces para compartir el error.</string>
 </resources>
