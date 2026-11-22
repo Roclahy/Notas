@@ -1,4 +1,4 @@
-name: Build Notas 1.4.9 (113) - signed release preparation
+name: Build Notas 1.4.10 (114) - signed release preparation
 
 on:
   workflow_dispatch:
@@ -12,6 +12,7 @@ on:
       - work/notas-147-calendar-fix
       - work/notas-148-calendar-vector-fix
       - work/notas-149-calendar-raster-fix
+      - work/notas-150-metadata-alignment
     paths:
       - .github/workflows/build-notas-dev.yml
       - app/**
@@ -53,7 +54,7 @@ jobs:
       - name: Upload signed debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-149-debug-installable
+          name: notas-150-debug-installable
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -63,7 +64,7 @@ jobs:
       - name: Upload unsigned optimized Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-149-r8-unsigned
+          name: notas-150-r8-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
