@@ -44,6 +44,7 @@ import androidx.lifecycle.MutableLiveData
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.omgodse.notally.MenuDialog
 import com.omgodse.notally.Progress
+import com.omgodse.notally.diagnostics.NotasErrorReport
 import com.omgodse.notally.R
 import com.omgodse.notally.databinding.DialogProgressBinding
 import com.omgodse.notally.databinding.FragmentSettingsBinding
@@ -453,6 +454,8 @@ class Settings : Fragment() {
                 .show()
         }
 
+        binding.CrashReport.setOnClickListener { showCrashReport() }
+
         // La autoría es texto informativo; el canal abre Telegram.
         binding.TelegramChannel.setOnClickListener {
             openLink("https://t.me/notas_app")
@@ -656,6 +659,55 @@ class Settings : Fragment() {
         }
     }
 
+
+    private fun showCrashReport() {
+        val app = requireActivity().application
+        val reportText = NotasErrorReport.read(app)
+        if (reportText.isBlank()) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.crash_report_open)
+                .setMessage(R.string.crash_report_empty)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.crash_report_open)
+            .setMessage(reportText.takeLast(10000))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton(R.string.crash_report_clear) { _, _ ->
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.crash_report_clear)
+                    .setMessage(R.string.crash_report_clear_confirm)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.crash_report_clear) { _, _ ->
+                        NotasErrorReport.delete(app)
+                    }
+                    .show()
+            }
+            .setPositiveButton(R.string.crash_report_share) { _, _ ->
+                try {
+                    val file = NotasErrorReport.file(app)
+                    val uri = FileProvider.getUriForFile(
+                        requireContext(), "${requireContext().packageName}.provider", file)
+                    val share = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        clipData = android.content.ClipData.newUri(
+                            requireContext().contentResolver, "Notas-Reporte.txt", uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(
+                        share, getString(R.string.crash_report_share)).apply {
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    })
+                } catch (_: Exception) {
+                    Toast.makeText(requireContext(),
+                        R.string.crash_report_share_failed, Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
+    }
 
     private fun sendEmailWithLog() {
         val intent = Intent(Intent.ACTION_SEND)
