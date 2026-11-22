@@ -1,7 +1,6 @@
 package com.omgodse.notally.room
 
 import androidx.room.TypeConverter
-import com.omgodse.notally.diagnostics.NoteLinkTrace
 import com.omgodse.notally.security.SecureFields
 import org.json.JSONArray
 import org.json.JSONException
@@ -84,7 +83,6 @@ object Converters {
         val array = try {
             JSONArray(SecureFields.open(json, "spans"))
         } catch (error: Exception) {
-            NoteLinkTrace.recordIfReady("spans.decode.EXCEPTION", "encryptedLength=${json.length}", error)
             android.util.Log.e("NotasLinkRecovery", "Unable to read span metadata: ${error.javaClass.simpleName}")
             return emptyList()
         }
@@ -99,14 +97,12 @@ object Converters {
                     is String -> {
                         if (raw.length > 16_384) throw JSONException("Oversized legacy span")
                         val recovered = JSONObject(raw)
-                        NoteLinkTrace.recordIfReady("spans.legacyString.recovered", "index=$index")
                         recovered
                     }
                     else -> {
                         // Old spansToJSONArray() returned null when imageName was
                         // absent because the last expression was a nullable let.
                         // A null has no link destination that can be recovered.
-                        NoteLinkTrace.recordIfReady("spans.legacyNull.unrecoverable", "index=$index")
                         continue
                     }
                 }
@@ -125,7 +121,6 @@ object Converters {
                     item.optBoolean("highlighted", false), imageName
                 ))
             } catch (error: Exception) {
-                NoteLinkTrace.recordIfReady("spans.entry.EXCEPTION", "index=$index", error)
                 android.util.Log.w("NotasLinkRecovery", "Skipping malformed display span #$index")
             }
         }
