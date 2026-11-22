@@ -133,4 +133,57 @@ class NoteLinksPersistenceTest {
             runBlocking { dao.delete(longArrayOf(source, targetA, targetB)) }
         }
     }
+
+    @Test fun linkIsPersistedWithoutClosingEditor() {
+        val target = create("target background test", "destination")
+        val source = create("source background test", "Link")
+        try {
+            val intent = Intent(app, TakeNote::class.java)
+                .putExtra(Constants.SelectedBaseNote, source)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val scenario = ActivityScenario.launch<TakeNote>(intent)
+            try {
+                var installed = false
+                for (attempt in 0 until 75) {
+                    scenario.onActivity { activity ->
+                        val view = activity.findViewById<View>(R.id.ScrollView)
+                        val editor = activity.findViewById<EditText>(R.id.EnterBody)
+                        if (!installed && view?.visibility == View.VISIBLE &&
+                            editor?.text?.toString() == "Link") {
+                            val install = TakeNote::class.java.getDeclaredMethod(
+                                "installLink",
+                                Int::class.javaPrimitiveType,
+                                Int::class.javaPrimitiveType,
+                                String::class.java,
+                                String::class.java
+                            )
+                            install.isAccessible = true
+                            install.invoke(activity, 0, 4, "Link", RoseInternalLinks.note(target))
+                            installed = true
+                        }
+                    }
+                    if (installed) break
+                    Thread.sleep(100)
+                }
+                assertTrue("Editor failed to load", installed)
+                // The activity has not been finished, so the link must
+                // already be committed by the immediate-save path.
+                var saved = false
+                for (attempt in 0 until 100) {
+                    if (dao.get(source)?.spans?.any { it.link && it.url == RoseInternalLinks.note(target) } == true) {
+                        saved = true
+                        break
+                    }
+                    Thread.sleep(100)
+                }
+                assertTrue("Link was not saved while editor stayed open", saved)
+                scenario.moveToState(Lifecycle.State.CREATED)
+                assertTrue(dao.get(source)?.spans?.any {
+                    it.link && it.url == RoseInternalLinks.note(target)
+                } == true)
+            } finally { scenario.close() }
+        } finally {
+            runBlocking { dao.delete(longArrayOf(source, target)) }
+        }
+    }
 }
