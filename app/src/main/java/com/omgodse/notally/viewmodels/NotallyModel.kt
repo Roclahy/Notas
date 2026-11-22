@@ -22,7 +22,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.omgodse.notally.AttachmentDeleteService
-import com.omgodse.notally.Cache
 import com.omgodse.notally.MarkerSpan
 import com.omgodse.notally.view.InlineImageRefSpan
 import com.omgodse.notally.view.InlineNoteImageSpan
@@ -334,8 +333,9 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         if (id != 0L) {
             isNewNote = false
 
-            val cachedNote = Cache.list.find { baseNote -> baseNote.id == id }
-            val baseNote = cachedNote ?: withContext(Dispatchers.IO) { baseNoteDao.get(id) }
+            // Cache.list is only a navigation snapshot. Reusing it here can
+            // silently discard the latest saved URL spans when reopening a note.
+            val baseNote = withContext(Dispatchers.IO) { baseNoteDao.get(id) }
 
             if (baseNote != null) {
                 this.id = id
@@ -412,7 +412,10 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
         }
 
         val firstSave = id == 0L
-        val savedId = withContext(Dispatchers.IO) { baseNoteDao.insert(getBaseNote()) }
+        // Editable/URLSpan belong to the UI thread. Capture the complete note
+        // before switching to IO so links are not read while the editor mutates.
+        val snapshot = withContext(Dispatchers.Main.immediate) { getBaseNote() }
+        val savedId = withContext(Dispatchers.IO) { baseNoteDao.insert(snapshot) }
         if (firstSave) {
             id = savedId
             reminder.value?.let {
