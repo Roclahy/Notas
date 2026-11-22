@@ -94,7 +94,7 @@
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
                 android:paddingTop="10dp"
-                android:paddingBottom="10dp"
+                android:paddingBottom="6dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 app:itemSpacing="12dp"
@@ -204,7 +204,7 @@
                 android:hint="@string/note"
                 android:inputType="textMultiLine|textCapSentences|textAutoCorrect"
                 android:paddingStart="24dp"
-                android:paddingTop="24dp"
+                android:paddingTop="6dp"
                 android:paddingEnd="16dp"
                 android:fontFamily="@font/notas_sans"
                 android:textAppearance="?attr/textAppearanceBody1" />

@@ -171,8 +171,10 @@ abstract class NotallyFragment : Fragment(), ItemListener {
             // y de los limites de densidad: maxTitle, maxLines, maxItems.
             StaggeredGridLayoutManager(2, RecyclerView.VERTICAL).apply {
                 reverseLayout = false
-                // Evitar recolocaciones que podrian invertir las columnas.
-                gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
+                // La estrategia NONE conserva huecos (incluso una columna
+                // completamente vacía arriba de la siguiente tarjeta).
+                // Reequilibrar cuando la cuadrícula queda inactiva.
+                gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS
             }
         } else LinearLayoutManager(requireContext())
     }
