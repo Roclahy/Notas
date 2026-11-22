@@ -104,10 +104,14 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
+                    <!-- Zona interior de 18dp para el glifo y 2dp de margen
+                         físico en cada lado: evita cortar el trazo inferior. -->
                     <ImageView
                         android:id="@+id/DateIcon"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:padding="2dp"
+                        android:scaleType="fitCenter"
                         android:src="@drawable/notas_huge_calendar04"
                         android:contentDescription="@null"
                         app:tint="@color/NotasMuted" />
