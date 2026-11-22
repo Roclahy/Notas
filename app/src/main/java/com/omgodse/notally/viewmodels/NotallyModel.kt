@@ -22,7 +22,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.omgodse.notally.AttachmentDeleteService
-import com.omgodse.notally.diagnostics.NoteLinkTrace
 import com.omgodse.notally.MarkerSpan
 import com.omgodse.notally.view.InlineImageRefSpan
 import com.omgodse.notally.view.InlineNoteImageSpan
@@ -352,8 +351,6 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
                 labels.value = ArrayList(baseNote.labels)
 
                 body = baseNote.body.applySpans(baseNote.spans)
-                NoteLinkTrace.record(app, "note.loaded",
-                    "noteId=$id dbSpanCount=${baseNote.spans.size} dbLinkCount=${baseNote.spans.count { it.link }} renderedLinkCount=${body.getSpans<URLSpan>(0, body.length).size} bodyLength=${body.length}")
 
                 items.clear()
                 items.addAll(baseNote.items)
@@ -420,24 +417,14 @@ class NotallyModel(private val app: Application) : AndroidViewModel(app) {
             withContext(Dispatchers.Main.immediate) { getBaseNote() }
         } catch (error: Exception) {
             if (error is kotlinx.coroutines.CancellationException) throw error
-            NoteLinkTrace.record(app, "save.snapshot.EXCEPTION",
-                "noteId=$id firstSave=$firstSave", error)
             throw error
         }
-        val malformed = snapshot.spans.count { it.start < 0 ||
-            it.end > snapshot.body.length || it.start >= it.end }
-        NoteLinkTrace.record(app, "save.snapshot",
-            "noteId=$id firstSave=$firstSave type=${type.name} bodyLength=${snapshot.body.length} spanCount=${snapshot.spans.size} linkCount=${snapshot.spans.count { it.link }} invalidRanges=$malformed")
         val savedId = try {
             withContext(Dispatchers.IO) { baseNoteDao.insert(snapshot) }
         } catch (error: Exception) {
             if (error is kotlinx.coroutines.CancellationException) throw error
-            NoteLinkTrace.record(app, "save.db.EXCEPTION",
-                "noteId=$id spanCount=${snapshot.spans.size} linkCount=${snapshot.spans.count { it.link }}", error)
             throw error
         }
-        NoteLinkTrace.record(app, "save.db.ok",
-            "noteId=$id savedId=$savedId linkCount=${snapshot.spans.count { it.link }}")
         if (firstSave) {
             id = savedId
             reminder.value?.let {
