@@ -94,26 +94,37 @@
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
                 android:paddingTop="10dp"
-                android:paddingBottom="8dp"
+                android:paddingBottom="10dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 app:itemSpacing="12dp"
                 app:lineSpacing="6dp">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="28dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
-                    <!-- Icono y fecha se miden juntos para evitar recortes. -->
+                    <!-- Calendar04Icon rasterizado a 6x, con margen real
+                         para que FlowLayout no corte los bordes inferiores. -->
+                    <ImageView
+                        android:id="@+id/DateIcon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/notas_calendar04_raster"
+                        android:contentDescription="@null"
+                        app:tint="@color/NotasMuted" />
+
                     <TextView
                         android:id="@+id/DateCreated"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:minHeight="20dp"
+                        android:layout_marginStart="6dp"
                         android:gravity="center_vertical"
-                        android:drawableStart="@drawable/notas_huge_calendar04"
-                        android:drawableTint="@color/NotasMuted"
-                        android:drawablePadding="6dp"
                         android:text="@string/date"
                         android:textColor="@color/NotasMuted"
                         android:fontFamily="@font/notas_sans"
