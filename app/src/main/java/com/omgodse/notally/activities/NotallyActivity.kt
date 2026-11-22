@@ -101,6 +101,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     private var syncActionButton: ImageButton? = null
     private var editorDirty = false
     private var metadataExpanded = false
+    private var smartColorJob: kotlinx.coroutines.Job? = null
 
     protected fun markNoteEdited() {
         if (model.type == Type.LIST) updateCharacterCount()
@@ -586,10 +587,33 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         }
     }
 
-    private fun applyNoteAppearance(noteColor: NoteColor) {
+    private fun applyNoteAppearance(noteColor: NoteColor, smartOverride: Int? = null) {
+        // Modo Inteligente se recalcula al cambiar la primera foto.
+        // El resultado en background solo se aplica si la nota sigue igual.
+        if (smartOverride == null) {
+            smartColorJob?.cancel()
+            smartColorJob = null
+            if (noteColor == NoteColor.INTELLIGENT) {
+                val filename = model.images.value.firstOrNull()?.name
+                if (filename != null) {
+                    smartColorJob = lifecycleScope.launch {
+                        val dominant = com.omgodse.notally.miscellaneous.SmartNoteColor
+                            .dominant(application, model.imageRoot, filename)
+                        if (dominant != null && model.color.value == NoteColor.INTELLIGENT &&
+                            model.images.value.firstOrNull()?.name == filename) {
+                            applyNoteAppearance(noteColor,
+                                com.omgodse.notally.miscellaneous.SmartNoteColor.forTheme(
+                                    dominant, this@NotallyActivity))
+                        }
+                    }
+                }
+            }
+        }
         val isAmoled = com.omgodse.notally.preferences.Preferences
             .getInstance(application).isAmoledTheme()
-        val colorInt = if (isAmoled && noteColor == NoteColor.DEFAULT) Color.BLACK
+        val colorInt = smartOverride ?:
+            if (isAmoled && (noteColor == NoteColor.DEFAULT ||
+                    noteColor == NoteColor.INTELLIGENT)) Color.BLACK
             else Operations.extractColor(noteColor, this)
         // Si la nota no tiene fondo propio, hereda automáticamente el de su carpeta.
         // El nombre del archivo es aleatorio; el contenido permanece cifrado.
@@ -691,6 +715,9 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             if (permittedToSave) markNoteEdited()
             adapter.submitList(list)
             binding.ImagePreview.isVisible = list.isNotEmpty()
+            if (model.color.value == NoteColor.INTELLIGENT) {
+                applyNoteAppearance(NoteColor.INTELLIGENT)
+            }
         })
 
         val dialogBinding = DialogProgressBinding.inflate(layoutInflater)
@@ -1008,6 +1035,10 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         })
         val palette = DialogColorBinding.inflate(layoutInflater)
         palette.RecyclerView.adapter = colorAdapter
+        palette.IntelligentOption.setOnClickListener {
+            dialog.dismiss()
+            model.color.value = NoteColor.INTELLIGENT
+        }
         dialog.setView(palette.root)
         dialog.show()
     }

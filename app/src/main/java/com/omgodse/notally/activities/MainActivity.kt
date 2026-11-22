@@ -783,6 +783,10 @@ class MainActivity : NotasBaseActivity() {
 
         val dialogBinding = DialogColorBinding.inflate(layoutInflater)
         dialogBinding.RecyclerView.adapter = colorAdapter
+        dialogBinding.IntelligentOption.setOnClickListener {
+            dialog.dismiss()
+            model.colorBaseNote(Color.INTELLIGENT)
+        }
 
         dialog.setView(dialogBinding.root)
         dialog.show()

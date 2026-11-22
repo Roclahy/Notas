@@ -23,6 +23,11 @@ import com.bumptech.glide.request.target.Target
 import com.omgodse.notally.R
 import com.omgodse.notally.databinding.RecyclerBaseNoteBinding
 import com.omgodse.notally.miscellaneous.Operations
+import com.omgodse.notally.miscellaneous.SmartNoteColor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import com.omgodse.notally.miscellaneous.applySpans
 import com.omgodse.notally.preferences.DateFormat
 import com.omgodse.notally.preferences.TextSize
@@ -54,6 +59,8 @@ class BaseNoteVH(
 
     val bodySize = TextSize.getDisplayBodySize(textSize)
     private var showingLockedNote = false
+    private var activeSmartImage: String? = null
+    private var smartColorJob: Job? = null
 
     init {
         binding.Title.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getDisplayTitleSize(textSize))
@@ -85,6 +92,8 @@ class BaseNoteVH(
 
     /** Vista segura cuando falla el formato; no mostrar notas protegidas. */
     fun bindUnreadable(baseNote: BaseNote) {
+        smartColorJob?.cancel()
+        activeSmartImage = null
         val locked = PinSecurity.noteLocked(binding.root.context, baseNote.id)
         showingLockedNote = locked
         binding.PreviewContent.isVisible = !locked
@@ -125,6 +134,8 @@ class BaseNoteVH(
     }
 
     fun bind(baseNote: BaseNote, mediaRoot: File?, checked: Boolean) {
+        smartColorJob?.cancel()
+        activeSmartImage = null
         updateCheck(checked)
         val locked = PinSecurity.noteLocked(binding.root.context, baseNote.id)
         showingLockedNote = locked
@@ -154,6 +165,21 @@ class BaseNoteVH(
 
         setDate(baseNote.timestamp)
         setColor(baseNote.color)
+        if (baseNote.color == Color.INTELLIGENT &&
+            baseNote.images.isNotEmpty() && mediaRoot != null) {
+            val first = baseNote.images[0].name
+            val expected = "${baseNote.id}/$first"
+            activeSmartImage = expected
+            val app = binding.root.context.applicationContext as Application
+            smartColorJob = CoroutineScope(Dispatchers.Main).launch {
+                val sampled = SmartNoteColor.dominant(app, mediaRoot, first)
+                if (sampled != null && activeSmartImage == expected && !showingLockedNote) {
+                    binding.root.strokeWidth = 0
+                    binding.root.setCardBackgroundColor(
+                        SmartNoteColor.forTheme(sampled, binding.root.context))
+                }
+            }
+        }
         setImages(baseNote.images, mediaRoot)
         setReminder(baseNote.reminder)
 
