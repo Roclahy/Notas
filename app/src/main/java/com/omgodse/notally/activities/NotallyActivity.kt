@@ -100,10 +100,40 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     private var pendingState: Bundle? = null
     private var syncActionButton: ImageButton? = null
     private var editorDirty = false
+    private var metadataExpanded = false
 
     protected fun markNoteEdited() {
+        if (model.type == Type.LIST) updateCharacterCount()
         editorDirty = true
         updateNoteSyncIndicator()
+    }
+
+    private fun setupCollapsibleMetadata() {
+        // Siempre cerrado al entrar. No cambia la fecha ni el contenido.
+        metadataExpanded = false
+        binding.StatsRow.visibility = View.GONE
+        binding.StatsChevron.rotation = 0f
+        updateMetadataAccessibility()
+        binding.MetadataToggle.setOnClickListener {
+            metadataExpanded = !metadataExpanded
+            android.transition.TransitionManager.beginDelayedTransition(
+                binding.InfoPills,
+                android.transition.AutoTransition().apply { duration = 180L }
+            )
+            binding.StatsRow.visibility = if (metadataExpanded) View.VISIBLE else View.GONE
+            binding.StatsChevron.animate()
+                .rotation(if (metadataExpanded) 180f else 0f)
+                .setDuration(180L)
+                .start()
+            updateMetadataAccessibility()
+        }
+    }
+
+    private fun updateMetadataAccessibility() {
+        val action = if (metadataExpanded) R.string.notas_hide_statistics
+            else R.string.notas_show_statistics
+        binding.MetadataToggle.contentDescription =
+            "${binding.DateCreated.text}. ${getString(action)}"
     }
 
     override fun onBackPressed() {
@@ -321,7 +351,15 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
     }
 
     private fun updateCharacterCount() {
-        if (model.type != Type.NOTE) return
+        if (model.type == Type.LIST) {
+            val total = model.items.count { it.body.isNotBlank() }
+            val completed = model.items.count { it.body.isNotBlank() && it.checked }
+            binding.WordCount.text = resources.getQuantityString(
+                R.plurals.notas_tasks_total, total, total)
+            binding.CharacterCount.text = resources.getQuantityString(
+                R.plurals.notas_tasks_completed, completed, completed)
+            return
+        }
         val body = model.body.toString().replace("\uFFFC", "")
         val characters = body.codePointCount(0, body.length)
         val words = Regex("""[\p{L}\p{N}]+(?:['’_-][\p{L}\p{N}]+)*""")
@@ -340,6 +378,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
         val createdAt = java.util.Date(model.timestamp)
         binding.DateCreated.text =
             "${dateFormatter.format(createdAt)} · ${timeFormatter.format(createdAt)}"
+        updateMetadataAccessibility()
 
         binding.EnterTitle.setText(model.title)
         updateCharacterCount()
@@ -580,6 +619,7 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             view.setTextColor(metadataColor)
         }
         binding.DateIcon.imageTintList = ColorStateList.valueOf(metadataColor)
+        binding.StatsChevron.imageTintList = ColorStateList.valueOf(metadataColor)
         for (i in 0 until binding.Toolbar.menu.size()) {
             binding.Toolbar.menu.getItem(i).icon?.mutate()?.setTint(foreground)
         }
@@ -1152,14 +1192,12 @@ abstract class NotallyActivity(private val type: Type) : NotasBaseActivity() {
             Type.NOTE -> {
                 binding.AddItem.visibility = View.GONE
                 binding.RecyclerView.visibility = View.GONE
-                binding.WordCount.visibility = View.VISIBLE
-                binding.StatsSeparator.visibility = View.VISIBLE
-                binding.CharacterCount.visibility = View.VISIBLE
             }
             Type.LIST -> {
                 binding.EnterBody.visibility = View.GONE
             }
         }
+        setupCollapsibleMetadata()
 
         val bodySize = TextSize.getDisplayBodySize(model.textSize)
 

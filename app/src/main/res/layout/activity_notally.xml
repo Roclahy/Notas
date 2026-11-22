@@ -86,32 +86,30 @@
                 android:textSize="26sp"
                 android:textAppearance="?attr/textAppearanceHeadline6" />
 
-            <!-- Metadatos compactos: fecha y estadísticas se adaptan al ancho. -->
-            <com.omgodse.notally.view.PublicFlowLayout
+            <!-- Fecha y hora a la vista; estadísticas colapsadas por defecto.
+                 Un solo control táctil, sin tarjetas ni separadores. -->
+            <LinearLayout
                 android:id="@+id/InfoPills"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="vertical"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
-                android:paddingTop="10dp"
-                android:paddingBottom="6dp"
-                android:clipChildren="false"
-                android:clipToPadding="false"
-                app:itemSpacing="12dp"
-                app:lineSpacing="6dp">
+                android:paddingTop="8dp"
+                android:paddingBottom="6dp">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:id="@+id/MetadataToggle"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="28dp"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    android:baselineAligned="false"
+                    android:minHeight="36dp"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?android:attr/selectableItemBackground">
 
-                    <!-- Calendar04Icon rasterizado a 6x, con margen real
-                         para que FlowLayout no corte los bordes inferiores. -->
+                    <!-- El PNG de Calendar04 conserva sus trazos completos. -->
                     <ImageView
                         android:id="@+id/DateIcon"
                         android:layout_width="16dp"
@@ -123,27 +121,38 @@
 
                     <TextView
                         android:id="@+id/DateCreated"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:layout_marginStart="6dp"
-                        android:gravity="center_vertical"
                         android:text="@string/date"
                         android:textColor="@color/NotasMuted"
                         android:fontFamily="@font/notas_sans"
                         android:includeFontPadding="false"
                         android:textSize="12sp" />
+
+                    <ImageView
+                        android:id="@+id/StatsChevron"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="8dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/notas_huge_chevron_down"
+                        android:contentDescription="@null"
+                        app:tint="@color/NotasMuted" />
                 </LinearLayout>
 
-                <!-- El FlowLayout coloca sus hijos desde arriba. Reservar
-                     el mismo alto minimo de la fecha centra ambos renglones
-                     sin desplazar el icono ya corregido. -->
+                <!-- Las estadísticas no ocupan altura mientras están ocultas. -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:id="@+id/StatsRow"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="28dp"
-                    android:baselineAligned="false"
+                    android:layout_marginStart="22dp"
+                    android:layout_marginTop="2dp"
+                    android:paddingBottom="4dp"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:visibility="gone">
 
                     <TextView
                         android:id="@+id/WordCount"
@@ -152,8 +161,7 @@
                         android:fontFamily="@font/notas_sans"
                         android:includeFontPadding="false"
                         android:textColor="@color/NotasMuted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
+                        android:textSize="12sp" />
 
                     <TextView
                         android:id="@+id/StatsSeparator"
@@ -165,8 +173,7 @@
                         android:includeFontPadding="false"
                         android:text="·"
                         android:textColor="@color/NotasMuted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
+                        android:textSize="12sp" />
 
                     <TextView
                         android:id="@+id/CharacterCount"
@@ -175,10 +182,9 @@
                         android:fontFamily="@font/notas_sans"
                         android:includeFontPadding="false"
                         android:textColor="@color/NotasMuted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
+                        android:textSize="12sp" />
                 </LinearLayout>
-            </com.omgodse.notally.view.PublicFlowLayout>
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/Reminder"

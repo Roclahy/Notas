@@ -344,4 +344,14 @@
     <string name="notas_backup_manual_no_images">Copia ahora (sin imágenes)</string>
     <string name="notas_backup_size">Última copia: %1$s</string>
     <string name="notas_missing_inline_image">Imagen no incluida en esta copia</string>
+    <string name="notas_show_statistics">Mostrar estadísticas</string>
+    <string name="notas_hide_statistics">Ocultar estadísticas</string>
+    <plurals name="notas_tasks_total">
+        <item quantity="one">%d tarea</item>
+        <item quantity="other">%d tareas</item>
+    </plurals>
+    <plurals name="notas_tasks_completed">
+        <item quantity="one">%d completada</item>
+        <item quantity="other">%d completadas</item>
+    </plurals>
 </resources>

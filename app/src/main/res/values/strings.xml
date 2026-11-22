@@ -355,4 +355,14 @@
     <string name="notas_backup_manual_no_images">Back up now (without images)</string>
     <string name="notas_backup_size">Last backup: %1$s</string>
     <string name="notas_missing_inline_image">Image not included in this backup</string>
+    <string name="notas_show_statistics">Show statistics</string>
+    <string name="notas_hide_statistics">Hide statistics</string>
+    <plurals name="notas_tasks_total">
+        <item quantity="one">%d task</item>
+        <item quantity="other">%d tasks</item>
+    </plurals>
+    <plurals name="notas_tasks_completed">
+        <item quantity="one">%d completed</item>
+        <item quantity="other">%d completed</item>
+    </plurals>
 </resources>
