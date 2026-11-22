@@ -13,6 +13,7 @@ android {
         applicationId 'com.rocla.notas'
         minSdk 24
         targetSdk 35
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         versionCode 123
         versionName "1.4.19"
         resourceConfigurations += ['en', 'ca', 'cs', 'da', 'de', 'el', 'es', 'fr', 'hu', 'in', 'it', 'ja', 'ko', 'my', 'nb', 'nl', 'nn', 'pl', 'pt-rBR', 'pt-rPT', 'ro', 'ru', 'sk', 'sl', 'sv', 'tl', 'tr', 'uk', 'vi', 'zh-rCN']
@@ -75,6 +76,10 @@ dependencies {
 
     // AndroidX Palette: la muestra dominante es la de mayor población,
     // no la más saturada. El análisis se realiza solo en el dispositivo.
+    androidTestImplementation "androidx.test:runner:1.6.2"
+    androidTestImplementation "androidx.test:core:1.6.1"
+    androidTestImplementation "androidx.test.ext:junit:1.2.1"
+
     implementation "androidx.palette:palette:1.0.0"
     implementation "org.ocpsoft.prettytime:prettytime:4.0.6.Final"
     implementation "com.google.android.material:material:1.4.0"
