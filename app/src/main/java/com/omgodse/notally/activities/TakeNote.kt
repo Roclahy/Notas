@@ -1,6 +1,5 @@
 package com.omgodse.notally.activities
 
-import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
 import android.text.Spanned
@@ -51,6 +50,7 @@ import com.omgodse.notally.room.Type
 
 class TakeNote : NotallyActivity(Type.NOTE) {
     private var pendingInline: Pair<Int, Set<String>>? = null
+    private var previousImageNames: Set<String>? = null
     private val inlineRequestCode = 241
 
     override fun insertInlineImage() {
@@ -125,6 +125,25 @@ class TakeNote : NotallyActivity(Type.NOTE) {
         binding.EnterBody.post(autoLink)
         renderInlineImages()
         model.images.observe(this) { images ->
+            val names = images.map { it.name }.toSet()
+            val removed = previousImageNames?.minus(names).orEmpty()
+            previousImageNames = names
+            if (removed.isNotEmpty()) {
+                val editable = binding.EnterBody.text
+                if (editable != null) {
+                    val placed = editable.getSpans<InlineNoteImageSpan>(0, editable.length)
+                        .filter { it.imageName in removed }
+                        .map { editable.getSpanStart(it) to editable.getSpanEnd(it) } +
+                        editable.getSpans<InlineImageRefSpan>(0, editable.length)
+                            .filter { it.imageName in removed }
+                            .map { editable.getSpanStart(it) to editable.getSpanEnd(it) }
+                    placed.sortedByDescending { it.first }.forEach { (start, end) ->
+                        if (start >= 0 && end > start && end <= editable.length) {
+                            editable.delete(start, end)
+                        }
+                    }
+                }
+            }
             val pending = pendingInline ?: return@observe
             val added = images.firstOrNull { it.name !in pending.second }
             if (added != null) {
@@ -458,7 +477,8 @@ class TakeNote : NotallyActivity(Type.NOTE) {
 
         ifBothNotNullAndInvalid(selectionStart, selectionEnd) { start, end ->
             binding.EnterBody.text?.getSpans<CharacterStyle>(start, end)?.forEach { span ->
-                if (span !is MarkerSpan) {
+                if (span !is MarkerSpan &&
+                    span !is InlineNoteImageSpan && span !is InlineImageRefSpan) {
                     binding.EnterBody.text?.removeSpan(span)
                 }
             }
