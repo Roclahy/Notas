@@ -29,6 +29,7 @@ import com.omgodse.notally.preferences.View as ViewPref
 abstract class NotallyFragment : Fragment(), ItemListener {
 
     private var adapter: BaseNoteAdapter? = null
+    private var returningFromEditor = false
     internal var binding: FragmentNotesBinding? = null
 
     internal val model: BaseNoteModel by activityViewModels()
@@ -37,6 +38,28 @@ abstract class NotallyFragment : Fragment(), ItemListener {
         super.onDestroyView()
         binding = null
         adapter = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!returningFromEditor) return
+        returningFromEditor = false
+
+        // Returning from the editor is a new layout boundary. The data may be
+        // unchanged, so the folder observer cannot repair a stale span anchor.
+        val recycler = binding?.RecyclerView
+        val notesAdapter = adapter
+        if (recycler != null && notesAdapter != null &&
+            model.preferences.view.value == ViewPref.grid) {
+            recycler.post {
+                if (isAdded && binding?.RecyclerView === recycler &&
+                    recycler.adapter === notesAdapter) {
+                    FolderGridSwitch.reset(recycler, notesAdapter) {
+                        newLayoutManager()
+                    }
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -134,15 +157,12 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                 previousNotebookId = id
                 folderGeneration++
                 scrollToStartGeneration = folderGeneration
-                // A StaggeredGridLayoutManager holds references to views and
-                // their assigned spans. Clearing the span lookup while DiffUtil
-                // is replacing another folder's items can leave stale spans,
-                // produce a giant blank area and crash on its next layout pass.
+                // Detach stale spans, but never enqueue an asynchronous
+                // intermediate empty list that may race this folder's notes.
                 val recycler = binding?.RecyclerView
                 val notesAdapter = adapter
                 if (recycler != null && notesAdapter != null) {
-                    FolderGridSwitch.reset(recycler, notesAdapter,
-                        clearItems = { notesAdapter.submitList(emptyList()) }) {
+                    FolderGridSwitch.reset(recycler, notesAdapter) {
                         newLayoutManager()
                     }
                 }
@@ -198,6 +218,7 @@ abstract class NotallyFragment : Fragment(), ItemListener {
     private fun goToActivity(activity: Class<*>, baseNote: BaseNote) {
         val intent = Intent(requireContext(), activity)
         intent.putExtra(Constants.SelectedBaseNote, baseNote.id)
+        returningFromEditor = true
         startActivity(intent)
     }
 
