@@ -351,6 +351,7 @@ class MainActivity : NotasBaseActivity() {
 
     private fun showNotebookOptions(folder: NotebookFolder) {
         val items = mutableListOf(
+            getString(R.string.notebook_rename) to "rename",
             getString(R.string.notebook_wallpaper) to "wallpaper")
         if (folder.wallpaperName.isNotBlank()) {
             items.add(getString(R.string.notebook_remove_wallpaper) to "remove_wallpaper")
@@ -366,6 +367,7 @@ class MainActivity : NotasBaseActivity() {
             .setTitle(folder.name)
             .setItems(items.map { it.first }.toTypedArray()) { _, selected ->
                 when (items[selected].second) {
+                    "rename" -> renameNotebookDialog(folder)
                     "wallpaper" -> {
                         pendingWallpaperFolderId = folder.id
                         wallpaperPicker.launch("image/*")
@@ -392,6 +394,65 @@ class MainActivity : NotasBaseActivity() {
                     "delete" -> confirmNotebookDeletion(folder)
                 }
             }.show()
+    }
+
+    private fun renameNotebookDialog(folder: NotebookFolder) {
+        val (field, input) = notebookField(R.string.notebook_name)
+        input.setText(folder.name)
+        input.setSelection(input.text?.length ?: 0)
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.notebook_rename)
+            .setView(notebookDialogView(field))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.save, null)
+            .create()
+        dialog.setOnShowListener {
+            val positive = dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE)
+            positive.setOnClickListener {
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (name.isBlank()) {
+                    field.error = getString(R.string.notebook_name_required)
+                    return@setOnClickListener
+                }
+                field.error = null
+                positive.isEnabled = false
+                lifecycleScope.launch {
+                    try {
+                        when (model.renameNotebook(folder.id, name)) {
+                            com.omgodse.notally.viewmodels.BaseNoteModel.NotebookRenameResult.RENAMED -> {
+                                // Updating only the display labels keeps navigation and
+                                // access to the selected protected folder unchanged.
+                                if (model.selectedNotebookId.value == folder.id) {
+                                    binding.SectionTitle.text = name
+                                    binding.FoldersLabel.text = name
+                                }
+                                dialog.dismiss()
+                                Toast.makeText(this@MainActivity,
+                                    R.string.notebook_renamed, Toast.LENGTH_SHORT).show()
+                            }
+                            com.omgodse.notally.viewmodels.BaseNoteModel.NotebookRenameResult.UNCHANGED -> {
+                                dialog.dismiss()
+                            }
+                            com.omgodse.notally.viewmodels.BaseNoteModel.NotebookRenameResult.DUPLICATE -> {
+                                field.error = getString(R.string.notebook_name_exists)
+                                positive.isEnabled = true
+                            }
+                            com.omgodse.notally.viewmodels.BaseNoteModel.NotebookRenameResult.NOT_FOUND -> {
+                                dialog.dismiss()
+                                Toast.makeText(this@MainActivity,
+                                    R.string.notebook_not_found, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } catch (error: Exception) {
+                        android.util.Log.e("NotasFolders", "Unable to rename folder: " +
+                            error.javaClass.simpleName)
+                        field.error = getString(R.string.notebook_rename_error)
+                        positive.isEnabled = true
+                    }
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun confirmNotebookDeletion(folder: NotebookFolder) {
