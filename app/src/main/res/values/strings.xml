@@ -375,4 +375,8 @@
     <string name="crash_report_clear_confirm">Delete the local error report? Your notes will remain unchanged.</string>
     <string name="crash_report_share_failed">Could not share the error report.</string>
     <string name="link_save_failed">Could not save the note link.</string>
+    <string name="notebook_rename">Rename folder</string>
+    <string name="notebook_renamed">Folder renamed</string>
+    <string name="notebook_name_exists">A folder already has this name.</string>
+    <string name="notebook_rename_error">Could not rename the folder.</string>
 </resources>
