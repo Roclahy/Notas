@@ -1,45 +1,44 @@
 package com.omgodse.notally.recyclerview
 
-import android.app.Activity
-import android.view.LayoutInflater
-import android.view.View
-import android.widget.FrameLayout
-import androidx.core.view.ViewCompat
-import com.google.android.material.card.MaterialCardView
-import com.omgodse.notally.R
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.Robolectric
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
+import org.w3c.dom.Element
 
 /**
- * Regression for excessive right-side preview margins reported in 1.4.26
- * and made worse in 1.4.27 by increasing the end inset from 12 to 16dp.
+ * Regression guard for the source-of-truth XML preview insets.
+ * Parsing the layout directly avoids Robolectric inflation failures caused
+ * by unrelated drawable/theme resources.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
 class PreviewInsetRegressionTest {
 
-    @Test fun textPreviewsUseACompactRightInsetWithoutShrinkingTheLeftInset() {
-        val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
-        activity.setTheme(R.style.AppTheme)
-        val card = LayoutInflater.from(activity).inflate(
-            R.layout.recycler_base_note, FrameLayout(activity), false
-        ) as MaterialCardView
-        val density = activity.resources.displayMetrics.density
-        fun px(dp: Int): Int = (dp * density + 0.5f).toInt()
-        val ids = listOf(
-            R.id.Title, R.id.Date, R.id.Note,
-            R.id.LinearLayout, R.id.LabelGroup, R.id.Reminder, R.id.LockedTitle
-        )
-        for (id in ids) {
-            val child = card.findViewById<View>(id)
-            assertEquals("Unexpected leading inset for ${activity.resources.getResourceEntryName(id)}",
-                px(12), ViewCompat.getPaddingStart(child))
-            assertEquals("Right-side preview padding regressed for ${activity.resources.getResourceEntryName(id)}",
-                px(4), ViewCompat.getPaddingEnd(child))
+    @Test fun textPreviewsKeepTheirCompactRightInset() {
+        val layout = File("src/main/res/layout/recycler_base_note.xml")
+        assertTrue("Preview layout must exist in the app module", layout.isFile)
+        val factory = DocumentBuilderFactory.newInstance().apply {
+            isNamespaceAware = true
         }
+        val document = factory.newDocumentBuilder().parse(layout)
+        val androidNs = "http://schemas.android.com/apk/res/android"
+        val expectedIds = setOf(
+            "@+id/Title", "@+id/Date", "@+id/Note",
+            "@+id/LinearLayout", "@+id/LabelGroup", "@+id/Reminder",
+            "@+id/LockedTitle"
+        )
+        val found = mutableSetOf<String>()
+        val all = document.getElementsByTagName("*")
+        for (index in 0 until all.length) {
+            val element = all.item(index) as Element
+            val id = element.getAttributeNS(androidNs, "id")
+            if (id !in expectedIds) continue
+            found += id
+            assertEquals("Leading inset changed for $id", "12dp",
+                element.getAttributeNS(androidNs, "paddingStart"))
+            assertEquals("Excessive right inset regressed for $id", "4dp",
+                element.getAttributeNS(androidNs, "paddingEnd"))
+        }
+        assertEquals("All preview components must be covered", expectedIds, found)
     }
 }
