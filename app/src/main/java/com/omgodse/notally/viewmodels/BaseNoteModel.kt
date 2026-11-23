@@ -50,6 +50,7 @@ import com.omgodse.notally.room.Image
 import com.omgodse.notally.room.Item
 import com.omgodse.notally.room.Label
 import com.omgodse.notally.room.NotallyDatabase
+import com.omgodse.notally.room.NotebookRenameRules
 import com.omgodse.notally.room.Reminder
 import com.omgodse.notally.room.Type
 import com.omgodse.notally.room.livedata.Content
@@ -174,8 +175,10 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
 
     suspend fun renameNotebook(id: Long, requestedName: String): NotebookRenameResult =
         withContext(Dispatchers.IO) {
-            val name = requestedName.trim()
-            require(id > 0L && name.isNotBlank() && name.length <= 80)
+            val name = requireNotNull(NotebookRenameRules.normalized(requestedName)) {
+                "Invalid folder name"
+            }
+            require(id > 0L)
             database.withTransaction {
                 val folders = database.getNotebookFolderDao()
                 val current = folders.get(id)
@@ -183,7 +186,7 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
                 if (current.name == name) return@withTransaction NotebookRenameResult.UNCHANGED
                 // Names are stored encrypted, so compare decrypted names on-device.
                 // Case-only renames are allowed; other duplicate names are rejected.
-                if (folders.listOnce().any { it.id != id && it.name.equals(name, ignoreCase = true) }) {
+                if (NotebookRenameRules.isDuplicate(id, name, folders.listOnce())) {
                     return@withTransaction NotebookRenameResult.DUPLICATE
                 }
                 if (folders.rename(id, name)) NotebookRenameResult.RENAMED
