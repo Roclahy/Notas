@@ -242,9 +242,8 @@ class MainActivity : NotasBaseActivity() {
         if (navController.currentDestination?.id != R.id.Notes) {
             navController.navigate(R.id.Notes)
         }
-        binding.SectionTitle.text = if (id == -1L) {
-            getString(R.string.internal_app_name)
-        } else title
+        // The app header belongs to navigation, not folder selection.
+        // Only this second-row label is allowed to display the folder name.
         binding.FoldersLabel.text = if (id == -1L) getString(R.string.notebook_folders) else title
     }
 
@@ -423,7 +422,7 @@ class MainActivity : NotasBaseActivity() {
                                 // Updating only the display labels keeps navigation and
                                 // access to the selected protected folder unchanged.
                                 if (model.selectedNotebookId.value == folder.id) {
-                                    binding.SectionTitle.text = name
+                                    // Keep the fixed application title (Notas/Notes).
                                     binding.FoldersLabel.text = name
                                 }
                                 dialog.dismiss()
