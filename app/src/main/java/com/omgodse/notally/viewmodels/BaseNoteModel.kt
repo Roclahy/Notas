@@ -170,6 +170,28 @@ class BaseNoteModel(private val app: Application) : AndroidViewModel(app) {
             )
         }
 
+    enum class NotebookRenameResult { RENAMED, UNCHANGED, DUPLICATE, NOT_FOUND }
+
+    suspend fun renameNotebook(id: Long, requestedName: String): NotebookRenameResult =
+        withContext(Dispatchers.IO) {
+            val name = requestedName.trim()
+            require(id > 0L && name.isNotBlank() && name.length <= 80)
+            database.withTransaction {
+                val folders = database.getNotebookFolderDao()
+                val current = folders.get(id)
+                    ?: return@withTransaction NotebookRenameResult.NOT_FOUND
+                if (current.name == name) return@withTransaction NotebookRenameResult.UNCHANGED
+                // Names are stored encrypted, so compare decrypted names on-device.
+                // Case-only renames are allowed; other duplicate names are rejected.
+                if (folders.listOnce().any { it.id != id && it.name.equals(name, ignoreCase = true) }) {
+                    return@withTransaction NotebookRenameResult.DUPLICATE
+                }
+                if (folders.rename(id, name)) NotebookRenameResult.RENAMED
+                else NotebookRenameResult.NOT_FOUND
+            }
+        }
+
+
     /**
      * Conserva notas y adjuntos: solo quita su pertenencia a la carpeta.
      * Ambas escrituras deben ser atómicas para evitar referencias huérfanas.
