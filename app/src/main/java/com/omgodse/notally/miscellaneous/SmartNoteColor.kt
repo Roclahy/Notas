@@ -61,7 +61,7 @@ object SmartNoteColor {
             result
         }
 
-    private fun mostFrequentColor(bitmap: Bitmap): Int? {
+    internal fun mostFrequentColor(bitmap: Bitmap): Int? {
         val pixels = IntArray(bitmap.width * bitmap.height)
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
         val counts = IntArray(1 shl 15)
