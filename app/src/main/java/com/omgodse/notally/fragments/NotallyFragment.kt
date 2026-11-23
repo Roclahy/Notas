@@ -141,7 +141,8 @@ abstract class NotallyFragment : Fragment(), ItemListener {
                 val recycler = binding?.RecyclerView
                 val notesAdapter = adapter
                 if (recycler != null && notesAdapter != null) {
-                    FolderGridSwitch.reset(recycler, notesAdapter) {
+                    FolderGridSwitch.reset(recycler, notesAdapter,
+                        clearItems = { notesAdapter.submitList(emptyList()) }) {
                         newLayoutManager()
                     }
                 }
