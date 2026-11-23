@@ -61,6 +61,11 @@ class BaseNoteVH(
     private var showingLockedNote = false
     private var activeSmartImage: String? = null
     private var smartColorJob: Job? = null
+    // Capturados ANTES del primer bind para restaurarlos al reciclar tarjetas.
+    private val normalTitleColor = binding.Title.currentTextColor
+    private val normalNoteColor = binding.Note.currentTextColor
+    private val normalReminderColor = binding.Reminder.currentTextColor
+    private val normalItemColor = (binding.LinearLayout.getChildAt(0) as TextView).currentTextColor
 
     init {
         binding.Title.setTextSize(TypedValue.COMPLEX_UNIT_SP, TextSize.getDisplayTitleSize(textSize))
@@ -174,9 +179,10 @@ class BaseNoteVH(
             smartColorJob = CoroutineScope(Dispatchers.Main).launch {
                 val sampled = SmartNoteColor.dominant(app, mediaRoot, first)
                 if (sampled != null && activeSmartImage == expected && !showingLockedNote) {
+                    val rgb = SmartNoteColor.actualColor(sampled)
                     binding.root.strokeWidth = 0
-                    binding.root.setCardBackgroundColor(
-                        SmartNoteColor.forTheme(sampled, binding.root.context))
+                    binding.root.setCardBackgroundColor(rgb)
+                    applySmartTextContrast(rgb)
                 }
             }
         }
@@ -251,8 +257,28 @@ class BaseNoteVH(
         } else binding.Date.visibility = View.GONE
     }
 
+    /** El texto vuelve a sus colores normales cuando RecyclerView recicla la tarjeta. */
+    private fun applySmartTextContrast(rgb: Int?) {
+        val foreground = if (rgb == null) normalTitleColor else SmartNoteColor.textColor(rgb)
+        val secondary = if (rgb == null) normalNoteColor
+            else androidx.core.graphics.ColorUtils.setAlphaComponent(foreground, 229)
+        val metadata = if (rgb == null)
+            ContextCompat.getColor(binding.root.context, R.color.NotasMuted)
+        else androidx.core.graphics.ColorUtils.setAlphaComponent(foreground, 211)
+        binding.Title.setTextColor(foreground)
+        binding.Note.setTextColor(secondary)
+        binding.Date.setTextColor(metadata)
+        binding.Reminder.setTextColor(if (rgb == null) normalReminderColor else secondary)
+        binding.LinearLayout.children.forEach { view ->
+            if (view is TextView) {
+                view.setTextColor(if (rgb == null) normalItemColor else secondary)
+            }
+        }
+    }
+
     private fun setColor(color: Color) {
         val context = binding.root.context
+        applySmartTextContrast(null)
 
         val amoled = Preferences.getInstance(context.applicationContext as Application).isAmoledTheme()
         val effectiveColor = if (color == Color.INTELLIGENT) Color.DEFAULT else color
