@@ -47,6 +47,16 @@ abstract class NotebookFolderDao {
     @Query("DELETE FROM NotebookFolder WHERE id = :id")
     abstract suspend fun delete(id: Long)
 
+    // Only the encrypted name changes. The stable ID, protection, wallpaper,
+    // creation date and links referencing this folder remain untouched.
+    @Query("UPDATE NotebookFolder SET name = :encryptedName WHERE id = :id")
+    protected abstract suspend fun rawRename(id: Long, encryptedName: String): Int
+
+    suspend fun rename(id: Long, newName: String): Boolean {
+        require(id > 0L && newName.isNotBlank() && newName.length <= 80)
+        return rawRename(id, SecureFields.seal(newName, "folderName")) == 1
+    }
+
     @Query("UPDATE NotebookFolder SET wallpaperName = :filename WHERE id = :id")
     abstract suspend fun updateWallpaper(id: Long, filename: String)
 
