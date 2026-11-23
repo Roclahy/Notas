@@ -127,24 +127,37 @@ abstract class NotallyFragment : Fragment(), ItemListener {
         }
 
         var previousNotebookId: Long? = null
-        var resetPosition = true
+        var folderGeneration = 0L
+        var scrollToStartGeneration: Long? = null
         model.selectedNotebookId.observe(viewLifecycleOwner) { id ->
             if (id != previousNotebookId) {
                 previousNotebookId = id
-                resetPosition = true
-                binding?.RecyclerView?.stopScroll()
-                binding?.RecyclerView?.scrollToPosition(0)
+                folderGeneration++
+                scrollToStartGeneration = folderGeneration
+                // A StaggeredGridLayoutManager holds references to views and
+                // their assigned spans. Clearing the span lookup while DiffUtil
+                // is replacing another folder's items can leave stale spans,
+                // produce a giant blank area and crash on its next layout pass.
+                val recycler = binding?.RecyclerView
+                val notesAdapter = adapter
+                if (recycler != null && notesAdapter != null) {
+                    FolderGridSwitch.reset(recycler, notesAdapter) {
+                        newLayoutManager()
+                    }
+                }
             }
         }
         getObservable().observe(viewLifecycleOwner) { list ->
-            adapter?.submitList(list) {
-                if (resetPosition) {
-                    resetPosition = false
-                    val recycler = binding?.RecyclerView
-                    // Las carpetas no heredan asignaciones de columna previas.
-                    (recycler?.layoutManager as? StaggeredGridLayoutManager)
-                        ?.invalidateSpanAssignments()
-                    recycler?.scrollToPosition(0)
+            val generation = folderGeneration
+            val currentAdapter = adapter
+            currentAdapter?.submitList(list) {
+                val recycler = binding?.RecyclerView
+                // Ignore callbacks from older generations of the async differ.
+                if (generation == folderGeneration &&
+                    scrollToStartGeneration == generation && recycler != null &&
+                    recycler.adapter === currentAdapter) {
+                    scrollToStartGeneration = null
+                    recycler.scrollToPosition(0)
                 }
             }
             binding?.ImageView?.isVisible = list.isEmpty()
@@ -164,20 +177,21 @@ abstract class NotallyFragment : Fragment(), ItemListener {
     private fun setupRecyclerView() {
         binding?.RecyclerView?.apply {
             layoutDirection = View.LAYOUT_DIRECTION_LTR
-            isSaveEnabled = false // Nunca restaurar ancla de columna de otra carpeta.
+            isSaveEnabled = false // No restore a scroll anchor from another folder.
+            layoutManager = newLayoutManager()
         }
-        binding?.RecyclerView?.layoutManager = if (model.preferences.view.value == ViewPref.grid) {
-            // La altura de cada tarjeta depende solo de su propio contenido
-            // y de los limites de densidad: maxTitle, maxLines, maxItems.
+    }
+
+    private fun newLayoutManager(): RecyclerView.LayoutManager =
+        if (model.preferences.view.value == ViewPref.grid) {
+            // Maintain independent card heights, but start with fresh span
+            // assignments for every folder. Never invalidate live assignments
+            // after an async DiffUtil commit.
             StaggeredGridLayoutManager(2, RecyclerView.VERTICAL).apply {
                 reverseLayout = false
-                // La estrategia NONE conserva huecos (incluso una columna
-                // completamente vacía arriba de la siguiente tarjeta).
-                // Reequilibrar cuando la cuadrícula queda inactiva.
                 gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS
             }
         } else LinearLayoutManager(requireContext())
-    }
 
 
     private fun goToActivity(activity: Class<*>, baseNote: BaseNote) {
