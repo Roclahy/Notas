@@ -1,4 +1,4 @@
-name: Build Notas 1.4.27 (131) - restore note grid position and preview insets
+name: Build Notas 1.4.28 (132) - compact preview right insets
 
 on:
   workflow_dispatch:
@@ -29,6 +29,7 @@ on:
       - work/notas-1425-restore-header-photo-rgb
       - work/notas-1426-folder-grid-crash-fix
       - work/notas-1427-grid-position-regression
+      - work/notas-1428-preview-right-insets
     paths:
       - .github/workflows/build-notas-dev.yml
       - app/**
@@ -64,7 +65,7 @@ jobs:
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: 'Run unit tests - grid placement and editor return, RGB, links, rename, crash report'
+      - name: 'Run unit tests - preview insets, grid placement, RGB, links, rename, crash report'
         run: bash ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Build installable debug APK
@@ -73,7 +74,7 @@ jobs:
       - name: Upload signed debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-1427-debug-installable
+          name: notas-1428-debug-installable
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -83,7 +84,7 @@ jobs:
       - name: Upload unsigned optimized Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-1427-r8-unsigned
+          name: notas-1428-r8-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
