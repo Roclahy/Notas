@@ -1,4 +1,4 @@
-name: Build Notas 1.4.24 (128) - rename user folders
+name: Build Notas 1.4.25 (129) - restore real photo RGB and app title
 
 on:
   workflow_dispatch:
@@ -26,6 +26,7 @@ on:
       - work/notas-1423-json-span-fix
       - work/notas-1423-crash-anr-reports
       - work/notas-1424-rename-folders
+      - work/notas-1425-restore-header-photo-rgb
     paths:
       - .github/workflows/build-notas-dev.yml
       - app/**
@@ -61,7 +62,7 @@ jobs:
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: 'Run unit tests - folder rename, JSON codec, crash report'
+      - name: 'Run unit tests - RGB color, links, rename and crash report'
         run: bash ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Build installable debug APK
@@ -70,7 +71,7 @@ jobs:
       - name: Upload signed debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-1424-debug-installable
+          name: notas-1425-debug-installable
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -80,7 +81,7 @@ jobs:
       - name: Upload unsigned optimized Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: notas-1424-r8-unsigned
+          name: notas-1425-r8-unsigned
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
 
